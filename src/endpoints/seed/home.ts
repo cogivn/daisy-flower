@@ -12,12 +12,64 @@ export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug
 }) => {
   const [primaryHeroImage] = heroImages
 
+  const heroSlidesMeta = [
+    {
+      featured: 'New Plant Arrivals',
+      title: 'Lovely Plants & Flowers',
+      description:
+        'Discount 20% off for Lukani members. Beautiful plants and flower arrangements for every space.',
+      button: {
+        label: 'Shop Now',
+        url: '/shop',
+      },
+    },
+    {
+      featured: 'Limited Time Offer',
+      title: 'Fresh Greenery For Your Home',
+      description:
+        'Bring nature indoors with lush plants, curated pots, and accessories for every corner.',
+      button: {
+        label: 'View Deals',
+        url: '/shop?tag=sale',
+      },
+    },
+    {
+      featured: 'Best Seller Collection',
+      title: 'Top Picks For Plant Lovers',
+      description:
+        'Explore our most-loved plants and bouquets, handpicked by the Lukani design team.',
+      button: {
+        label: 'Browse Collection',
+        url: '/shop?tag=best-sellers',
+      },
+    },
+  ]
+
   return {
     slug: 'home',
     _status: 'published',
     hero: {
       type: 'highImpact',
-      media: heroImages.map((image) => ({ image })),
+      media: heroImages.map((image, index) => {
+        const meta = heroSlidesMeta[index] || heroSlidesMeta[0]
+
+        return {
+          image,
+          featured: meta.featured,
+          title: meta.title,
+          description: meta.description,
+          button: [
+            {
+              link: {
+                type: 'custom',
+                appearance: 'default',
+                label: meta.button.label,
+                url: meta.button.url,
+              },
+            },
+          ],
+        }
+      }),
       links: [
         {
           link: {

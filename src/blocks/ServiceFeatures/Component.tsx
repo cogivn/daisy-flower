@@ -12,7 +12,7 @@ export const ServiceFeaturesBlock: React.FC<any> = ({ features }) => {
   if (!features || features.length === 0) return null
 
   return (
-    <div className="bg-white py-12 border-b">
+    <div className="bg-white pb-12 border-b">
       <div className="container">
         <div className="flex flex-col lg:flex-row lg:justify-between gap-8">
           {features.map((feature: any, i: number) => {

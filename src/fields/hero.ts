@@ -8,6 +8,7 @@ import {
 } from '@payloadcms/richtext-lexical'
 
 import { linkGroup } from './linkGroup'
+import { link } from './link'
 
 export const hero: Field = {
   name: 'hero',
@@ -42,7 +43,7 @@ export const hero: Field = {
       name: 'featuredText',
       type: 'text',
       admin: {
-        condition: (_, { type } = {}) => ['highImpact', 'mediumImpact'].includes(type),
+        condition: (_, { type } = {}) => type === 'mediumImpact',
       },
       label: 'Featured Badge/Label',
     },
@@ -59,6 +60,9 @@ export const hero: Field = {
           ]
         },
       }),
+      admin: {
+        condition: (_, { type } = {}) => ['mediumImpact', 'lowImpact'].includes(type),
+      },
       label: false,
     },
     {
@@ -149,6 +153,33 @@ export const hero: Field = {
           type: 'upload',
           relationTo: 'media',
           required: true,
+        },
+        {
+          name: 'featured',
+          type: 'text',
+          label: 'Featured label',
+        },
+        {
+          name: 'title',
+          type: 'text',
+          label: 'Title',
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          label: 'Description',
+        },
+        {
+          name: 'button',
+          type: 'array',
+          label: 'Button (optional)',
+          minRows: 0,
+          maxRows: 1,
+          fields: [
+            link({
+              appearances: ['default', 'outline'],
+            }),
+          ],
         },
       ],
     },
