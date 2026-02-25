@@ -1,10 +1,14 @@
 import { ArchiveBlock } from '@/blocks/ArchiveBlock/Component'
 import { BannerBlock } from '@/blocks/Banner/Component'
+import { BrandSliderBlock } from '@/blocks/BrandSlider/Component'
 import { CallToActionBlock } from '@/blocks/CallToAction/Component'
 import { CarouselBlock } from '@/blocks/Carousel/Component'
+import { CategoryCarouselBlock } from '@/blocks/CategoryCarousel/Component'
 import { ContentBlock } from '@/blocks/Content/Component'
 import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
+import { PromoBannersBlock } from '@/blocks/PromoBanners/Component'
+import { ServiceFeaturesBlock } from '@/blocks/ServiceFeatures/Component'
 import { ThreeItemGridBlock } from '@/blocks/ThreeItemGrid/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
 import React, { Fragment } from 'react'
@@ -19,7 +23,11 @@ const blockComponents = {
   cta: CallToActionBlock,
   formBlock: FormBlock,
   mediaBlock: MediaBlock,
+  promoBanners: PromoBannersBlock,
+  serviceFeatures: ServiceFeaturesBlock,
   threeItemGrid: ThreeItemGridBlock,
+  brandSlider: BrandSliderBlock,
+  categoryCarousel: CategoryCarouselBlock,
 }
 
 export const RenderBlocks: React.FC<{

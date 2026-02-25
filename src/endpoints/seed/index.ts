@@ -1,15 +1,17 @@
-import type { CollectionSlug, GlobalSlug, Payload, PayloadRequest, File } from 'payload'
+import type { CollectionSlug, File, GlobalSlug, Payload, PayloadRequest } from 'payload'
 
+import { Address, Transaction, VariantOption } from '@/payload-types'
 import { contactFormData } from './contact-form'
 import { contactPageData } from './contact-page'
-import { productHatData } from './product-hat'
-import { productTshirtData, productTshirtVariant } from './product-tshirt'
 import { homePageData } from './home'
 import { imageHatData } from './image-hat'
+import { imageHero1Data } from './image-hero-1'
+import { imageHero2Data } from './image-hero-2'
+import { imageHero3Data } from './image-hero-3'
 import { imageTshirtBlackData } from './image-tshirt-black'
 import { imageTshirtWhiteData } from './image-tshirt-white'
-import { imageHero1Data } from './image-hero-1'
-import { Address, Transaction, VariantOption } from '@/payload-types'
+import { productHatData } from './product-hat'
+import { productTshirtData, productTshirtVariant } from './product-tshirt'
 
 const collections: CollectionSlug[] = [
   'categories',
@@ -92,9 +94,7 @@ export const seed = async ({
     globals.map((global) =>
       payload.updateGlobal({
         slug: global,
-        data: {
-          navItems: [],
-        },
+        data: {},
         depth: 0,
         context: {
           disableRevalidate: true,
@@ -124,28 +124,36 @@ export const seed = async ({
 
   payload.logger.info(`— Seeding media...`)
 
-  const [imageHatBuffer, imageTshirtBlackBuffer, imageTshirtWhiteBuffer, heroBuffer] =
-    await Promise.all([
-      fetchFileByURL(
-        'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/hat-logo.png',
-      ),
-      fetchFileByURL(
-        'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/tshirt-black.png',
-      ),
-      fetchFileByURL(
-        'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/tshirt-white.png',
-      ),
-      fetchFileByURL(
-        'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/website/src/endpoints/seed/image-hero1.webp',
-      ),
-    ])
+  const [
+    imageHatBuffer,
+    imageTshirtBlackBuffer,
+    imageTshirtWhiteBuffer,
+    hero1Buffer,
+    hero2Buffer,
+    hero3Buffer,
+  ] = await Promise.all([
+    fetchFileByURL(
+      'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/hat-logo.png',
+    ),
+    fetchFileByURL(
+      'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/tshirt-black.png',
+    ),
+    fetchFileByURL(
+      'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/tshirt-white.png',
+    ),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/slider/slider1.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/slider/slider2.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/slider/slider3.jpg'),
+  ])
 
   const [
     customer,
     imageHat,
     imageTshirtBlack,
     imageTshirtWhite,
-    imageHero,
+    imageHero1,
+    imageHero2,
+    imageHero3,
     accessoriesCategory,
     tshirtsCategory,
     hatsCategory,
@@ -177,7 +185,17 @@ export const seed = async ({
     payload.create({
       collection: 'media',
       data: imageHero1Data,
-      file: heroBuffer,
+      file: hero1Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: imageHero2Data,
+      file: hero2Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: imageHero3Data,
+      file: hero3Buffer,
     }),
     ...categories.map((category) =>
       payload.create({
@@ -258,7 +276,7 @@ export const seed = async ({
         { image: imageTshirtWhite, variantOption: white },
       ],
       metaImage: imageTshirtBlack,
-      contentImage: imageHero,
+      contentImage: imageHero1,
       variantTypes: [colorVariantType, sizeVariantType],
       categories: [tshirtsCategory],
       relatedProducts: [productHat],
@@ -318,9 +336,12 @@ export const seed = async ({
       collection: 'pages',
       depth: 0,
       data: homePageData({
-        contentImage: imageHero,
+        heroImages: [imageHero1, imageHero2, imageHero3],
         metaImage: imageHat,
       }),
+      context: {
+        disableRevalidate: true,
+      },
     }),
     payload.create({
       collection: 'pages',
@@ -328,6 +349,9 @@ export const seed = async ({
       data: contactPageData({
         contactForm: contactForm,
       }),
+      context: {
+        disableRevalidate: true,
+      },
     }),
   ])
 
@@ -524,51 +548,88 @@ export const seed = async ({
               url: '/shop',
             },
           },
-          {
-            link: {
-              type: 'custom',
-              label: 'Account',
-              url: '/account',
-            },
-          },
         ],
       },
     }),
     payload.updateGlobal({
       slug: 'footer',
       data: {
-        navItems: [
+        brandDescription:
+          'We are a team of designers and developers that create high quality plants and flower shop themes for your business.',
+        sections: [
           {
-            link: {
-              type: 'custom',
-              label: 'Admin',
-              url: '/admin',
-            },
+            title: 'Information',
+            navItems: [
+              {
+                link: {
+                  type: 'custom',
+                  label: 'About Us',
+                  url: '/about',
+                },
+              },
+              {
+                link: {
+                  type: 'custom',
+                  label: 'Checkout',
+                  url: '/checkout',
+                },
+              },
+              {
+                link: {
+                  type: 'custom',
+                  label: 'Contact',
+                  url: '/contact',
+                },
+              },
+              {
+                link: {
+                  type: 'custom',
+                  label: 'Frequently Questions',
+                  url: '/faq',
+                },
+              },
+            ],
           },
           {
-            link: {
-              type: 'custom',
-              label: 'Find my order',
-              url: '/find-order',
-            },
-          },
-          {
-            link: {
-              type: 'custom',
-              label: 'Source Code',
-              newTab: true,
-              url: 'https://github.com/payloadcms/payload/tree/main/templates/website',
-            },
-          },
-          {
-            link: {
-              type: 'custom',
-              label: 'Payload',
-              newTab: true,
-              url: 'https://payloadcms.com/',
-            },
+            title: 'My Account',
+            navItems: [
+              {
+                link: {
+                  type: 'custom',
+                  label: 'My Account',
+                  url: '/account',
+                },
+              },
+              {
+                link: {
+                  type: 'custom',
+                  label: 'Shopping Cart',
+                  url: '/cart',
+                },
+              },
+              {
+                link: {
+                  type: 'custom',
+                  label: 'Checkout',
+                  url: '/checkout',
+                },
+              },
+              {
+                link: {
+                  type: 'custom',
+                  label: 'Shop',
+                  url: '/shop',
+                },
+              },
+            ],
           },
         ],
+        openingHours: [
+          { day: 'Monday - Friday:', hours: '8AM - 10PM' },
+          { day: 'Saturday:', hours: '9AM - 8PM' },
+          { day: 'Sunday:', hours: 'Closed' },
+        ],
+        copyrightText: 'LUKANI. Made with ❤️ for plants.',
       },
     }),
   ])

@@ -11,14 +11,61 @@ export const Footer: GlobalConfig = {
   },
   fields: [
     {
-      name: 'navItems',
+      name: 'brandDescription',
+      type: 'text',
+      label: 'Brand Description',
+      defaultValue:
+        'We are a team of designers and developers that create high quality plants and flower shop themes for your business.',
+    },
+    {
+      name: 'sections',
       type: 'array',
+      label: 'Column Sections',
       fields: [
-        link({
-          appearances: false,
-        }),
+        {
+          name: 'title',
+          type: 'text',
+          required: true,
+        },
+        {
+          name: 'navItems',
+          type: 'array',
+          fields: [
+            link({
+              appearances: false,
+            }),
+          ],
+        },
       ],
-      maxRows: 6,
+      maxRows: 4,
+    },
+    {
+      name: 'openingHours',
+      type: 'array',
+      label: 'Opening Hours',
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'day',
+              type: 'text',
+              admin: { width: '50%' },
+            },
+            {
+              name: 'hours',
+              type: 'text',
+              admin: { width: '50%' },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'copyrightText',
+      type: 'text',
+      label: 'Copyright Text (after year)',
+      defaultValue: 'LUKANI. Made with ❤️ for plants.',
     },
   ],
 }

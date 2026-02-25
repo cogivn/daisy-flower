@@ -1,65 +1,155 @@
-import type { Footer } from '@/payload-types'
-
-import { FooterMenu } from '@/components/Footer/menu'
-import { ThemeSelector } from '@/providers/Theme/ThemeSelector'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 import Link from 'next/link'
-import React, { Suspense } from 'react'
-import { LogoIcon } from '@/components/icons/logo'
 
-const { COMPANY_NAME, SITE_NAME } = process.env
+import { CMSLink } from '@/components/Link'
+import { Facebook, Instagram, MapPin, Phone, Twitter, Youtube } from 'lucide-react'
+
+import { Footer as FooterType } from '@/payload-types'
 
 export async function Footer() {
-  const footer: Footer = await getCachedGlobal('footer', 1)()
-  const menu = footer.navItems || []
-  const currentYear = new Date().getFullYear()
-  const copyrightDate = 2023 + (currentYear > 2023 ? `-${currentYear}` : '')
-  const skeleton = 'w-full h-6 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700'
+  const footer = (await getCachedGlobal('footer', 1)()) as FooterType
+  const { sections = [], openingHours = [] } = footer
 
-  const copyrightName = COMPANY_NAME || SITE_NAME || ''
+  // Extract contactNumber if it exists in your schema,
+  // or use a default if it's not in the generated type yet
+  const contactNumber = (footer as any).contactNumber
+  const brandDescription =
+    (footer as any).brandDescription ||
+    'We are a team of designers and developers that create high quality plants and flower shop themes for your business.'
+  const copyrightText =
+    (footer as any).copyrightText || 'LUKANI. Made with ❤️ for plants.'
+
+  const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="text-sm text-neutral-500 dark:text-neutral-400">
-      <div className="container">
-        <div className="flex w-full flex-col gap-6 border-t border-neutral-200 py-12 text-sm md:flex-row md:gap-12 dark:border-neutral-700">
-          <div>
-            <Link className="flex items-center gap-2 text-black md:pt-1 dark:text-white" href="/">
-              <LogoIcon className="w-6" />
-              <span className="sr-only">{SITE_NAME}</span>
+    <footer className="bg-white text-sm border-t">
+      {/* Main Footer Content */}
+      <div className="container py-20 md:py-28">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
+          {/* Brand Info */}
+          <div className="flex flex-col items-start">
+            <Link href="/" className="inline-block mb-8">
+              <h2 className="text-4xl font-bold tracking-tighter">
+                LUKANI<span className="text-primary">.</span>
+              </h2>
             </Link>
-          </div>
-          <Suspense
-            fallback={
-              <div className="flex h-[188px] w-[200px] flex-col gap-2">
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
-                <div className={skeleton} />
+            <p className="text-muted-foreground leading-relaxed mb-8 text-base">
+              {brandDescription}
+            </p>
+            <div className="space-y-5">
+              <div className="flex items-start gap-4">
+                <MapPin size={22} className="text-primary shrink-0 mt-1" />
+                <span className="text-base text-muted-foreground">
+                  1234 Street Name, City, United States
+                </span>
               </div>
-            }
-          >
-            <FooterMenu menu={menu} />
-          </Suspense>
-          <div className="md:ml-auto flex flex-col gap-4 items-end">
-            <ThemeSelector />
+              <div className="flex items-start gap-4">
+                <Phone size={22} className="text-primary shrink-0 mt-1" />
+                <span className="text-base text-muted-foreground font-medium">
+                  {contactNumber || '+01 23456789'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Link Columns */}
+          {sections &&
+            sections.map((section, i: number) => (
+              <div key={i}>
+                <h4 className="text-lg font-bold mb-10 uppercase tracking-widest relative pb-4 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
+                  {section.title}
+                </h4>
+                <ul className="space-y-5">
+                  {section.navItems?.map((item, j: number) => (
+                    <li key={j}>
+                      <CMSLink
+                        {...item.link}
+                        className="text-muted-foreground hover:text-primary transition-colors text-base"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+          {/* Opening Hours */}
+          <div>
+            <h4 className="text-lg font-bold mb-10 uppercase tracking-widest relative pb-4 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
+              Opening Hours
+            </h4>
+            <ul className="space-y-5">
+              {openingHours && openingHours.length > 0 ? (
+                openingHours.map((item, i: number) => (
+                  <li
+                    key={i}
+                    className="flex justify-between border-b border-border/40 pb-3 text-base"
+                  >
+                    <span className="text-muted-foreground">{item.day}</span>
+                    <span className="font-bold text-foreground">{item.hours}</span>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li className="flex justify-between border-b border-border/40 pb-3 text-base">
+                    <span className="text-muted-foreground">Mon - Fri:</span>
+                    <span className="font-bold text-foreground">9:00 AM - 6:00 PM</span>
+                  </li>
+                  <li className="flex justify-between border-b border-border/40 pb-3 text-base">
+                    <span className="text-muted-foreground">Saturday:</span>
+                    <span className="font-bold text-foreground">10:00 AM - 5:00 PM</span>
+                  </li>
+                  <li className="flex justify-between border-b border-border/40 pb-3 text-base">
+                    <span className="text-muted-foreground">Sunday:</span>
+                    <span className="font-bold text-foreground">Closed</span>
+                  </li>
+                </>
+              )}
+            </ul>
           </div>
         </div>
       </div>
-      <div className="border-t border-neutral-200 py-6 text-sm dark:border-neutral-700">
-        <div className="container mx-auto flex w-full flex-col items-center gap-1 md:flex-row md:gap-0">
-          <p>
-            &copy; {copyrightDate} {copyrightName}
-            {copyrightName.length && !copyrightName.endsWith('.') ? '.' : ''} All rights reserved.
+
+      {/* Copyright Bar */}
+      <div className="bg-neutral-50 border-t items-center py-10">
+        <div className="container flex flex-col md:flex-row items-center justify-between gap-8">
+          <p className="text-muted-foreground text-base">
+            &copy; {currentYear}{' '}
+            {copyrightText ? (
+              copyrightText
+            ) : (
+              <>
+                <strong>LUKANI</strong>. Made with ❤️ for plants.
+              </>
+            )}
           </p>
-          <hr className="mx-4 hidden h-4 w-px border-l border-neutral-400 md:inline-block" />
-          <p>Designed in Michigan</p>
-          <p className="md:ml-auto">
-            <a className="text-black dark:text-white" href="https://payloadcms.com">
-              Crafted by Payload
-            </a>
-          </p>
+          <div className="flex flex-col md:flex-row items-center gap-10">
+            <div className="flex gap-6">
+              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Facebook size={20} />
+              </Link>
+              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Twitter size={20} />
+              </Link>
+              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Instagram size={20} />
+              </Link>
+              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Youtube size={20} />
+              </Link>
+            </div>
+            {/* Payment Icons Placeholder */}
+            <div className="flex gap-3 opacity-60">
+              <div className="w-12 h-8 bg-white border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
+                VISA
+              </div>
+              <div className="w-12 h-8 bg-white border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
+                PAYPAL
+              </div>
+              <div className="w-12 h-8 bg-white border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
+                MC
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

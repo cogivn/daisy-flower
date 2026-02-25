@@ -1,10 +1,8 @@
-import type { CollectionConfig } from 'payload'
-import { slugField } from 'payload'
-
 import { adminOnly } from '@/access/adminOnly'
+import type { CollectionConfig } from 'payload'
 
-export const Categories: CollectionConfig = {
-  slug: 'categories',
+export const Brands: CollectionConfig = {
+  slug: 'brands',
   access: {
     create: adminOnly,
     delete: adminOnly,
@@ -12,22 +10,24 @@ export const Categories: CollectionConfig = {
     update: adminOnly,
   },
   admin: {
-    useAsTitle: 'title',
+    useAsTitle: 'name',
     group: 'Content',
   },
   fields: [
     {
-      name: 'title',
+      name: 'name',
       type: 'text',
       required: true,
     },
     {
-      name: 'image',
+      name: 'logo',
       type: 'upload',
       relationTo: 'media',
+      required: true,
     },
-    slugField({
-      position: undefined,
-    }),
+    {
+      name: 'link',
+      type: 'text',
+    },
   ],
 }

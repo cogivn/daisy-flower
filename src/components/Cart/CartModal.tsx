@@ -22,7 +22,11 @@ import { OpenCartButton } from './OpenCart'
 import { Button } from '@/components/ui/button'
 import { Product } from '@/payload-types'
 
-export function CartModal() {
+export type CartModalProps = {
+  renderTrigger?: (info: { quantity?: number; subtotal?: number }) => React.ReactNode
+}
+
+export function CartModal({ renderTrigger }: CartModalProps) {
   const { cart } = useCart()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -41,7 +45,14 @@ export function CartModal() {
   return (
     <Sheet onOpenChange={setIsOpen} open={isOpen}>
       <SheetTrigger asChild>
-        <OpenCartButton quantity={totalQuantity} />
+        {renderTrigger ? (
+          renderTrigger({
+            quantity: totalQuantity,
+            subtotal: typeof cart?.subtotal === 'number' ? cart.subtotal : undefined,
+          })
+        ) : (
+          <OpenCartButton quantity={totalQuantity} />
+        )}
       </SheetTrigger>
 
       <SheetContent className="flex flex-col">

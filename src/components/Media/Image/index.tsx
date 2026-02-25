@@ -52,6 +52,12 @@ export const Image: React.FC<MediaProps> = (props) => {
     src = `${process.env.NEXT_PUBLIC_SERVER_URL}${url}`
   }
 
+  // Fallback dimensions for images that don't have width/height in the document
+  if (!fill && (!width || !height)) {
+    width = width ?? 1920
+    height = height ?? 600
+  }
+
   // NOTE: this is used by the browser to determine which image to download at different screen sizes
   const sizes = sizeFromProps
     ? sizeFromProps

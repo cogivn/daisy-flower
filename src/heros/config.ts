@@ -7,6 +7,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 
+import { link } from '@/fields/link'
 import { linkGroup } from '@/fields/linkGroup'
 
 export const hero: Field = {
@@ -35,8 +36,44 @@ export const hero: Field = {
           label: 'Low Impact',
           value: 'lowImpact',
         },
+        {
+          label: 'Home Slider (Lukani)',
+          value: 'homeSlider',
+        },
       ],
       required: true,
+    },
+    {
+      name: 'slides',
+      type: 'array',
+      admin: {
+        condition: (_, { type } = {}) => type === 'homeSlider',
+      },
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          required: true,
+        },
+        {
+          name: 'subtitle',
+          type: 'text',
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+        },
+        {
+          name: 'media',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+        },
+        link({
+          appearances: false,
+        }),
+      ],
+      label: 'Slides',
     },
     {
       name: 'richText',
@@ -52,6 +89,122 @@ export const hero: Field = {
         },
       }),
       label: false,
+    },
+    {
+      name: 'secondaryMedia',
+      type: 'array',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'media',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+        },
+      ],
+      label: 'Secondary Media (Collage)',
+      maxRows: 3,
+    },
+    {
+      name: 'newestFlowers',
+      type: 'array',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'product',
+          type: 'relationship',
+          relationTo: 'products',
+          required: true,
+        },
+        {
+          name: 'label',
+          type: 'text',
+          defaultValue: 'New Arrival',
+        },
+      ],
+      label: 'Newest Flowers (Card Stack)',
+      maxRows: 5,
+    },
+    {
+      name: 'brandInfo',
+      type: 'group',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'name',
+          type: 'text',
+          defaultValue: 'Planto',
+        },
+        {
+          name: 'rating',
+          type: 'number',
+          defaultValue: 4.8,
+          max: 5,
+          min: 1,
+        },
+      ],
+      label: 'Brand Info',
+    },
+    {
+      name: 'featuredProduct',
+      type: 'group',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'product',
+          type: 'relationship',
+          relationTo: 'products',
+        },
+        {
+          name: 'stats',
+          type: 'array',
+          fields: [
+            {
+              name: 'label',
+              type: 'text',
+            },
+            {
+              name: 'value',
+              type: 'text',
+            },
+          ],
+        },
+      ],
+      label: 'Featured Product Spotlight',
+    },
+    {
+      name: 'trustBadge',
+      type: 'group',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'text',
+          type: 'text',
+          defaultValue: 'Trusted by 300+ People',
+        },
+        {
+          name: 'avatars',
+          type: 'array',
+          fields: [
+            {
+              name: 'image',
+              type: 'upload',
+              relationTo: 'media',
+            },
+          ],
+        },
+      ],
+      label: 'Trust Badge',
     },
     linkGroup({
       overrides: {

@@ -39,6 +39,14 @@ export const hero: Field = {
       required: true,
     },
     {
+      name: 'featuredText',
+      type: 'text',
+      admin: {
+        condition: (_, { type } = {}) => ['highImpact', 'mediumImpact'].includes(type),
+      },
+      label: 'Featured Badge/Label',
+    },
+    {
       name: 'richText',
       type: 'richText',
       editor: lexicalEditor({
@@ -53,6 +61,75 @@ export const hero: Field = {
       }),
       label: false,
     },
+    {
+      name: 'brandInfo',
+      type: 'group',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'name',
+          type: 'text',
+          defaultValue: 'Planto',
+        },
+        {
+          name: 'rating',
+          type: 'number',
+          defaultValue: 4.8,
+          max: 5,
+          min: 1,
+        },
+      ],
+      label: 'Brand Info',
+    },
+    {
+      name: 'featuredProduct',
+      type: 'group',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'product',
+          type: 'relationship',
+          relationTo: 'products',
+        },
+        {
+          name: 'stats',
+          type: 'array',
+          fields: [
+            {
+              name: 'label',
+              type: 'text',
+            },
+            {
+              name: 'value',
+              type: 'text',
+            },
+          ],
+        },
+      ],
+      label: 'Featured Product Spotlight',
+    },
+    {
+      name: 'mediaCarousel',
+      type: 'array',
+      admin: {
+        condition: (_, { type } = {}) => type === 'mediumImpact',
+      },
+      fields: [
+        {
+          name: 'media',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+        },
+      ],
+      label: 'Main Media Carousel (MD3 Style)',
+      maxRows: 3,
+      minRows: 1,
+    },
     linkGroup({
       overrides: {
         maxRows: 2,
@@ -60,12 +137,20 @@ export const hero: Field = {
     }),
     {
       name: 'media',
-      type: 'upload',
+      type: 'array',
       admin: {
-        condition: (_, { type } = {}) => ['highImpact', 'mediumImpact'].includes(type),
+        condition: (_, { type } = {}) => type === 'highImpact',
       },
-      relationTo: 'media',
-      required: true,
+      minRows: 1,
+      maxRows: 5,
+      fields: [
+        {
+          name: 'image',
+          type: 'upload',
+          relationTo: 'media',
+          required: true,
+        },
+      ],
     },
   ],
   label: false,

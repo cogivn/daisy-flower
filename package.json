@@ -8,6 +8,7 @@
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && pnpm build && pnpm start",
+    "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx ./src/seed.ts",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "ii": "cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install",
@@ -23,6 +24,7 @@
   },
   "dependencies": {
     "@payloadcms/admin-bar": "3.77.0",
+    "@payloadcms/db-sqlite": "3.77.0",
     "@payloadcms/email-nodemailer": "3.77.0",
     "@payloadcms/live-preview-react": "3.77.0",
     "@payloadcms/next": "3.77.0",
@@ -47,6 +49,7 @@
     "dotenv": "^8.2.0",
     "embla-carousel-auto-scroll": "^8.1.5",
     "embla-carousel-react": "^8.5.2",
+    "framer-motion": "^12.34.3",
     "geist": "^1.3.0",
     "graphql": "^16.8.2",
     "jsonwebtoken": "9.0.1",
@@ -62,8 +65,7 @@
     "sharp": "0.34.2",
     "sonner": "^1.7.2",
     "stripe": "18.5.0",
-    "tailwind-merge": "^3.4.0",
-    "@payloadcms/db-sqlite": "3.77.0"
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

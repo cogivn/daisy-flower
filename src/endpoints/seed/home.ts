@@ -3,33 +3,36 @@ import { RequiredDataFromCollectionSlug } from 'payload'
 
 type ProductArgs = {
   metaImage: Media
-  contentImage: Media
+  heroImages: Media[]
 }
 
 export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug<'pages'> = ({
   metaImage,
-  contentImage,
+  heroImages,
 }) => {
+  const [primaryHeroImage] = heroImages
+
   return {
     slug: 'home',
     _status: 'published',
     hero: {
-      type: 'lowImpact',
+      type: 'highImpact',
+      media: heroImages.map((image) => ({ image })),
       links: [
         {
           link: {
             type: 'custom',
             appearance: 'default',
-            label: 'All products',
-            url: '/search',
+            label: 'Shop Now',
+            url: '/shop',
           },
         },
         {
           link: {
             type: 'custom',
             appearance: 'outline',
-            label: 'Contact',
-            url: '/contact',
+            label: 'View Deals',
+            url: '/shop?tag=sale',
           },
         },
       ],
@@ -46,7 +49,7 @@ export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug
                   format: 0,
                   mode: 'normal',
                   style: '',
-                  text: 'Payload Ecommerce Template',
+                  text: 'Lovely Plants & Flowers',
                   version: 1,
                 },
               ],
@@ -60,67 +63,12 @@ export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug
               type: 'paragraph',
               children: [
                 {
-                  type: 'link',
-                  children: [
-                    {
-                      type: 'text',
-                      detail: 0,
-                      format: 0,
-                      mode: 'normal',
-                      style: '',
-                      text: 'Visit the admin dashboard',
-                      version: 1,
-                    },
-                  ],
-                  direction: 'ltr',
-                  fields: {
-                    linkType: 'custom',
-                    newTab: false,
-                    url: '/admin',
-                  },
-                  format: '',
-                  indent: 0,
-                  version: 3,
-                },
-                {
                   type: 'text',
                   detail: 0,
                   format: 0,
                   mode: 'normal',
                   style: '',
-                  text: " to begin managing this site's content. The code for this template is completely open-source and can be found ",
-                  version: 1,
-                },
-                {
-                  type: 'link',
-                  children: [
-                    {
-                      type: 'text',
-                      detail: 0,
-                      format: 0,
-                      mode: 'normal',
-                      style: '',
-                      text: 'on our Github',
-                      version: 1,
-                    },
-                  ],
-                  direction: 'ltr',
-                  fields: {
-                    linkType: 'custom',
-                    newTab: true,
-                    url: 'https://github.com/payloadcms/payload/tree/main/templates/ecommerce',
-                  },
-                  format: '',
-                  indent: 0,
-                  version: 3,
-                },
-                {
-                  type: 'text',
-                  detail: 0,
-                  format: 0,
-                  mode: 'normal',
-                  style: '',
-                  text: '. ',
+                  text: 'Discount 20% off for Lukani members. Beautiful plants and flower arrangements for every space.',
                   version: 1,
                 },
               ],
@@ -139,6 +87,27 @@ export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug
       },
     },
     layout: [
+      {
+        blockName: 'Shipping Features',
+        blockType: 'serviceFeatures',
+        features: [
+          {
+            icon: 'truck',
+            title: 'Free Delivery',
+            description: 'Free shipping around the world for all orders over $120',
+          },
+          {
+            icon: 'shield',
+            title: 'Safe Payment',
+            description: "With our payment gateway, don’t worry about your information",
+          },
+          {
+            icon: 'headphones',
+            title: 'Friendly Services',
+            description: 'You have 30-day return guarantee for every single order',
+          },
+        ],
+      },
       {
         blockName: 'Content Block',
         blockType: 'content',
@@ -510,7 +479,7 @@ export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug
       {
         blockName: 'Media Block',
         blockType: 'mediaBlock',
-        media: contentImage,
+        media: primaryHeroImage,
       },
       {
         blockName: 'CTA',
