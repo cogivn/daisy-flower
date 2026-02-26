@@ -1,7 +1,7 @@
 'use client'
 
-import React, { Suspense } from 'react'
 import Link from 'next/link'
+import React, { Suspense } from 'react'
 
 import type {
   Media as MediaType,
@@ -10,9 +10,10 @@ import type {
   SaleOfferBlock as SaleOfferBlockType,
 } from '@/payload-types'
 
+import { Price } from '@/components/Price'
 import { Gallery } from '@/components/product/Gallery'
-import { Button } from '@/components/ui/button'
 import { RichText } from '@/components/RichText'
+import { Button } from '@/components/ui/button'
 
 type Props = SaleOfferBlockType
 
@@ -56,7 +57,6 @@ export const SaleOfferBlockComponent: React.FC<Props> = (props) => {
     highlight,
     product,
   } = props
-  const [activeIndex, setActiveIndex] = React.useState(0)
 
   const linkedProduct = (typeof product === 'object' ? (product as Product) : null) || null
 
@@ -133,7 +133,15 @@ export const SaleOfferBlockComponent: React.FC<Props> = (props) => {
 
   if (activeSaleEvent?.salePrice && typeof activeSaleEvent.salePrice === 'number') {
     originalPrice = basePrice ?? null
-    displayPrice = activeSaleEvent.salePrice
+    const configuredSalePrice = activeSaleEvent.salePrice
+
+    // Treat salePrice as a normal USD amount (e.g. 39.99) for editor UX, but
+    // keep compatibility with existing values stored in minor units (e.g. 3999).
+    // Heuristic: values <= 1000 are treated as whole-unit dollars and converted to cents.
+    const salePriceInMinorUnits =
+      configuredSalePrice <= 1000 ? Math.round(configuredSalePrice * 100) : configuredSalePrice
+
+    displayPrice = salePriceInMinorUnits
   }
 
   const displayTitle = linkedProduct?.title
@@ -187,22 +195,27 @@ export const SaleOfferBlockComponent: React.FC<Props> = (props) => {
               </div>
             )}
 
-            <div className="mt-2 flex items-baseline gap-3 flex-wrap">
-              {originalPrice && originalPrice !== displayPrice ? (
-                <>
-                  <span className="text-lg md:text-xl font-semibold text-muted-foreground line-through">
-                    ${((originalPrice ?? 0) / 100).toFixed(2)}
-                  </span>
-                  <span className="text-2xl md:text-3xl font-bold text-primary">
-                    ${((displayPrice ?? 0) / 100).toFixed(2)}
-                  </span>
-                </>
-              ) : (
-                <span className="text-2xl md:text-3xl font-bold text-primary">
-                  ${((displayPrice ?? 0) / 100).toFixed(2)}
-                </span>
-              )}
-            </div>
+            {typeof displayPrice === 'number' && (
+              <div className="mt-2 flex items-baseline gap-3 flex-wrap">
+                {originalPrice && originalPrice !== displayPrice ? (
+                  <>
+                    <Price
+                      amount={originalPrice}
+                      className="text-lg md:text-xl font-semibold text-muted-foreground line-through"
+                    />
+                    <Price
+                      amount={displayPrice}
+                      className="text-2xl md:text-3xl font-bold text-primary"
+                    />
+                  </>
+                ) : (
+                  <Price
+                    amount={displayPrice}
+                    className="text-2xl md:text-3xl font-bold text-primary"
+                  />
+                )}
+              </div>
+            )}
 
             {highlight && (
               <h3 className="text-xs md:text-sm font-semibold tracking-[0.18em] uppercase text-foreground mt-2">

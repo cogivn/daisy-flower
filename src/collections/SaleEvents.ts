@@ -47,7 +47,7 @@ export const SaleEvents: CollectionConfig = {
           required: true,
           admin: {
             description:
-              'Sale price in the same unit as the base product price (minor units, e.g. cents). This does not change the original product price.',
+              'Sale price in USD (e.g. 39.99). This does not change the original product price.',
           },
         },
         {

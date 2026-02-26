@@ -555,6 +555,7 @@ export interface Page {
     | ShopByCategoriesBlock
     | BrandSliderBlock
     | CategoryCarouselBlock
+    | BlogBentoBlock
   )[];
   meta?: {
     title?: string | null;
@@ -1112,6 +1113,66 @@ export interface CategoryCarouselBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogBentoBlock".
+ */
+export interface BlogBentoBlock {
+  /**
+   * Small label shown above the main heading (e.g. "From the blog").
+   */
+  eyebrow?: string | null;
+  heading: string;
+  /**
+   * Short intro text below the heading.
+   */
+  description?: string | null;
+  /**
+   * Optional "See more" button shown in the blog header.
+   */
+  seeMoreLink: {
+    type?: ('reference' | 'custom') | null;
+    newTab?: boolean | null;
+    reference?: {
+      relationTo: 'pages';
+      value: number | Page;
+    } | null;
+    url?: string | null;
+    label: string;
+  };
+  /**
+   * First item fills the left column, second and third fill the middle, fourth fills the right column.
+   */
+  items?:
+    | {
+        /**
+         * Small label above the item title (e.g. "Mobile friendly").
+         */
+        kicker?: string | null;
+        title: string;
+        excerpt?: string | null;
+        image: number | Media;
+        link: {
+          type?: ('reference' | 'custom') | null;
+          newTab?: boolean | null;
+          reference?: {
+            relationTo: 'pages';
+            value: number | Page;
+          } | null;
+          url?: string | null;
+          label: string;
+          /**
+           * Choose how the link should be rendered.
+           */
+          appearance?: ('default' | 'outline') | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'blogBento';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variants".
  */
 export interface Variant {
@@ -1145,7 +1206,7 @@ export interface SaleEvent {
    */
   product: number | Product;
   /**
-   * Sale price in the same unit as the base product price (minor units, e.g. cents). This does not change the original product price.
+   * Sale price in USD (e.g. 39.99). This does not change the original product price.
    */
   salePrice: number;
   /**
@@ -1657,6 +1718,7 @@ export interface PagesSelect<T extends boolean = true> {
         shopByCategories?: T | ShopByCategoriesBlockSelect<T>;
         brandSlider?: T | BrandSliderBlockSelect<T>;
         categoryCarousel?: T | CategoryCarouselBlockSelect<T>;
+        blogBento?: T | BlogBentoBlockSelect<T>;
       };
   meta?:
     | T
@@ -1896,6 +1958,45 @@ export interface BrandSliderBlockSelect<T extends boolean = true> {
  */
 export interface CategoryCarouselBlockSelect<T extends boolean = true> {
   categories?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogBentoBlock_select".
+ */
+export interface BlogBentoBlockSelect<T extends boolean = true> {
+  eyebrow?: T;
+  heading?: T;
+  description?: T;
+  seeMoreLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        label?: T;
+      };
+  items?:
+    | T
+    | {
+        kicker?: T;
+        title?: T;
+        excerpt?: T;
+        image?: T;
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              label?: T;
+              appearance?: T;
+            };
+        id?: T;
+      };
   id?: T;
   blockName?: T;
 }

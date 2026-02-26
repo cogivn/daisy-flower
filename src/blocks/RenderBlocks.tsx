@@ -13,6 +13,7 @@ import { SaleOfferBlockComponent } from '@/blocks/SaleOffer/Component'
 import { ShopByCategoriesBlockComponent } from '@/blocks/ShopByCategories/Component'
 import { ThreeItemGridBlock } from '@/blocks/ThreeItemGrid/Component'
 import { ProductListingBlock } from '@/blocks/ProductListing/Component'
+import { BlogBentoBlock } from '@/blocks/BlogBento/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
 import React, { Fragment } from 'react'
 
@@ -34,6 +35,7 @@ const blockComponents = {
   saleOffer: SaleOfferBlockComponent,
   shopByCategories: ShopByCategoriesBlockComponent,
   productListing: ProductListingBlock,
+  blogBento: BlogBentoBlock,
 }
 
 export const RenderBlocks: React.FC<{

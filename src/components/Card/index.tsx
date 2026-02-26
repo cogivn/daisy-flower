@@ -1,4 +1,5 @@
 import { Media as MediaComponent } from '@/components/Media'
+import { Price } from '@/components/Price'
 import type { Media, Product } from '@/payload-types'
 import { cn } from '@/utilities/cn'
 import { Eye, Heart, ShoppingCart, Star } from 'lucide-react'
@@ -72,7 +73,12 @@ export const Card: React.FC<{
           <h3 className="text-base font-semibold tracking-tight leading-tight">{title}</h3>
         </Link>
         <div className="mt-auto">
-          <span className="text-xl font-black text-primary tracking-tighter">${priceInUSD}</span>
+          {typeof priceInUSD === 'number' && (
+            <Price
+              amount={priceInUSD}
+              className="text-xl font-black text-primary tracking-tighter"
+            />
+          )}
         </div>
       </div>
     </div>

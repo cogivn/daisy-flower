@@ -17,6 +17,7 @@ import { ServiceFeatures } from '@/blocks/ServiceFeatures/config'
 import { ShopByCategories } from '@/blocks/ShopByCategories/config'
 import { ThreeItemGrid } from '@/blocks/ThreeItemGrid/config'
 import { ProductListing } from '@/blocks/ProductListing/config'
+import { BlogBento } from '@/blocks/BlogBento/config'
 import { hero } from '@/fields/hero'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
 import {
@@ -110,6 +111,7 @@ export const Pages: CollectionConfig = {
                 ShopByCategories,
                 BrandSlider,
                 CategoryCarousel,
+                BlogBento,
               ],
               required: true,
             },

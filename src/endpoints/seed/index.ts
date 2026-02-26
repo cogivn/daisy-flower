@@ -160,6 +160,10 @@ export const seed = async ({
     banner4Buffer,
     banner5Buffer,
     banner6Buffer,
+    blog12Buffer,
+    blog13Buffer,
+    blog14Buffer,
+    blog15Buffer,
   ] = await Promise.all([
     fetchFileByURL(
       'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/hat-logo.png',
@@ -191,10 +195,21 @@ export const seed = async ({
     fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner4.jpg'),
     fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner5.jpg'),
     fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner6.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/blog/blog12.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/blog/blog13.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/blog/blog14.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/blog/blog15.jpg'),
   ])
 
-  const [customer, imageHat, imageTshirtBlack, imageTshirtWhite, imageHero1, imageHero2, imageHero3] =
-    await Promise.all([
+  const [
+    customer,
+    imageHat,
+    imageTshirtBlack,
+    imageTshirtWhite,
+    imageHero1,
+    imageHero2,
+    imageHero3,
+  ] = await Promise.all([
     payload.create({
       collection: 'users',
       data: {
@@ -244,6 +259,19 @@ export const seed = async ({
       payload.create({
         collection: 'media',
         data: { alt: `Category banner ${index + 1}` },
+        file,
+      }),
+    ),
+  )
+
+  // Seed blog images (blog12.jpg - blog15.jpg)
+  const blogBuffers = [blog12Buffer, blog13Buffer, blog14Buffer, blog15Buffer]
+
+  const blogMediaDocs = await Promise.all(
+    blogBuffers.map((file, index) =>
+      payload.create({
+        collection: 'media',
+        data: { alt: `Blog image ${12 + index}` },
         file,
       }),
     ),
@@ -663,6 +691,7 @@ export const seed = async ({
         metaImage: imageHat,
         categories: [accessoriesCategory, tshirtsCategory, hatsCategory, plantsCategory],
         product: productHat,
+        blogImages: blogMediaDocs,
       }),
       context: {
         disableRevalidate: true,

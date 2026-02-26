@@ -6,6 +6,7 @@ type ProductArgs = {
   heroImages: Media[]
   categories?: Category[]
   product?: Product | number | string | null
+  blogImages?: Media[]
 }
 
 export const homePageData = ({
@@ -13,8 +14,9 @@ export const homePageData = ({
   heroImages,
   categories = [],
   product,
+  blogImages = [],
 }: ProductArgs): RequiredDataFromCollectionSlug<'pages'> => {
-  const [primaryHeroImage] = heroImages
+  const [primaryHeroImage, secondaryHeroImage, tertiaryHeroImage] = heroImages
 
   const heroSlidesMeta = [
     {
@@ -241,6 +243,106 @@ export const homePageData = ({
           },
         ],
       },
+      {
+        blockName: 'From the Blog',
+        blockType: 'blogBento' as const,
+        eyebrow: 'From the blog',
+        heading: 'Stories from the flower studio',
+        description:
+          'Tips, stories, and behind-the-scenes notes from our florists to help you care for your plants and bouquets.',
+        seeMoreLink: {
+          type: 'custom' as const,
+          newTab: false,
+          url: '/blog',
+          label: 'See more',
+        },
+        items: [
+          {
+            kicker: 'Care tips',
+            title: 'How to keep indoor plants thriving all year',
+            excerpt:
+              'Light, water, and a little routine go a long way. Learn how we care for the plants in our own studio.',
+            image: blogImages[0] || secondaryHeroImage || primaryHeroImage,
+            link: {
+              type: 'custom' as const,
+              newTab: false,
+              url: '/blog/indoor-plant-care',
+              label: 'Read story',
+              appearance: 'default' as const,
+            },
+          },
+          {
+            kicker: 'Occasions',
+            title: 'Picking the perfect bouquet for every moment',
+            excerpt:
+              'From birthdays to quiet thank-yous, we break down which stems work best for each occasion.',
+            image: blogImages[1] || tertiaryHeroImage || primaryHeroImage,
+            link: {
+              type: 'custom' as const,
+              newTab: false,
+              url: '/blog/bouquet-occasion-guide',
+              label: 'Read story',
+              appearance: 'outline' as const,
+            },
+          },
+          {
+            kicker: 'Behind the scenes',
+            title: 'A morning inside our flower shop',
+            excerpt:
+              'Follow our team from first delivery to the last ribbon tie of the day.',
+            image: blogImages[2] || primaryHeroImage,
+            link: {
+              type: 'custom' as const,
+              newTab: false,
+              url: '/blog/inside-the-flower-shop',
+              label: 'Read story',
+              appearance: 'default' as const,
+            },
+          },
+          {
+            kicker: 'Design notes',
+            title: 'Why we love mixing dried and fresh stems',
+            excerpt:
+              'Texture, longevity, and unexpected color—see how dried florals can elevate everyday arrangements.',
+            image: blogImages[3] || tertiaryHeroImage || secondaryHeroImage || primaryHeroImage,
+            link: {
+              type: 'custom' as const,
+              newTab: false,
+              url: '/blog/dried-and-fresh',
+              label: 'Read story',
+              appearance: 'outline' as const,
+            },
+          },
+          {
+            kicker: 'Workspace ideas',
+            title: 'Styling your desk with small plants',
+            excerpt:
+              'A few low-maintenance plants and the right pots can completely change how your desk feels.',
+            image: blogImages[4] || secondaryHeroImage || primaryHeroImage,
+            link: {
+              type: 'custom' as const,
+              newTab: false,
+              url: '/blog/desk-plant-styling',
+              label: 'Read story',
+              appearance: 'default' as const,
+            },
+          },
+          {
+            kicker: 'Gifting',
+            title: 'How to write a heartfelt message for any bouquet',
+            excerpt:
+              'Not sure what to say on the card? Here are a few prompts our florists use every day.',
+            image: blogImages[5] || tertiaryHeroImage || primaryHeroImage,
+            link: {
+              type: 'custom' as const,
+              newTab: false,
+              url: '/blog/bouquet-card-messages',
+              label: 'Read story',
+              appearance: 'outline' as const,
+            },
+          },
+        ],
+      } as any,
       {
         blockName: 'Content Block',
         blockType: 'content',
