@@ -22,28 +22,28 @@ export async function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-white text-sm border-t">
+    <footer className="debug-outline debug-grid bg-white text-sm border-t">
       {/* Main Footer Content */}
-      <div className="container py-20 md:py-28">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
+      <div className="container debug-container py-6 md:py-8 lg:py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {/* Brand Info */}
           <div className="flex flex-col items-start">
-            <Link href="/" className="inline-block mb-8">
-              <h2 className="text-4xl font-bold tracking-tighter">
+            <Link href="/" className="inline-block mb-3">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">
                 LUKANI<span className="text-primary">.</span>
               </h2>
             </Link>
-            <p className="text-muted-foreground leading-relaxed mb-8 text-base">
+            <p className="text-muted-foreground leading-relaxed mb-3 text-base">
               {brandDescription}
             </p>
-            <div className="space-y-5">
-              <div className="flex items-start gap-4">
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
                 <MapPin size={22} className="text-primary shrink-0 mt-1" />
                 <span className="text-base text-muted-foreground">
                   1234 Street Name, City, United States
                 </span>
               </div>
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-2">
                 <Phone size={22} className="text-primary shrink-0 mt-1" />
                 <span className="text-base text-muted-foreground font-medium">
                   {contactNumber || '+01 23456789'}
@@ -56,10 +56,10 @@ export async function Footer() {
           {sections &&
             sections.map((section, i: number) => (
               <div key={i}>
-                <h4 className="text-lg font-bold mb-10 uppercase tracking-widest relative pb-4 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
+                <h4 className="text-base font-bold mb-3 uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
                   {section.title}
                 </h4>
-                <ul className="space-y-5">
+                <ul className="space-y-2">
                   {section.navItems?.map((item, j: number) => (
                     <li key={j}>
                       <CMSLink
@@ -74,15 +74,15 @@ export async function Footer() {
 
           {/* Opening Hours */}
           <div>
-            <h4 className="text-lg font-bold mb-10 uppercase tracking-widest relative pb-4 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
+            <h4 className="text-base font-bold mb-3 uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
               Opening Hours
             </h4>
-            <ul className="space-y-5">
+            <ul className="space-y-0">
               {openingHours && openingHours.length > 0 ? (
                 openingHours.map((item, i: number) => (
                   <li
                     key={i}
-                    className="flex justify-between border-b border-border/40 pb-3 text-base"
+                    className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base"
                   >
                     <span className="text-muted-foreground">{item.day}</span>
                     <span className="font-bold text-foreground">{item.hours}</span>
@@ -90,15 +90,15 @@ export async function Footer() {
                 ))
               ) : (
                 <>
-                  <li className="flex justify-between border-b border-border/40 pb-3 text-base">
+                  <li className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base">
                     <span className="text-muted-foreground">Mon - Fri:</span>
                     <span className="font-bold text-foreground">9:00 AM - 6:00 PM</span>
                   </li>
-                  <li className="flex justify-between border-b border-border/40 pb-3 text-base">
+                  <li className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base">
                     <span className="text-muted-foreground">Saturday:</span>
                     <span className="font-bold text-foreground">10:00 AM - 5:00 PM</span>
                   </li>
-                  <li className="flex justify-between border-b border-border/40 pb-3 text-base">
+                  <li className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base">
                     <span className="text-muted-foreground">Sunday:</span>
                     <span className="font-bold text-foreground">Closed</span>
                   </li>
@@ -110,8 +110,8 @@ export async function Footer() {
       </div>
 
       {/* Copyright Bar */}
-      <div className="bg-neutral-50 border-t items-center py-10">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-8">
+      <div className="bg-neutral-50 border-t items-center py-3 md:py-4">
+        <div className="container debug-container flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
           <p className="text-muted-foreground text-base">
             &copy; {currentYear}{' '}
             {copyrightText ? (
@@ -122,8 +122,8 @@ export async function Footer() {
               </>
             )}
           </p>
-          <div className="flex flex-col md:flex-row items-center gap-10">
-            <div className="flex gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-3 md:gap-4">
+            <div className="flex gap-4">
               <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <Facebook size={20} />
               </Link>

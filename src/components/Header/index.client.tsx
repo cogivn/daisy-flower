@@ -72,10 +72,10 @@ export function HeaderClient({ header }: Props) {
   }, [])
 
   return (
-    <header className="w-full bg-white text-black" data-theme="light">
+    <header className="relative z-50 w-full bg-white text-black" data-theme="light">
       {/* Top Bar */}
-      <div className="bg-white border-b py-2 hidden md:block">
-        <div className="container flex justify-between items-center text-sm font-light text-muted-foreground">
+      <div className="bg-white border-b py-2 hidden md:block debug-outline debug-grid">
+        <div className="container debug-container flex justify-between items-center text-sm font-light text-muted-foreground">
           <div>{topBarContent || 'Free Delivery: Take advantage of our limited time offer!'}</div>
           <div className="flex gap-6">
             <div className="relative group cursor-pointer py-1">
@@ -115,11 +115,11 @@ export function HeaderClient({ header }: Props) {
         </div>
       </div>
 
-      {/* Middle Header */}
-      <div className="bg-white py-6 md:py-10 border-b md:border-none">
-        <div className="container flex items-stretch justify-between gap-8">
-          {/* Mobile Menu Button - Left on mobile */}
-          <div className="md:hidden flex-1">
+      {/* Middle Header - z-40 so hamburger stays above Sheet overlay */}
+      <div className="relative z-40 bg-white py-6 md:py-10 border-b md:border-none debug-outline debug-grid">
+        <div className="container debug-container flex items-stretch justify-between gap-4 md:gap-8">
+          {/* Mobile Menu Button - Left on mobile; z-10 + min size so tap always hits */}
+          <div className="md:hidden flex-1 min-w-0 flex items-center shrink-0 relative z-10">
             <Suspense fallback={null}>
               <MobileMenu menu={navItems} />
             </Suspense>
@@ -181,39 +181,48 @@ export function HeaderClient({ header }: Props) {
         </div>
       </div>
 
+      {/* Categories bar: overflow-visible so dropdown can overlap content below */}
       <div
         className={cn(
-          'transition-all duration-300',
+          'relative z-50 transition-all duration-300 overflow-visible py-1 md:py-2',
           isSticky
-            ? 'fixed top-0 left-0 right-0 z-50 shadow-md translate-y-0 bg-white border-y'
-            : 'relative bg-white border-y',
+            ? 'fixed top-0 left-0 right-0 shadow-md translate-y-0 bg-white border-y'
+            : 'bg-white border-y',
         )}
       >
-        <div className="container flex items-center justify-between">
-          {/* Categories Dropdown */}
-          <div className="relative group w-64">
+        <div className="container debug-container flex flex-row items-center justify-between gap-2 md:gap-0">
+          {/* Categories Dropdown - full width on mobile, fixed width on desktop */}
+          <div className="relative w-full md:w-64 md:shrink-0">
             <button
-              className="bg-primary text-white w-full py-3 px-4 flex items-center justify-between font-medium"
-              onClick={() => setShowCategories(!showCategories)}
+              type="button"
+              className="bg-primary text-white w-full py-3 px-3 md:px-4 flex items-center justify-between font-medium text-left touch-manipulation cursor-pointer select-none"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setShowCategories((prev) => !prev)
+              }}
+              aria-expanded={showCategories}
+              aria-haspopup="true"
             >
-              <div className="flex items-center gap-2">
-                <MenuIcon size={20} />
-                <span>CATEGORIES</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <MenuIcon size={20} className="shrink-0" />
+                <span className="truncate">CATEGORIES</span>
               </div>
               <ChevronDown
                 size={16}
-                className={cn('transition-transform', showCategories && 'rotate-180')}
+                className={cn('shrink-0 transition-transform', showCategories && 'rotate-180')}
               />
             </button>
 
-            {/* Categories Menu */}
+            {/* Categories Menu - use max-height so it's not clipped by scale-y-0 on mobile */}
             <div
               className={cn(
-                'absolute top-full left-0 w-full bg-white border shadow-lg z-50 transition-all duration-300 origin-top',
+                'absolute top-full left-0 w-full md:w-full bg-white border shadow-lg z-100 transition-all duration-200 origin-top overflow-y-auto',
                 showCategories
-                  ? 'scale-y-100 opacity-100'
-                  : 'scale-y-0 opacity-0 pointer-events-none',
+                  ? 'max-h-[60vh] md:max-h-[70vh] opacity-100 visible'
+                  : 'max-h-0 opacity-0 invisible pointer-events-none border-transparent',
               )}
+              style={showCategories ? undefined : { overflow: 'hidden' }}
             >
               <ul className="py-2">
                 {categories && categories.length > 0 ? (
@@ -249,9 +258,9 @@ export function HeaderClient({ header }: Props) {
             </div>
           </div>
 
-          {/* Main Navigation */}
-          <nav className="grow ml-8">
-            <ul className="flex items-center gap-8">
+          {/* Main Navigation - hidden on mobile (links are in MobileMenu), visible on desktop */}
+          <nav className="hidden md:block grow md:ml-6 lg:ml-8">
+            <ul className="flex items-center gap-4 lg:gap-8 whitespace-nowrap py-2 md:py-0">
               {navItems &&
                 navItems.map((item: { link: any; id?: string | null }, i: number) => (
                   <li key={item.id || i}>
@@ -267,15 +276,15 @@ export function HeaderClient({ header }: Props) {
             </ul>
           </nav>
 
-          {/* Help / Phone */}
-          <div className="self-stretch hidden md:flex items-center justify-end">
-            <div className="inline-flex items-center gap-3 rounded-sm border border-border/40 bg-neutral-50/60 px-5 py-3">
-              <Phone size={22} strokeWidth={1.8} className="text-primary" />
+          {/* Help / Phone - compact padding */}
+          <div className="hidden md:flex items-center justify-end">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5">
+              <Phone size={18} strokeWidth={1.8} className="text-primary shrink-0" />
               <div className="flex flex-col leading-tight">
                 <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                   Call us 24/7
                 </span>
-                <span className="mt-0.5 text-lg font-bold tracking-[0.03em] text-primary">
+                <span className="mt-0.5 text-sm font-bold tracking-[0.03em] text-primary">
                   {formattedContactNumber}
                 </span>
               </div>
