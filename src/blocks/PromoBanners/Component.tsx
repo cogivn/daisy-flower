@@ -16,9 +16,9 @@ export const PromoBannersBlock: React.FC<any> = ({ banners }) => {
   return (
     <div className="py-12 md:py-20">
       <div className="container">
-        <div className={cn('grid gap-8', gridCols)}>
+        <div className={cn('grid gap-4 md:gap-8', gridCols)}>
           {banners.map((banner: any, i: number) => (
-            <div key={i} className="relative group overflow-hidden h-[250px] md:h-[350px]">
+            <div key={i} className="relative group overflow-hidden h-[220px] sm:h-[250px] md:h-[350px]">
               {banner.media && (
                 <Media
                   resource={banner.media}
@@ -27,7 +27,7 @@ export const PromoBannersBlock: React.FC<any> = ({ banners }) => {
                 />
               )}
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
-              <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 z-10">
+              <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-10 md:inset-x-8">
                 {banner.subtitle && (
                   <p className="text-white font-medium uppercase tracking-[0.2em] mb-2 text-sm">
                     {banner.subtitle}

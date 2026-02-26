@@ -22,6 +22,13 @@ export const Categories: CollectionConfig = {
       required: true,
     },
     {
+      name: 'description',
+      type: 'textarea',
+      admin: {
+        description: 'Short description for category cards (e.g. in Shop By Categories block).',
+      },
+    },
+    {
       name: 'image',
       type: 'upload',
       relationTo: 'media',

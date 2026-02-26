@@ -47,6 +47,8 @@ const twitterSite = TWITTER_SITE ? ensureStartsWith(TWITTER_SITE, 'https://') : 
     }),
 } */
 
+const debugLayout = process.env.NEXT_PUBLIC_DEBUG_LAYOUT === 'true'
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
@@ -59,7 +61,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <link href="/favicon.ico" rel="icon" sizes="32x32" />
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       </head>
-      <body>
+      <body className={debugLayout ? 'debug-layout' : undefined}>
         <Providers>
           <AdminBar />
           <LivePreviewListener />

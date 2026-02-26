@@ -4,11 +4,13 @@ import { RequiredDataFromCollectionSlug } from 'payload'
 type ProductArgs = {
   metaImage: Media
   heroImages: Media[]
+  categories?: Category[]
 }
 
 export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug<'pages'> = ({
   metaImage,
   heroImages,
+  categories = [],
 }) => {
   const [primaryHeroImage] = heroImages
 
@@ -157,6 +159,56 @@ export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug
             icon: 'headphones',
             title: 'Friendly Services',
             description: 'You have 30-day return guarantee for every single order',
+          },
+        ],
+      },
+      ...(categories.length > 0
+        ? [
+            {
+              blockName: 'Shop By Categories',
+              blockType: 'shopByCategories' as const,
+              title: 'Shop By Categories',
+              description:
+                'Find the perfect plants and flowers tailored to your style. We offer solutions designed to meet the needs of every plant lover.',
+              exploreMoreLink: {
+                type: 'custom' as const,
+                newTab: false,
+                label: 'Explore More',
+                url: '/shop',
+              },
+              categories: categories.map((c) => c.id),
+            },
+          ]
+        : []),
+      {
+        blockName: 'Limited Time Offer',
+        blockType: 'saleOffer',
+        sectionTitle: 'Limited Time Offer',
+        sectionDescription:
+          'Don’t miss out on our best deals. Grab your favourite items before they’re gone.',
+        productLabel: 'Backpack',
+        gallery: heroImages.slice(0, 3).map((image) => ({ image })),
+        title: 'BLINGO BACKPACK',
+        description:
+          'Neque porro quisquam est, qui dolorem ipsum quia dolor ipisci velit, sed quia non numquam eius modi.',
+        originalPrice: 199,
+        price: 162,
+        currency: '$',
+        rating: 5,
+        highlight: "BEST DEAL, LIMITED TIME OFFER GET YOUR'S NOW!",
+        countdown: {
+          enabled: true,
+          // Future date so sale stays active: original price strikethrough + green sale price + countdown
+          targetDate: '2026-12-31T23:59:59.000Z',
+        },
+        cta: [
+          {
+            link: {
+              type: 'custom' as const,
+              newTab: false,
+              label: 'Shop Now',
+              url: '/shop',
+            },
           },
         ],
       },

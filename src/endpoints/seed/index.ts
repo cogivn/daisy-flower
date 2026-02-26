@@ -1,5 +1,6 @@
-import type { CollectionSlug, File, GlobalSlug, Payload, PayloadRequest } from 'payload'
+import type { File, Payload, PayloadRequest } from 'payload'
 
+import type { Cart } from '@/payload-types'
 import { Address, Transaction, VariantOption } from '@/payload-types'
 import { contactFormData } from './contact-form'
 import { contactPageData } from './contact-page'
@@ -12,24 +13,14 @@ import { imageTshirtBlackData } from './image-tshirt-black'
 import { imageTshirtWhiteData } from './image-tshirt-white'
 import { productHatData } from './product-hat'
 import { productTshirtData, productTshirtVariant } from './product-tshirt'
+import { resetDatabase } from './reset'
 
-const collections: CollectionSlug[] = [
-  'categories',
-  'media',
-  'pages',
-  'products',
-  'forms',
-  'form-submissions',
-  'variants',
-  'variantOptions',
-  'variantTypes',
-  'carts',
-  'transactions',
-  'addresses',
-  'orders',
+const categorySeedData = [
+  { title: 'Accessories', slug: 'Accessories', description: 'Bags, backpacks and accessories for every style.' },
+  { title: 'T-Shirts', slug: 'T-Shirts', description: 'Comfortable tees in multiple colors and sizes.' },
+  { title: 'Hats', slug: 'Hats', description: 'Caps and hats to complete your look.' },
+  { title: 'Plants', slug: 'Plants', description: 'Indoor and outdoor plants to bring nature into your space.' },
 ]
-
-const categories = ['Accessories', 'T-Shirts', 'Hats']
 
 const sizeVariantOptions = [
   { label: 'Small', value: 'small' },
@@ -42,8 +33,6 @@ const colorVariantOptions = [
   { label: 'Black', value: 'black' },
   { label: 'White', value: 'white' },
 ]
-
-const globals: GlobalSlug[] = ['header', 'footer']
 
 const baseAddressUSData: Transaction['billingAddress'] = {
   title: 'Dr.',
@@ -83,32 +72,8 @@ export const seed = async ({
 }): Promise<void> => {
   payload.logger.info('Seeding database...')
 
-  // we need to clear the media directory before seeding
-  // as well as the collections and globals
-  // this is because while `yarn seed` drops the database
-  // the custom `/api/seed` endpoint does not
-  payload.logger.info(`— Clearing collections and globals...`)
-
-  // clear the database
-  await Promise.all(
-    globals.map((global) =>
-      payload.updateGlobal({
-        slug: global,
-        data: {},
-        depth: 0,
-        context: {
-          disableRevalidate: true,
-        },
-      }),
-    ),
-  )
-
-  for (const collection of collections) {
-    await payload.db.deleteMany({ collection, req, where: {} })
-    if (payload.collections[collection].config.versions) {
-      await payload.db.deleteVersions({ collection, req, where: {} })
-    }
-  }
+  // clear collections and globals before seeding
+  await resetDatabase({ payload, req })
 
   payload.logger.info(`— Seeding customer and customer data...`)
 
@@ -157,6 +122,7 @@ export const seed = async ({
     accessoriesCategory,
     tshirtsCategory,
     hatsCategory,
+    plantsCategory,
   ] = await Promise.all([
     payload.create({
       collection: 'users',
@@ -197,12 +163,13 @@ export const seed = async ({
       data: imageHero3Data,
       file: hero3Buffer,
     }),
-    ...categories.map((category) =>
+    ...categorySeedData.map((cat) =>
       payload.create({
         collection: 'categories',
         data: {
-          title: category,
-          slug: category,
+          title: cat.title,
+          slug: cat.slug,
+          description: cat.description,
         },
       }),
     ),
@@ -338,6 +305,7 @@ export const seed = async ({
       data: homePageData({
         heroImages: [imageHero1, imageHero2, imageHero3],
         metaImage: imageHat,
+        categories: [accessoriesCategory, tshirtsCategory, hatsCategory, plantsCategory],
       }),
       context: {
         disableRevalidate: true,
@@ -415,37 +383,51 @@ export const seed = async ({
 
   payload.logger.info(`— Seeding carts...`)
 
+  // SQLite can return "database is locked" if another process (e.g. dev server) has the DB open. Run seed with dev server stopped.
+  const createCartWithRetry = async (data: Record<string, unknown>, retries = 3): Promise<Cart> => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await payload.create({ collection: 'carts', data: data as any })
+        return result as Cart
+      } catch (e: unknown) {
+        const isLocked =
+          e && typeof e === 'object' && 'cause' in e && (e as { cause?: { code?: string } }).cause?.code === 'SQLITE_BUSY'
+        if (isLocked && i < retries - 1) {
+          await new Promise((r) => setTimeout(r, 300 * (i + 1)))
+          continue
+        }
+        throw e
+      }
+    }
+    throw new Error('createCartWithRetry: unexpected')
+  }
+
   // This cart is open as it's created now
-  const openCart = await payload.create({
-    collection: 'carts',
-    data: {
-      customer: customer.id,
-      currency: 'USD',
-      items: [
-        {
-          product: productTshirt.id,
-          variant: mediumTshirtHoodieVariant.id,
-          quantity: 1,
-        },
-      ],
-    },
+  const openCart = await createCartWithRetry({
+    customer: customer.id,
+    currency: 'USD',
+    items: [
+      {
+        product: productTshirt.id,
+        variant: mediumTshirtHoodieVariant.id,
+        quantity: 1,
+      },
+    ],
   })
 
   const oldTimestamp = new Date('2023-01-01T00:00:00Z').toISOString()
 
   // Cart is abandoned because it was created long in the past
-  const abandonedCart = await payload.create({
-    collection: 'carts',
-    data: {
-      currency: 'USD',
-      createdAt: oldTimestamp,
-      items: [
-        {
-          product: productHat.id,
-          quantity: 1,
-        },
-      ],
-    },
+  const abandonedCart = await createCartWithRetry({
+    currency: 'USD',
+    createdAt: oldTimestamp,
+    items: [
+      {
+        product: productHat.id,
+        quantity: 1,
+      },
+    ],
   })
 
   // Cart is purchased because it has a purchasedAt date

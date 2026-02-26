@@ -12,7 +12,9 @@ import { Content } from '@/blocks/Content/config'
 import { FormBlock } from '@/blocks/Form/config'
 import { MediaBlock } from '@/blocks/MediaBlock/config'
 import { PromoBanners } from '@/blocks/PromoBanners/config'
+import { SaleOffer } from '@/blocks/SaleOffer/config'
 import { ServiceFeatures } from '@/blocks/ServiceFeatures/config'
+import { ShopByCategories } from '@/blocks/ShopByCategories/config'
 import { ThreeItemGrid } from '@/blocks/ThreeItemGrid/config'
 import { hero } from '@/fields/hero'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
@@ -101,7 +103,9 @@ export const Pages: CollectionConfig = {
                 Banner,
                 FormBlock,
                 PromoBanners,
+                SaleOffer,
                 ServiceFeatures,
+                ShopByCategories,
                 BrandSlider,
                 CategoryCarousel,
               ],

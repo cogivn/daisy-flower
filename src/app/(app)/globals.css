@@ -84,6 +84,37 @@
       max-width: var(--breakpoint-2xl);
     }
   }
+
+  /* Standard vertical spacing for top-level sections (responsive) */
+  .section-spacing {
+    @apply py-8 md:py-12 lg:py-16;
+  }
+
+  /* Debug helpers for layout inspection (similar to Flutter inspector) */
+  .debug-layout .debug-outline * {
+    outline: 1px solid rgba(0, 128, 255, 0.35);
+  }
+
+  /* Outline the element itself (container) to check padding/margin vs parent */
+  .debug-layout .debug-container {
+    outline: 2px dashed rgba(220, 100, 0, 0.6);
+    outline-offset: -2px;
+  }
+
+  .debug-layout .debug-grid::before {
+    pointer-events: none;
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.06) 1px,
+        transparent 1px
+      ),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+    background-size: 80px 80px;
+    z-index: 50;
+  }
 }
 
 :root {

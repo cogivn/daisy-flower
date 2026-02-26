@@ -533,7 +533,9 @@ export interface Page {
     | BannerBlock
     | FormBlock
     | PromoBannersBlock
+    | SaleOfferBlock
     | ServiceFeaturesBlock
+    | ShopByCategoriesBlock
     | BrandSliderBlock
     | CategoryCarouselBlock
   )[];
@@ -650,6 +652,10 @@ export interface ArchiveBlock {
 export interface Category {
   id: number;
   title: string;
+  /**
+   * Short description for category cards (e.g. in Shop By Categories block).
+   */
+  description?: string | null;
   image?: (number | null) | Media;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
@@ -955,6 +961,63 @@ export interface PromoBannersBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SaleOfferBlock".
+ */
+export interface SaleOfferBlock {
+  /**
+   * Optional title above the offer (e.g. "Limited Time Offer").
+   */
+  sectionTitle?: string | null;
+  /**
+   * Optional short intro below the heading.
+   */
+  sectionDescription?: string | null;
+  productLabel?: string | null;
+  gallery?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  title: string;
+  description?: string | null;
+  /**
+   * Price before sale. When countdown is active, shown with sale price; when expired, only this is shown.
+   */
+  originalPrice?: number | null;
+  price: number;
+  currency?: string | null;
+  rating?: number | null;
+  highlight?: string | null;
+  countdown?: {
+    enabled?: boolean | null;
+    targetDate?: string | null;
+  };
+  cta?:
+    | {
+        link: {
+          type?: ('reference' | 'custom') | null;
+          newTab?: boolean | null;
+          reference?: {
+            relationTo: 'pages';
+            value: number | Page;
+          } | null;
+          url?: string | null;
+          label: string;
+          /**
+           * Choose how the link should be rendered.
+           */
+          appearance?: ('default' | 'outline') | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'saleOffer';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ServiceFeaturesBlock".
  */
 export interface ServiceFeaturesBlock {
@@ -969,6 +1032,40 @@ export interface ServiceFeaturesBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'serviceFeatures';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopByCategoriesBlock".
+ */
+export interface ShopByCategoriesBlock {
+  /**
+   * Section heading.
+   */
+  title: string;
+  /**
+   * Subtitle or short intro below the heading.
+   */
+  description?: string | null;
+  /**
+   * Main "Explore More" button (top right).
+   */
+  exploreMoreLink: {
+    type?: ('reference' | 'custom') | null;
+    newTab?: boolean | null;
+    reference?: {
+      relationTo: 'pages';
+      value: number | Page;
+    } | null;
+    url?: string | null;
+    label: string;
+  };
+  /**
+   * Categories to show as cards (max 4 for a 2×2 grid).
+   */
+  categories: (number | Category)[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'shopByCategories';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1407,7 +1504,9 @@ export interface PagesSelect<T extends boolean = true> {
         banner?: T | BannerBlockSelect<T>;
         formBlock?: T | FormBlockSelect<T>;
         promoBanners?: T | PromoBannersBlockSelect<T>;
+        saleOffer?: T | SaleOfferBlockSelect<T>;
         serviceFeatures?: T | ServiceFeaturesBlockSelect<T>;
+        shopByCategories?: T | ShopByCategoriesBlockSelect<T>;
         brandSlider?: T | BrandSliderBlockSelect<T>;
         categoryCarousel?: T | CategoryCarouselBlockSelect<T>;
       };
@@ -1569,6 +1668,51 @@ export interface PromoBannersBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SaleOfferBlock_select".
+ */
+export interface SaleOfferBlockSelect<T extends boolean = true> {
+  sectionTitle?: T;
+  sectionDescription?: T;
+  productLabel?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  title?: T;
+  description?: T;
+  originalPrice?: T;
+  price?: T;
+  currency?: T;
+  rating?: T;
+  highlight?: T;
+  countdown?:
+    | T
+    | {
+        enabled?: T;
+        targetDate?: T;
+      };
+  cta?:
+    | T
+    | {
+        link?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              label?: T;
+              appearance?: T;
+            };
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ServiceFeaturesBlock_select".
  */
 export interface ServiceFeaturesBlockSelect<T extends boolean = true> {
@@ -1580,6 +1724,26 @@ export interface ServiceFeaturesBlockSelect<T extends boolean = true> {
         description?: T;
         id?: T;
       };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShopByCategoriesBlock_select".
+ */
+export interface ShopByCategoriesBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  exploreMoreLink?:
+    | T
+    | {
+        type?: T;
+        newTab?: T;
+        reference?: T;
+        url?: T;
+        label?: T;
+      };
+  categories?: T;
   id?: T;
   blockName?: T;
 }
@@ -1607,6 +1771,7 @@ export interface CategoryCarouselBlockSelect<T extends boolean = true> {
  */
 export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
+  description?: T;
   image?: T;
   generateSlug?: T;
   slug?: T;

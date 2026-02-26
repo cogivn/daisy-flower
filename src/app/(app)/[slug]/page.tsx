@@ -61,7 +61,7 @@ export default async function Page({ params }: Args) {
   const { hero, layout } = page
 
   return (
-    <article className="pt-16 pb-24">
+    <article className="pt-8 pb-12 md:pt-12 md:pb-16 lg:pt-16 lg:pb-24 debug-container">
       <RenderHero {...hero} />
       <RenderBlocks blocks={layout} />
     </article>

@@ -9,6 +9,8 @@ import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
 import { PromoBannersBlock } from '@/blocks/PromoBanners/Component'
 import { ServiceFeaturesBlock } from '@/blocks/ServiceFeatures/Component'
+import { SaleOfferBlockComponent } from '@/blocks/SaleOffer/Component'
+import { ShopByCategoriesBlockComponent } from '@/blocks/ShopByCategories/Component'
 import { ThreeItemGridBlock } from '@/blocks/ThreeItemGrid/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
 import React, { Fragment } from 'react'
@@ -28,6 +30,8 @@ const blockComponents = {
   threeItemGrid: ThreeItemGridBlock,
   brandSlider: BrandSliderBlock,
   categoryCarousel: CategoryCarouselBlock,
+  saleOffer: SaleOfferBlockComponent,
+  shopByCategories: ShopByCategoriesBlockComponent,
 }
 
 export const RenderBlocks: React.FC<{
@@ -48,7 +52,7 @@ export const RenderBlocks: React.FC<{
 
             if (Block) {
               return (
-                <div className="my-16" key={index}>
+                <div className="debug-container" key={index}>
                   {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
                   {/* @ts-ignore - weird type mismatch here */}
                   <Block id={toKebabCase(blockName!)} {...block} />
