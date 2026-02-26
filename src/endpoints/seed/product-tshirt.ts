@@ -25,10 +25,10 @@ export const productTshirtData: (
     variantTypes: variantTypes,
     inventory: 0,
     meta: {
-      title: 'Tshirt | Payload Ecommerce Template',
+      title: 'Evergreen Desk Plant',
       image: metaImage,
       description:
-        'Top off your look with our classic Tshirt, crafted for style and comfort. Made with breathable, high-quality materials and an adjustable strap for the perfect fit.',
+        'A compact evergreen plant in a minimalist pot, ideal for desks, shelves and small corners that need a touch of green.',
     },
     _status: 'published',
     layout: [
@@ -1145,7 +1145,7 @@ export const productTshirtData: (
                 format: 0,
                 mode: 'normal',
                 style: '',
-                text: 'Top off your look with our classic hat, crafted for style and comfort. Made with breathable, high-quality materials and an adjustable strap for the perfect fit, it’s ideal for everyday wear or outdoor adventures. Available in a range of colors to match any outfit.',
+                text: 'Evergreen Desk Plant is a low‑maintenance, air‑purifying plant that thrives in indirect light. Each plant is potted in a ceramic container with drainage and decorative stones, making it a ready‑to‑gift piece of decor.',
                 type: 'text',
                 version: 1,
               },
@@ -1167,10 +1167,10 @@ export const productTshirtData: (
       },
     },
     gallery: galleryImages,
-    title: 'Tshirt',
-    slug: 'tshirt',
+    title: 'Evergreen Desk Plant',
+    slug: 'evergreen-desk-plant',
     priceInUSDEnabled: true,
-    priceInUSD: 4999,
+    priceInUSD: 3999,
     relatedProducts: relatedProducts,
   }
 }

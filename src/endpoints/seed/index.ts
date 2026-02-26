@@ -16,10 +16,56 @@ import { productTshirtData, productTshirtVariant } from './product-tshirt'
 import { resetDatabase } from './reset'
 
 const categorySeedData = [
-  { title: 'Accessories', slug: 'Accessories', description: 'Bags, backpacks and accessories for every style.' },
-  { title: 'T-Shirts', slug: 'T-Shirts', description: 'Comfortable tees in multiple colors and sizes.' },
-  { title: 'Hats', slug: 'Hats', description: 'Caps and hats to complete your look.' },
-  { title: 'Plants', slug: 'Plants', description: 'Indoor and outdoor plants to bring nature into your space.' },
+  {
+    title: 'Bouquets',
+    slug: 'bouquets',
+    description: 'Hand-tied flower bouquets for birthdays, anniversaries and every occasion.',
+  },
+  {
+    title: 'Indoor Plants',
+    slug: 'indoor-plants',
+    description: 'Low‑maintenance indoor plants to bring fresh greenery into your home.',
+  },
+  {
+    title: 'Outdoor Plants',
+    slug: 'outdoor-plants',
+    description: 'Hardy outdoor plants that thrive on balconies, terraces and in gardens.',
+  },
+  {
+    title: 'Dried Flowers',
+    slug: 'dried-flowers',
+    description: 'Long‑lasting dried and preserved arrangements that stay beautiful for months.',
+  },
+  {
+    title: 'Flower Accessories',
+    slug: 'flower-accessories',
+    description: 'Vases, ribbons, cards and add‑ons to complete your floral gift.',
+  },
+  {
+    title: 'Gift Boxes',
+    slug: 'gift-boxes',
+    description: 'Curated gift boxes with flowers, candles and sweet treats.',
+  },
+  {
+    title: 'Wedding Flowers',
+    slug: 'wedding-flowers',
+    description: 'Bridal bouquets, boutonnieres and ceremony florals for your big day.',
+  },
+  {
+    title: 'Birthday Flowers',
+    slug: 'birthday-flowers',
+    description: 'Bright and joyful arrangements designed specifically for birthday celebrations.',
+  },
+  {
+    title: 'Sympathy & Condolences',
+    slug: 'sympathy-flowers',
+    description: 'Soft, respectful arrangements to express sympathy and support.',
+  },
+  {
+    title: 'Office & Corporate',
+    slug: 'office-corporate',
+    description: 'Weekly office flowers and corporate gifts to keep workspaces fresh.',
+  },
 ]
 
 const sizeVariantOptions = [
@@ -96,6 +142,24 @@ export const seed = async ({
     hero1Buffer,
     hero2Buffer,
     hero3Buffer,
+    product1Buffer,
+    product2Buffer,
+    product3Buffer,
+    product4Buffer,
+    product5Buffer,
+    product6Buffer,
+    product7Buffer,
+    product8Buffer,
+    product9Buffer,
+    product10Buffer,
+    product11Buffer,
+    product12Buffer,
+    banner1Buffer,
+    banner2Buffer,
+    banner3Buffer,
+    banner4Buffer,
+    banner5Buffer,
+    banner6Buffer,
   ] = await Promise.all([
     fetchFileByURL(
       'https://raw.githubusercontent.com/payloadcms/payload/refs/heads/main/templates/ecommerce/src/endpoints/seed/hat-logo.png',
@@ -109,21 +173,28 @@ export const seed = async ({
     fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/slider/slider1.jpg'),
     fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/slider/slider2.jpg'),
     fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/slider/slider3.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product1.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product2.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product3.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product4.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product5.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product6.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product7.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product8.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product9.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product10.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product11.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/product/product12.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner1.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner2.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner3.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner4.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner5.jpg'),
+    fetchFileByURL('https://template.hasthemes.com/lukani/lukani/assets/img/bg/banner6.jpg'),
   ])
 
-  const [
-    customer,
-    imageHat,
-    imageTshirtBlack,
-    imageTshirtWhite,
-    imageHero1,
-    imageHero2,
-    imageHero3,
-    accessoriesCategory,
-    tshirtsCategory,
-    hatsCategory,
-    plantsCategory,
-  ] = await Promise.all([
+  const [customer, imageHat, imageTshirtBlack, imageTshirtWhite, imageHero1, imageHero2, imageHero3] =
+    await Promise.all([
     payload.create({
       collection: 'users',
       data: {
@@ -163,16 +234,102 @@ export const seed = async ({
       data: imageHero3Data,
       file: hero3Buffer,
     }),
-    ...categorySeedData.map((cat) =>
+  ])
+
+  // Seed category banner images (banner1.jpg - banner6.jpg)
+  const bannerBuffers = [banner1Buffer, banner2Buffer, banner3Buffer, banner4Buffer, banner5Buffer, banner6Buffer]
+
+  const bannerMediaDocs = await Promise.all(
+    bannerBuffers.map((file, index) =>
       payload.create({
+        collection: 'media',
+        data: { alt: `Category banner ${index + 1}` },
+        file,
+      }),
+    ),
+  )
+
+  // Seed categories and attach banner images to the first six
+  const categoryDocs = await Promise.all(
+    categorySeedData.map((cat, index) => {
+      const banner = bannerMediaDocs[index]
+
+      return payload.create({
         collection: 'categories',
         data: {
           title: cat.title,
           slug: cat.slug,
           description: cat.description,
+          ...(banner ? { image: banner.id } : {}),
         },
-      }),
-    ),
+      })
+    }),
+  )
+
+  const [accessoriesCategory, tshirtsCategory, hatsCategory, plantsCategory] = categoryDocs
+
+  // Seed additional product images (product1.jpg - product12.jpg) into the media library
+  const productMediaDocs = await Promise.all([
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 1' },
+      file: product1Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 2' },
+      file: product2Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 3' },
+      file: product3Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 4' },
+      file: product4Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 5' },
+      file: product5Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 6' },
+      file: product6Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 7' },
+      file: product7Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 8' },
+      file: product8Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 9' },
+      file: product9Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 10' },
+      file: product10Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 11' },
+      file: product11Buffer,
+    }),
+    payload.create({
+      collection: 'media',
+      data: { alt: 'Lukani product 12' },
+      file: product12Buffer,
+    }),
   ])
 
   payload.logger.info(`— Seeding variant types and options...`)
@@ -222,16 +379,24 @@ export const seed = async ({
 
   payload.logger.info(`— Seeding products...`)
 
+  const hatGalleryImages = Array.from({ length: 5 }).map((_, index) => {
+    const doc = productMediaDocs[index % productMediaDocs.length]
+    return { image: doc.id }
+  })
+
   const productHat = await payload.create({
     collection: 'products',
     depth: 0,
-    data: productHatData({
-      galleryImage: imageHat,
-      metaImage: imageHat,
-      variantTypes: [colorVariantType],
-      categories: [hatsCategory],
-      relatedProducts: [],
-    }),
+    data: {
+      ...productHatData({
+        galleryImage: imageHat,
+        metaImage: imageHat,
+        variantTypes: [colorVariantType],
+        categories: [hatsCategory],
+        relatedProducts: [],
+      }),
+      gallery: hatGalleryImages,
+    },
   })
 
   const productTshirt = await payload.create({
@@ -288,6 +453,197 @@ export const seed = async ({
     ),
   )
 
+  // Additional simple flower products using Lukani product images
+  const additionalProductsData = [
+    {
+      title: 'Sunrise Tulip Bouquet',
+      slug: 'sunrise-tulip-bouquet',
+      priceInUSD: 4599,
+      category: hatsCategory,
+      imageIndex: 1,
+    },
+    {
+      title: 'Lavender Dream Box',
+      slug: 'lavender-dream-box',
+      priceInUSD: 5299,
+      category: plantsCategory,
+      imageIndex: 2,
+    },
+    {
+      title: 'Pastel Garden Arrangement',
+      slug: 'pastel-garden-arrangement',
+      priceInUSD: 6199,
+      category: hatsCategory,
+      imageIndex: 3,
+    },
+    {
+      title: 'Monstera Deluxe Planter',
+      slug: 'monstera-deluxe-planter',
+      priceInUSD: 7499,
+      category: plantsCategory,
+      imageIndex: 4,
+    },
+    {
+      title: 'White Orchid Duo',
+      slug: 'white-orchid-duo',
+      priceInUSD: 8999,
+      category: plantsCategory,
+      imageIndex: 5,
+    },
+    {
+      title: 'Blush Peony Bouquet',
+      slug: 'blush-peony-bouquet',
+      priceInUSD: 6899,
+      category: hatsCategory,
+      imageIndex: 6,
+    },
+    {
+      title: 'Eucalyptus Cloud Vase',
+      slug: 'eucalyptus-cloud-vase',
+      priceInUSD: 3999,
+      category: plantsCategory,
+      imageIndex: 7,
+    },
+    {
+      title: 'Classic Red Roses',
+      slug: 'classic-red-roses',
+      priceInUSD: 5599,
+      category: hatsCategory,
+      imageIndex: 8,
+    },
+    {
+      title: 'Herb Kitchen Trio',
+      slug: 'herb-kitchen-trio',
+      priceInUSD: 3499,
+      category: plantsCategory,
+      imageIndex: 9,
+    },
+    {
+      title: 'Golden Sunflower Bundle',
+      slug: 'golden-sunflower-bundle',
+      priceInUSD: 4299,
+      category: hatsCategory,
+      imageIndex: 10,
+    },
+    {
+      title: 'Minimalist Fern Pot',
+      slug: 'minimalist-fern-pot',
+      priceInUSD: 2799,
+      category: plantsCategory,
+      imageIndex: 11,
+    },
+    {
+      title: 'Sweet Pastel Gift Box',
+      slug: 'sweet-pastel-gift-box',
+      priceInUSD: 5899,
+      category: hatsCategory,
+      imageIndex: 12,
+    },
+    {
+      title: 'Spring Meadow Bouquet',
+      slug: 'spring-meadow-bouquet',
+      priceInUSD: 4799,
+      category: hatsCategory,
+      imageIndex: 3,
+    },
+    {
+      title: 'Trailing Ivy Shelf Plant',
+      slug: 'trailing-ivy-shelf-plant',
+      priceInUSD: 3299,
+      category: plantsCategory,
+      imageIndex: 4,
+    },
+    {
+      title: 'Blossom Gift Basket',
+      slug: 'blossom-gift-basket',
+      priceInUSD: 6199,
+      category: hatsCategory,
+      imageIndex: 5,
+    },
+    {
+      title: 'Mini Cactus Collection',
+      slug: 'mini-cactus-collection',
+      priceInUSD: 2599,
+      category: plantsCategory,
+      imageIndex: 6,
+    },
+    {
+      title: 'Romantic Pink Roses',
+      slug: 'romantic-pink-roses',
+      priceInUSD: 5599,
+      category: hatsCategory,
+      imageIndex: 7,
+    },
+    {
+      title: 'Desk Succulent Duo',
+      slug: 'desk-succulent-duo',
+      priceInUSD: 2999,
+      category: plantsCategory,
+      imageIndex: 8,
+    },
+  ]
+
+  await Promise.all(
+    additionalProductsData.map(async (item) => {
+      const mediaDoc = productMediaDocs[(item.imageIndex - 1) % productMediaDocs.length]
+
+      const galleryImages = Array.from({ length: 5 }).map((_, index) => {
+        const doc =
+          productMediaDocs[(item.imageIndex - 1 + index) % productMediaDocs.length]
+        return { image: doc.id }
+      })
+
+      await payload.create({
+        collection: 'products',
+        depth: 0,
+        data: {
+          _status: 'published',
+          title: item.title,
+          slug: item.slug,
+          categories: [item.category],
+          enableVariants: false,
+          priceInUSDEnabled: true,
+          priceInUSD: item.priceInUSD,
+          gallery: galleryImages,
+          meta: {
+            title: item.title,
+            description: item.title,
+            image: mediaDoc.id,
+          },
+        },
+      })
+    }),
+  )
+
+  // Seed a sample active sale event for one product
+  const now = new Date()
+  const startsAt = new Date(now.getTime() - 60 * 60 * 1000).toISOString() // started 1 hour ago
+  const endsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() // ends in 7 days
+
+  const basePrice =
+    typeof (productHat as any).priceInUSD === 'number' ? (productHat as any).priceInUSD : 4999
+
+  const hatSaleEvent = await payload.create({
+    collection: 'sale-events',
+    data: {
+      title: 'Aurora Rose Bouquet Launch Offer',
+      product: productHat.id,
+      salePrice: Math.max(1, Math.floor(basePrice * 0.8)),
+      status: 'active',
+      startsAt,
+      endsAt,
+      notes: 'Seeded example sale event so there is always one product on sale after seeding.',
+    },
+  })
+
+  await payload.update({
+    collection: 'products',
+    id: productHat.id,
+    data: {
+      saleEvents: [hatSaleEvent.id],
+    },
+  })
+
   payload.logger.info(`— Seeding contact form...`)
 
   const contactForm = await payload.create({
@@ -306,6 +662,7 @@ export const seed = async ({
         heroImages: [imageHero1, imageHero2, imageHero3],
         metaImage: imageHat,
         categories: [accessoriesCategory, tshirtsCategory, hatsCategory, plantsCategory],
+        product: productHat,
       }),
       context: {
         disableRevalidate: true,

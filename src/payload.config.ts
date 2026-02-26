@@ -19,9 +19,11 @@ import { Categories } from '@/collections/Categories'
 import { Media } from '@/collections/Media'
 import { Pages } from '@/collections/Pages'
 import { Users } from '@/collections/Users'
+import { SaleEvents } from '@/collections/SaleEvents'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { plugins } from './plugins'
+import { refreshSaleEventsTask } from '@/jobs/saleEvents'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -38,7 +40,7 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Pages, Categories, Media, Brands],
+  collections: [Users, Pages, Categories, Media, Brands, SaleEvents],
   db: sqliteAdapter({
     client: {
       url: process.env.DATABASE_URL || '',
@@ -80,6 +82,9 @@ export default buildConfig({
     },
   }),
   //email: nodemailerAdapter(),
+  jobs: {
+    tasks: [refreshSaleEventsTask],
+  },
   endpoints: [],
   globals: [Header, Footer],
   plugins,

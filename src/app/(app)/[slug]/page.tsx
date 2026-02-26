@@ -85,6 +85,7 @@ const queryPageBySlug = async ({ slug }: { slug: string }) => {
 
   const result = await payload.find({
     collection: 'pages',
+    depth: 3,
     draft,
     limit: 1,
     overrideAccess: draft,

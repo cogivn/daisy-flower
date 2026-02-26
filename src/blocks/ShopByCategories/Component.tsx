@@ -73,22 +73,21 @@ export const ShopByCategoriesBlockComponent: React.FC<Props> = (props) => {
                     />
                   ) : null}
                 </div>
-                {/* Dark overlay for text readability */}
-                <div className="absolute inset-0 bg-black/50 group-hover/card:bg-black/45 transition-colors" />
-                {/* Content: title + description bottom-left, EXPLORE NOW bottom-right */}
-                <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5 md:p-6">
+
+                {/* Content: gradient only behind text area */}
+                <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end bg-black/70 p-4 sm:p-5 md:p-6">
                   <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
                     <div className="min-w-0">
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight uppercase text-white mb-1">
+                      <h3 className="mb-1 text-lg font-extrabold tracking-tight text-white uppercase sm:text-xl md:text-2xl">
                         {category.title}
                       </h3>
                       {category.description && (
-                        <p className="text-white/90 text-sm md:text-base line-clamp-2">
+                        <p className="text-sm text-white/90 md:text-base line-clamp-2">
                           {category.description}
                         </p>
                       )}
                     </div>
-                    <span className="inline-flex items-center justify-center border-2 border-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white w-fit shrink-0 hover:bg-white hover:text-foreground transition-colors">
+                    <span className="inline-flex w-fit shrink-0 items-center justify-center border-2 border-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-white hover:text-foreground transition-colors">
                       Explore Now
                     </span>
                   </div>

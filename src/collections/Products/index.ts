@@ -45,6 +45,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     ...defaultCollection?.defaultPopulate,
     title: true,
     slug: true,
+    description: true,
     variantOptions: true,
     variants: true,
     enableVariants: true,
@@ -52,6 +53,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     priceInUSD: true,
     inventory: true,
     meta: true,
+    saleEvents: true,
   },
   fields: [
     { name: 'title', type: 'text', required: true },
@@ -206,6 +208,16 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
       },
       hasMany: true,
       relationTo: 'categories',
+    },
+    {
+      name: 'saleEvents',
+      type: 'relationship',
+      relationTo: 'sale-events',
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Sale events that affect this product. Usually managed from the Sale events collection.',
+      },
     },
     slugField(),
   ],

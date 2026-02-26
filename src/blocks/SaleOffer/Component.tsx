@@ -1,11 +1,18 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
+import Link from 'next/link'
 
-import type { Media as MediaType, SaleOfferBlock as SaleOfferBlockType } from '@/payload-types'
+import type {
+  Media as MediaType,
+  Product,
+  SaleEvent,
+  SaleOfferBlock as SaleOfferBlockType,
+} from '@/payload-types'
 
-import { CMSLink } from '@/components/Link'
-import { Media } from '@/components/Media'
+import { Gallery } from '@/components/product/Gallery'
+import { Button } from '@/components/ui/button'
+import { RichText } from '@/components/RichText'
 
 type Props = SaleOfferBlockType
 
@@ -46,46 +53,62 @@ export const SaleOfferBlockComponent: React.FC<Props> = (props) => {
   const {
     sectionTitle,
     sectionDescription,
-    productLabel,
-    gallery,
-    title,
-    description,
-    originalPrice,
-    price,
-    currency,
-    rating,
     highlight,
-    countdown,
-    cta,
+    product,
   } = props
-
   const [activeIndex, setActiveIndex] = React.useState(0)
 
-  const mainImage: MediaType | null =
-    Array.isArray(gallery) && gallery[activeIndex] && gallery[activeIndex].image
-      ? (gallery[activeIndex].image as unknown as MediaType)
-      : null
+  const linkedProduct = (typeof product === 'object' ? (product as Product) : null) || null
 
-  const showCountdown = Boolean(
-    countdown?.enabled && countdown?.targetDate && typeof countdown.targetDate === 'string',
-  )
+  if (!linkedProduct) return null
+
+  const productGallery =
+    linkedProduct?.gallery
+      ?.filter((item) => typeof item.image === 'object')
+      .map((item) => ({
+        ...item,
+        image: item.image as MediaType,
+      })) || []
+  const effectiveGallery = productGallery
+
+  const saleEvents = Array.isArray(linkedProduct.saleEvents)
+    ? (linkedProduct.saleEvents as (number | SaleEvent)[])
+    : []
+
+  const activeSaleEvent = saleEvents.find(
+    (event) => typeof event === 'object' && event !== null && event.status === 'active',
+  ) as SaleEvent | undefined
+
+  const showCountdown = Boolean(activeSaleEvent?.endsAt)
+
+  React.useEffect(() => {
+    // Debug sale offer + sale event wiring
+    // eslint-disable-next-line no-console
+    console.log('[SaleOffer] product', {
+      productId: linkedProduct.id,
+      slug: linkedProduct.slug,
+      saleEvents,
+      activeSaleEvent,
+      showCountdown,
+    })
+  }, [linkedProduct.id, linkedProduct.slug, saleEvents, activeSaleEvent, showCountdown])
 
   const [parts, setParts] = React.useState<CountdownParts>(() =>
-    showCountdown ? getCountdownParts(new Date(countdown!.targetDate as string)) : getCountdownParts(new Date()),
+    showCountdown && activeSaleEvent?.endsAt
+      ? getCountdownParts(new Date(activeSaleEvent.endsAt as string))
+      : getCountdownParts(new Date()),
   )
 
   React.useEffect(() => {
-    if (!showCountdown || !countdown?.targetDate) return
+    if (!showCountdown || !activeSaleEvent?.endsAt) return
 
-    const target = new Date(countdown.targetDate as string)
+    const target = new Date(activeSaleEvent.endsAt as string)
     const id = setInterval(() => {
       setParts(getCountdownParts(target))
     }, 1000)
 
     return () => clearInterval(id)
-  }, [countdown?.targetDate, showCountdown])
-
-  const ctaLink = Array.isArray(cta) && cta[0]?.link ? cta[0].link : null
+  }, [activeSaleEvent?.endsAt, showCountdown])
 
   const isCountdownExpired =
     showCountdown &&
@@ -94,8 +117,27 @@ export const SaleOfferBlockComponent: React.FC<Props> = (props) => {
     parts.minutes === '00' &&
     parts.seconds === '00'
 
-  const showSalePrice = showCountdown && !isCountdownExpired && typeof originalPrice === 'number'
-  const displayPrice = isCountdownExpired && typeof originalPrice === 'number' ? originalPrice : price
+  let basePrice = linkedProduct.priceInUSD
+
+  if (linkedProduct.enableVariants && linkedProduct?.variants?.docs?.length) {
+    basePrice = linkedProduct?.variants?.docs?.reduce((acc, variant) => {
+      if (typeof variant === 'object' && variant?.priceInUSD && acc && variant?.priceInUSD > acc) {
+        return variant.priceInUSD
+      }
+      return acc
+    }, basePrice)
+  }
+
+  let displayPrice = basePrice
+  let originalPrice: number | null = null
+
+  if (activeSaleEvent?.salePrice && typeof activeSaleEvent.salePrice === 'number') {
+    originalPrice = basePrice ?? null
+    displayPrice = activeSaleEvent.salePrice
+  }
+
+  const displayTitle = linkedProduct?.title
+  const productHref = `/products/${linkedProduct.slug}`
 
   return (
     <section className="debug-outline debug-grid">
@@ -114,91 +156,50 @@ export const SaleOfferBlockComponent: React.FC<Props> = (props) => {
             )}
           </div>
         )}
-        <div className="grid gap-6 md:gap-8 lg:grid-cols-2 lg:gap-12 items-start">
-          {/* Left: vertical label + gallery filling full left column */}
+        <div className="grid items-start gap-6 md:gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* Left: product gallery, reusing product detail logic */}
           <div className="relative space-y-4">
-            <div className="bg-muted relative aspect-4/3 w-full overflow-hidden rounded-lg flex items-center justify-center">
-              {mainImage && (
-                <Media resource={mainImage} imgClassName="h-full w-full object-contain" />
-              )}
-            </div>
-
-            {Array.isArray(gallery) && gallery.length > 1 && (
-              <div className="mt-3 flex gap-3">
-                {gallery.slice(0, 4).map((item, index) => {
-                  if (!item?.image) return null
-                  const thumb = item.image as unknown as MediaType
-
-                  return (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => setActiveIndex(index)}
-                      className={`relative overflow-hidden rounded-md border ${
-                        index === activeIndex ? 'border-primary' : 'border-transparent'
-                      }`}
-                    >
-                      <div className="h-20 w-20 md:h-24 md:w-24">
-                        <Media resource={thumb} imgClassName="h-full w-full object-cover" />
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-            {productLabel && (
-              <div className="hidden lg:block absolute left-0 top-0">
-                <span
-                  className="text-[40px] font-extrabold tracking-[0.3em] text-muted-foreground/40"
-                  style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-                >
-                  {productLabel.toUpperCase()}
-                </span>
-              </div>
-            )}
+            <Suspense
+              fallback={
+                <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden bg-muted" />
+              }
+            >
+              {Boolean(effectiveGallery?.length) && <Gallery gallery={effectiveGallery} />}
+            </Suspense>
           </div>
 
           {/* Right: content, inspired by product detail layout */}
           <div className="flex flex-col space-y-4">
-            {typeof rating === 'number' && rating > 0 && (
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5 text-yellow-500 text-sm">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i}>{i < Math.round(rating) ? '★' : '☆'}</span>
-                  ))}
-                </div>
-                <span className="text-muted-foreground text-sm">{rating.toFixed(1)} / 5</span>
-              </div>
-            )}
-
-            {title && (
+            {displayTitle && (
               <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight uppercase">
-                {title}
+                {displayTitle}
               </h2>
             )}
 
-            {description && (
-              <p className="text-muted-foreground text-sm md:text-base">
-                {description}
-              </p>
+            {linkedProduct.description && (
+              <div className="text-sm md:text-base text-muted-foreground">
+                <RichText
+                  data={linkedProduct.description as any}
+                  enableGutter={false}
+                  enableProse={false}
+                  className="prose-sm max-w-none"
+                />
+              </div>
             )}
 
             <div className="mt-2 flex items-baseline gap-3 flex-wrap">
-              {showSalePrice && (
-                <span className="text-lg md:text-xl font-bold text-muted-foreground line-through">
-                  {currency}
-                  {originalPrice}
-                </span>
-              )}
-              <span
-                className={`font-bold ${showSalePrice ? 'text-3xl md:text-4xl text-primary' : 'text-2xl md:text-3xl text-foreground'}`}
-              >
-                {currency}
-                {displayPrice}
-              </span>
-              {showSalePrice && (
-                <span className="rounded bg-primary/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-primary">
-                  Sale
+              {originalPrice && originalPrice !== displayPrice ? (
+                <>
+                  <span className="text-lg md:text-xl font-semibold text-muted-foreground line-through">
+                    ${((originalPrice ?? 0) / 100).toFixed(2)}
+                  </span>
+                  <span className="text-2xl md:text-3xl font-bold text-primary">
+                    ${((displayPrice ?? 0) / 100).toFixed(2)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-2xl md:text-3xl font-bold text-primary">
+                  ${((displayPrice ?? 0) / 100).toFixed(2)}
                 </span>
               )}
             </div>
@@ -230,14 +231,14 @@ export const SaleOfferBlockComponent: React.FC<Props> = (props) => {
               </div>
             )}
 
-            {ctaLink && (
-              <div className="pt-4">
-                <CMSLink
-                  {...ctaLink}
-                  className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-primary/90 transition-colors"
-                />
-              </div>
-            )}
+            <div className="pt-4">
+              <Button
+                asChild
+                className="inline-flex items-center justify-center px-8 py-3 text-xs font-bold uppercase tracking-[0.18em]"
+              >
+                <Link href={productHref}>Shop this deal</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

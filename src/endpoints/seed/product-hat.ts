@@ -1,5 +1,4 @@
-import type { Category, Product, VariantOption, VariantType } from '@/payload-types'
-import type { Media } from '@/payload-types'
+import type { Category, Media, Product, VariantType } from '@/payload-types'
 import { RequiredDataFromCollectionSlug } from 'payload'
 
 type ProductArgs = {
@@ -19,14 +18,15 @@ export const productHatData: (args: ProductArgs) => RequiredDataFromCollectionSl
 }) => {
   return {
     meta: {
-      title: 'Hat | Payload Ecommerce Template',
+      title: 'Aurora Rose Bouquet',
       image: metaImage,
       description:
-        'Top off your look with our classic hat, crafted for style and comfort. Made with breathable, high-quality materials and an adjustable strap for the perfect fit.',
+        'A lush hand‑tied bouquet of premium roses and seasonal greenery, perfect for birthdays, anniversaries, or simply brightening any space.',
     },
     _status: 'published',
     layout: [],
     categories: categories,
+    enableVariants: false,
     description: {
       root: {
         children: [
@@ -37,7 +37,7 @@ export const productHatData: (args: ProductArgs) => RequiredDataFromCollectionSl
                 format: 0,
                 mode: 'normal',
                 style: '',
-                text: 'Top off your look with our classic hat, crafted for style and comfort. Made with breathable, high-quality materials and an adjustable strap for the perfect fit, it’s ideal for everyday wear or outdoor adventures. Available in a range of colors to match any outfit.',
+                text: 'Aurora Rose Bouquet combines soft pink and ivory roses with airy filler flowers and fresh foliage. Wrapped in eco‑friendly paper and finished with a satin ribbon, it is an elegant choice for gifting or styling your living room.',
                 type: 'text',
                 version: 1,
               },
@@ -59,10 +59,10 @@ export const productHatData: (args: ProductArgs) => RequiredDataFromCollectionSl
       },
     },
     gallery: [{ image: galleryImage }],
-    title: 'Hat',
-    slug: 'hat',
+    title: 'Aurora Rose Bouquet',
+    slug: 'aurora-rose-bouquet',
     priceInUSDEnabled: true,
-    priceInUSD: 2500,
+    priceInUSD: 4999,
     relatedProducts: relatedProducts,
   }
 }

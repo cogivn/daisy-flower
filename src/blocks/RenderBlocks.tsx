@@ -12,6 +12,7 @@ import { ServiceFeaturesBlock } from '@/blocks/ServiceFeatures/Component'
 import { SaleOfferBlockComponent } from '@/blocks/SaleOffer/Component'
 import { ShopByCategoriesBlockComponent } from '@/blocks/ShopByCategories/Component'
 import { ThreeItemGridBlock } from '@/blocks/ThreeItemGrid/Component'
+import { ProductListingBlock } from '@/blocks/ProductListing/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
 import React, { Fragment } from 'react'
 
@@ -32,6 +33,7 @@ const blockComponents = {
   categoryCarousel: CategoryCarouselBlock,
   saleOffer: SaleOfferBlockComponent,
   shopByCategories: ShopByCategoriesBlockComponent,
+  productListing: ProductListingBlock,
 }
 
 export const RenderBlocks: React.FC<{

@@ -206,7 +206,7 @@ export function HeaderClient({ header }: Props) {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <MenuIcon size={20} className="shrink-0" />
-                <span className="truncate">CATEGORIES</span>
+                <span className="truncate">Categories</span>
               </div>
               <ChevronDown
                 size={16}

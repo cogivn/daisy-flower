@@ -1,17 +1,19 @@
-import type { Category, Media } from '@/payload-types'
+import type { Category, Media, Product } from '@/payload-types'
 import { RequiredDataFromCollectionSlug } from 'payload'
 
 type ProductArgs = {
   metaImage: Media
   heroImages: Media[]
   categories?: Category[]
+  product?: Product | number | string | null
 }
 
-export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug<'pages'> = ({
+export const homePageData = ({
   metaImage,
   heroImages,
   categories = [],
-}) => {
+  product,
+}: ProductArgs): RequiredDataFromCollectionSlug<'pages'> => {
   const [primaryHeroImage] = heroImages
 
   const heroSlidesMeta = [
@@ -186,29 +188,56 @@ export const homePageData: (args: ProductArgs) => RequiredDataFromCollectionSlug
         sectionTitle: 'Limited Time Offer',
         sectionDescription:
           'Don’t miss out on our best deals. Grab your favourite items before they’re gone.',
-        productLabel: 'Backpack',
-        gallery: heroImages.slice(0, 3).map((image) => ({ image })),
-        title: 'BLINGO BACKPACK',
-        description:
-          'Neque porro quisquam est, qui dolorem ipsum quia dolor ipisci velit, sed quia non numquam eius modi.',
-        originalPrice: 199,
-        price: 162,
-        currency: '$',
-        rating: 5,
         highlight: "BEST DEAL, LIMITED TIME OFFER GET YOUR'S NOW!",
-        countdown: {
-          enabled: true,
-          // Future date so sale stays active: original price strikethrough + green sale price + countdown
-          targetDate: '2026-12-31T23:59:59.000Z',
-        },
-        cta: [
+        // Link the featured product into the sale offer if provided
+        ...(product
+          ? {
+              product: (typeof product === 'object' && product !== null
+                ? (product as Product).id
+                : product) as number | Product | null,
+            }
+          : {}),
+      },
+      {
+        blockName: 'Homepage Product Listing',
+        blockType: 'productListing' as const,
+        heading: 'Featured Products',
+        sectionDescription:
+          'Discover our favorite bouquets and plants, hand-picked to inspire your next gift or corner refresh.',
+        enableSearch: true,
+        tabs: [
           {
-            link: {
-              type: 'custom' as const,
-              newTab: false,
-              label: 'Shop Now',
-              url: '/shop',
-            },
+            label: 'All',
+            categories: categories.map((c) => c.id),
+            limit: 8,
+          },
+          {
+            label: 'Bouquets',
+            categories: categories
+              .filter((c) => c.slug === 'bouquets' || c.title === 'Bouquets')
+              .map((c) => c.id),
+            limit: 8,
+          },
+          {
+            label: 'Indoor Plants',
+            categories: categories
+              .filter((c) => c.slug === 'indoor-plants' || c.title === 'Indoor Plants')
+              .map((c) => c.id),
+            limit: 8,
+          },
+          {
+            label: 'Outdoor Plants',
+            categories: categories
+              .filter((c) => c.slug === 'outdoor-plants' || c.title === 'Outdoor Plants')
+              .map((c) => c.id),
+            limit: 8,
+          },
+          {
+            label: 'Dried Flowers',
+            categories: categories
+              .filter((c) => c.slug === 'dried-flowers' || c.title === 'Dried Flowers')
+              .map((c) => c.id),
+            limit: 8,
           },
         ],
       },

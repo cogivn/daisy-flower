@@ -77,6 +77,7 @@ export interface Config {
     categories: Category;
     media: Media;
     brands: Brand;
+    'sale-events': SaleEvent;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -88,6 +89,7 @@ export interface Config {
     orders: Order;
     transactions: Transaction;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -111,6 +113,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
+    'sale-events': SaleEventsSelect<false> | SaleEventsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -122,6 +125,7 @@ export interface Config {
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -133,15 +137,23 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'refresh-sale-events': TaskRefreshSaleEvents;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
   /**
@@ -308,6 +320,10 @@ export interface Product {
     description?: string | null;
   };
   categories?: (number | Category)[] | null;
+  /**
+   * Sale events that affect this product. Usually managed from the Sale events collection.
+   */
+  saleEvents?: (number | SaleEvent)[] | null;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -530,6 +546,7 @@ export interface Page {
     | ArchiveBlock
     | CarouselBlock
     | ThreeItemGridBlock
+    | ProductListingBlock
     | BannerBlock
     | FormBlock
     | PromoBannersBlock
@@ -706,6 +723,35 @@ export interface ThreeItemGridBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'threeItemGrid';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProductListingBlock".
+ */
+export interface ProductListingBlock {
+  /**
+   * Optional short intro text shown below the section heading.
+   */
+  sectionDescription?: string | null;
+  /**
+   * Main title for the product listing section.
+   */
+  heading: string;
+  enableSearch?: boolean | null;
+  tabs?:
+    | {
+        label: string;
+        /**
+         * If empty, this tab will show all products. If set, it will show products in the selected categories.
+         */
+        categories?: (number | Category)[] | null;
+        limit?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'productListing';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -972,46 +1018,11 @@ export interface SaleOfferBlock {
    * Optional short intro below the heading.
    */
   sectionDescription?: string | null;
-  productLabel?: string | null;
-  gallery?:
-    | {
-        image: number | Media;
-        id?: string | null;
-      }[]
-    | null;
-  title: string;
-  description?: string | null;
   /**
-   * Price before sale. When countdown is active, shown with sale price; when expired, only this is shown.
+   * Optional. If set, this offer can reuse the product gallery and link to the product detail page.
    */
-  originalPrice?: number | null;
-  price: number;
-  currency?: string | null;
-  rating?: number | null;
+  product?: (number | null) | Product;
   highlight?: string | null;
-  countdown?: {
-    enabled?: boolean | null;
-    targetDate?: string | null;
-  };
-  cta?:
-    | {
-        link: {
-          type?: ('reference' | 'custom') | null;
-          newTab?: boolean | null;
-          reference?: {
-            relationTo: 'pages';
-            value: number | Page;
-          } | null;
-          url?: string | null;
-          label: string;
-          /**
-           * Choose how the link should be rendered.
-           */
-          appearance?: ('default' | 'outline') | null;
-        };
-        id?: string | null;
-      }[]
-    | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'saleOffer';
@@ -1118,6 +1129,37 @@ export interface Variant {
   createdAt: string;
   deletedAt?: string | null;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sale-events".
+ */
+export interface SaleEvent {
+  id: number;
+  /**
+   * Internal name for this sale (e.g. Spring bouquet sale).
+   */
+  title: string;
+  /**
+   * Product this sale event applies to.
+   */
+  product: number | Product;
+  /**
+   * Sale price in the same unit as the base product price (minor units, e.g. cents). This does not change the original product price.
+   */
+  salePrice: number;
+  /**
+   * Status is usually derived from the start / end time, but can be overridden.
+   */
+  status?: ('scheduled' | 'active' | 'expired') | null;
+  startsAt: string;
+  endsAt: string;
+  /**
+   * Optional notes for marketing or operations.
+   */
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1281,6 +1323,107 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: number;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'refresh-sale-events';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'refresh-sale-events') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  meta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -1305,6 +1448,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'brands';
         value: number | Brand;
+      } | null)
+    | ({
+        relationTo: 'sale-events';
+        value: number | SaleEvent;
       } | null)
     | ({
         relationTo: 'forms';
@@ -1501,6 +1648,7 @@ export interface PagesSelect<T extends boolean = true> {
         archive?: T | ArchiveBlockSelect<T>;
         carousel?: T | CarouselBlockSelect<T>;
         threeItemGrid?: T | ThreeItemGridBlockSelect<T>;
+        productListing?: T | ProductListingBlockSelect<T>;
         banner?: T | BannerBlockSelect<T>;
         formBlock?: T | FormBlockSelect<T>;
         promoBanners?: T | PromoBannersBlockSelect<T>;
@@ -1622,6 +1770,25 @@ export interface ThreeItemGridBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProductListingBlock_select".
+ */
+export interface ProductListingBlockSelect<T extends boolean = true> {
+  sectionDescription?: T;
+  heading?: T;
+  enableSearch?: T;
+  tabs?:
+    | T
+    | {
+        label?: T;
+        categories?: T;
+        limit?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "BannerBlock_select".
  */
 export interface BannerBlockSelect<T extends boolean = true> {
@@ -1673,41 +1840,8 @@ export interface PromoBannersBlockSelect<T extends boolean = true> {
 export interface SaleOfferBlockSelect<T extends boolean = true> {
   sectionTitle?: T;
   sectionDescription?: T;
-  productLabel?: T;
-  gallery?:
-    | T
-    | {
-        image?: T;
-        id?: T;
-      };
-  title?: T;
-  description?: T;
-  originalPrice?: T;
-  price?: T;
-  currency?: T;
-  rating?: T;
+  product?: T;
   highlight?: T;
-  countdown?:
-    | T
-    | {
-        enabled?: T;
-        targetDate?: T;
-      };
-  cta?:
-    | T
-    | {
-        link?:
-          | T
-          | {
-              type?: T;
-              newTab?: T;
-              reference?: T;
-              url?: T;
-              label?: T;
-              appearance?: T;
-            };
-        id?: T;
-      };
   id?: T;
   blockName?: T;
 }
@@ -1805,6 +1939,21 @@ export interface BrandsSelect<T extends boolean = true> {
   name?: T;
   logo?: T;
   link?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sale-events_select".
+ */
+export interface SaleEventsSelect<T extends boolean = true> {
+  title?: T;
+  product?: T;
+  salePrice?: T;
+  status?: T;
+  startsAt?: T;
+  endsAt?: T;
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2054,6 +2203,7 @@ export interface ProductsSelect<T extends boolean = true> {
         description?: T;
       };
   categories?: T;
+  saleEvents?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
@@ -2176,6 +2326,38 @@ export interface PayloadKvSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  meta?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -2288,6 +2470,24 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats".
+ */
+export interface PayloadJobsStat {
+  id: number;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -2362,6 +2562,24 @@ export interface FooterSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats_select".
+ */
+export interface PayloadJobsStatsSelect<T extends boolean = true> {
+  stats?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskRefresh-sale-events".
+ */
+export interface TaskRefreshSaleEvents {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
