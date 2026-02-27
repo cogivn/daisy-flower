@@ -664,14 +664,6 @@ export const seed = async ({
     },
   })
 
-  await payload.update({
-    collection: 'products',
-    id: productHat.id,
-    data: {
-      saleEvents: [hatSaleEvent.id],
-    },
-  })
-
   payload.logger.info(`— Seeding contact form...`)
 
   const contactForm = await payload.create({

@@ -7,21 +7,22 @@ import { Price } from '@/components/Price'
 import Link from 'next/link'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 
-import { Search } from '@/components/Search'
-import { Header } from '@/payload-types'
+import { Category, Header } from '@/payload-types'
 import { useTheme } from '@/providers/Theme'
 import { cn } from '@/utilities/cn'
 import { ChevronDown, Heart, Menu as MenuIcon, Phone, User } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
-import { MobileMenu } from './MobileMenu'
+import { MobileMenu } from '@/components/Header/MobileMenu'
+import { Search } from '@/components/layout/search/Search'
 
 type Props = {
   header: Header
+  categories: Category[]
 }
 
-export function HeaderClient({ header }: Props) {
-  const { navItems = [], categories = [], topBarContent, contactNumber } = header
+export function HeaderClient({ header, categories }: Props) {
+  const { navItems = [], topBarContent, contactNumber } = header
   const pathname = usePathname()
   const [isSticky, setIsSticky] = useState(false)
   const [showCategories, setShowCategories] = useState(false)
@@ -115,8 +116,8 @@ export function HeaderClient({ header }: Props) {
         </div>
       </div>
 
-      {/* Middle Header - z-40 so hamburger stays above Sheet overlay */}
-      <div className="relative z-40 bg-white py-6 md:py-10 border-b md:border-none debug-outline debug-grid">
+      {/* Middle Header - higher z so search dropdown can overlap nav bar */}
+      <div className="relative z-60 bg-white py-6 md:py-10 border-b md:border-none debug-outline debug-grid">
         <div className="container debug-container flex items-stretch justify-between gap-4 md:gap-8">
           {/* Mobile Menu Button - Left on mobile; z-10 + min size so tap always hits */}
           <div className="md:hidden flex-1 min-w-0 flex items-center shrink-0 relative z-10">
@@ -139,7 +140,7 @@ export function HeaderClient({ header }: Props) {
           <div className="hidden md:flex grow max-w-2xl mx-12">
             <Search
               className="rounded-none border-2 border-primary"
-              categories={categories as any}
+              categories={categories}
             />
           </div>
 
@@ -226,12 +227,17 @@ export function HeaderClient({ header }: Props) {
             >
               <ul className="py-2">
                 {categories && categories.length > 0 ? (
-                  categories.map((item: { link: any; id?: string | null }, i: number) => (
+                  categories.map((cat) => (
                     <li
-                      key={item.id || i}
+                      key={cat.id}
                       className="px-4 py-2 hover:bg-muted transition-colors border-b last:border-none border-border/50"
                     >
-                      <CMSLink {...item.link} className="block w-full text-sm font-medium" />
+                      <Link
+                        href={`/shop?category=${cat.slug ?? ''}`}
+                        className="block w-full text-sm font-medium"
+                      >
+                        {cat.title}
+                      </Link>
                     </li>
                   ))
                 ) : (

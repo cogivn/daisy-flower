@@ -3,7 +3,6 @@ import type { TaskHandler } from 'payload'
 export const refreshSaleEventsHandler = (async ({ req }) => {
   const payload = req.payload
   const now = new Date().toISOString()
-
   // Mark events as expired when past endsAt
   await payload.update({
     collection: 'sale-events',
@@ -42,7 +41,7 @@ export const refreshSaleEventsTask = {
   handler: refreshSaleEventsHandler,
   schedule: [
     {
-      cron: '*/5 * * * *', // every 5 minutes
+      cron: '*/2 * * * *', // every 5 minutes
       queue: 'default',
     },
   ],

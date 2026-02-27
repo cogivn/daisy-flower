@@ -2,12 +2,11 @@
 
 import { cn } from '@/utilities/cn'
 import { createUrl } from '@/utilities/createUrl'
-import { SearchIcon } from 'lucide-react'
+import { ChevronDown, SearchIcon } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React from 'react'
 
-import { Category } from '@/payload-types'
-import { ChevronDown } from 'lucide-react'
+import type { Category } from '@/payload-types'
 
 type Props = {
   className?: string
@@ -47,14 +46,14 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
   return (
     <form className={cn('relative w-full flex items-center', className)} onSubmit={onSubmit}>
       {/* Category Dropdown */}
-      <div className="relative group/search-cat border-r border-neutral-200 h-full hidden lg:block">
+      <div className="relative group/search-cat border-r border-neutral-200 h-full hidden lg:block overflow-visible">
         <div className="h-full flex items-center px-4 cursor-pointer min-w-40 justify-between text-sm font-medium hover:text-primary transition-colors">
           <span>
             {categoryList.find((c) => c.slug === selectedCategory)?.title || 'All Categories'}
           </span>
           <ChevronDown size={14} />
         </div>
-        <div className="absolute top-full left-0 bg-background border shadow-lg hidden group-hover/search-cat:block z-50 min-w-full py-2 max-h-75 overflow-y-auto">
+        <div className="absolute top-full left-0 bg-background border shadow-lg hidden group-hover/search-cat:block z-60 min-w-full py-2 max-h-75 overflow-y-auto">
           <div
             onClick={() => setSelectedCategory('all')}
             className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
@@ -91,3 +90,4 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
     </form>
   )
 }
+

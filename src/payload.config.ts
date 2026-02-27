@@ -18,12 +18,12 @@ import { Brands } from '@/collections/Brands'
 import { Categories } from '@/collections/Categories'
 import { Media } from '@/collections/Media'
 import { Pages } from '@/collections/Pages'
-import { Users } from '@/collections/Users'
 import { SaleEvents } from '@/collections/SaleEvents'
+import { Users } from '@/collections/Users'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
-import { plugins } from './plugins'
 import { refreshSaleEventsTask } from '@/jobs/saleEvents'
+import { plugins } from './plugins'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -83,9 +83,10 @@ export default buildConfig({
   }),
   //email: nodemailerAdapter(),
   jobs: {
-    queues: [
+    autoRun: [
       {
-        slug: 'default',
+        cron: '* * * * *', // check 'default' queue every minute
+        queue: 'default',
       },
     ],
     tasks: [refreshSaleEventsTask],
@@ -96,6 +97,21 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
+  },
+  onInit: async (payload) => {
+    const jobsConfig = payload.config.jobs
+
+    if (jobsConfig?.autoRun && Array.isArray(jobsConfig.autoRun)) {
+      const queues = jobsConfig.autoRun.map((cfg: any) => cfg.queue).filter(Boolean).join(', ')
+
+      payload.logger.info(
+        queues && queues.length
+          ? `Jobs autoRun enabled for queues: ${queues}`
+          : 'Jobs autoRun enabled with custom configuration.',
+      )
+    } else {
+      payload.logger.info('Jobs autoRun is not configured.')
+    }
   },
   // Sharp is now an optional dependency -
   // if you want to resize images, crop, set focal point, etc.
