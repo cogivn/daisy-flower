@@ -12,6 +12,7 @@ export const SaleEvents: CollectionConfig = {
     useAsTitle: 'title',
     group: 'Ecommerce',
     defaultColumns: ['title', 'product', 'status', 'startsAt', 'endsAt'],
+    hidden: true,
   },
   access: {
     create: adminOnly,
@@ -34,8 +35,9 @@ export const SaleEvents: CollectionConfig = {
       relationTo: 'products',
       required: true,
       admin: {
-        description: 'Product this sale event applies to.',
+        description: 'Product this sale event applies to. Set automatically when creating from a product.',
         position: 'sidebar',
+        readOnly: true,
       },
     },
     {

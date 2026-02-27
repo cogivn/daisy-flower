@@ -105,6 +105,7 @@ export interface Config {
     };
     products: {
       variants: 'variants';
+      saleEvents: 'sale-events';
     };
   };
   collectionsSelect: {
@@ -320,10 +321,11 @@ export interface Product {
     description?: string | null;
   };
   categories?: (number | Category)[] | null;
-  /**
-   * Sale events that affect this product. Usually managed from the Sale events collection.
-   */
-  saleEvents?: (number | SaleEvent)[] | null;
+  saleEvents?: {
+    docs?: (number | SaleEvent)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -1202,7 +1204,7 @@ export interface SaleEvent {
    */
   title: string;
   /**
-   * Product this sale event applies to.
+   * Product this sale event applies to. Set automatically when creating from a product.
    */
   product: number | Product;
   /**

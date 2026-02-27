@@ -83,6 +83,11 @@ export default buildConfig({
   }),
   //email: nodemailerAdapter(),
   jobs: {
+    queues: [
+      {
+        slug: 'default',
+      },
+    ],
     tasks: [refreshSaleEventsTask],
   },
   endpoints: [],

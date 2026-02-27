@@ -211,12 +211,12 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     },
     {
       name: 'saleEvents',
-      type: 'relationship',
-      relationTo: 'sale-events',
-      hasMany: true,
+      type: 'join',
+      collection: 'sale-events',
+      on: 'product',
       admin: {
-        position: 'sidebar',
-        description: 'Sale events that affect this product. Usually managed from the Sale events collection.',
+        allowCreate: true,
+        defaultColumns: ['title', 'status', 'salePrice', 'startsAt', 'endsAt'],
       },
     },
     slugField(),
