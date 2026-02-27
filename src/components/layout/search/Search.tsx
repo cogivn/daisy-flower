@@ -2,7 +2,7 @@
 
 import { cn } from '@/utilities/cn'
 import { createUrl } from '@/utilities/createUrl'
-import { ChevronDown, SearchIcon } from 'lucide-react'
+import { ChevronDown, SearchIcon, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React from 'react'
 
@@ -17,30 +17,73 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [selectedCategory, setSelectedCategory] = React.useState<string>('all')
+  const [query, setQuery] = React.useState<string>(searchParams.get('q') || '')
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const didMountRef = React.useRef(false)
 
   const categoryList =
     categories?.filter((cat): cat is Category => typeof cat === 'object' && cat !== null) || []
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  React.useEffect(() => {
+    setQuery(searchParams.get('q') || '')
+    const categoryParam = searchParams.get('category')
+    setSelectedCategory(categoryParam || 'all')
+  }, [searchParams])
 
-    const val = e.target as HTMLFormElement
-    const search = val.search as HTMLInputElement
+  // Debounced search: run automatically 500ms after user stops typing / changes category
+  React.useEffect(() => {
+    // Skip on first mount to avoid double-running initial URL state
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      return
+    }
+
+    const trimmed = query.trim()
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+
+    debounceRef.current = setTimeout(() => {
+      applySearch(trimmed, selectedCategory)
+    }, 500)
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [query, selectedCategory])
+
+  function applySearch(nextQuery: string, nextCategory: string) {
     const newParams = new URLSearchParams(searchParams.toString())
 
-    if (search.value) {
-      newParams.set('q', search.value)
+    if (nextQuery) {
+      newParams.set('q', nextQuery)
     } else {
       newParams.delete('q')
     }
 
-    if (selectedCategory !== 'all') {
-      newParams.set('category', selectedCategory)
+    if (nextCategory !== 'all') {
+      newParams.set('category', nextCategory)
     } else {
       newParams.delete('category')
     }
 
     router.push(createUrl('/shop', newParams))
+  }
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    applySearch(query.trim(), selectedCategory)
+  }
+
+  const hasActiveFilters = Boolean(query.trim() || selectedCategory !== 'all')
+
+  function onClear() {
+    setQuery('')
+    setSelectedCategory('all')
+    applySearch('', 'all')
   }
 
   return (
@@ -75,17 +118,19 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
       <input
         autoComplete="off"
         className="grow rounded-none bg-background px-6 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none border-none focus:outline-none focus:ring-0 focus:border-none"
-        defaultValue={searchParams?.get('q') || ''}
-        key={searchParams?.get('q')}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
         name="search"
         placeholder="Search product..."
         type="text"
       />
       <button
-        type="submit"
+        type={hasActiveFilters ? 'button' : 'submit'}
+        onClick={hasActiveFilters ? onClear : undefined}
         className="w-12 h-full flex items-center justify-center text-muted-foreground hover:text-primary transition-colors pr-2"
+        aria-label={hasActiveFilters ? 'Clear search and category filters' : 'Search products'}
       >
-        <SearchIcon size={20} />
+        {hasActiveFilters ? <X size={18} /> : <SearchIcon size={20} />}
       </button>
     </form>
   )
