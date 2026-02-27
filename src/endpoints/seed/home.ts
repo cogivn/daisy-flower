@@ -145,27 +145,6 @@ export const homePageData = ({
       },
     },
     layout: [
-      {
-        blockName: 'Shipping Features',
-        blockType: 'serviceFeatures',
-        features: [
-          {
-            icon: 'truck',
-            title: 'Free Delivery',
-            description: 'Free shipping around the world for all orders over $120',
-          },
-          {
-            icon: 'shield',
-            title: 'Safe Payment',
-            description: "With our payment gateway, don’t worry about your information",
-          },
-          {
-            icon: 'headphones',
-            title: 'Friendly Services',
-            description: 'You have 30-day return guarantee for every single order',
-          },
-        ],
-      },
       ...(categories.length > 0
         ? [
             {
@@ -715,101 +694,6 @@ export const homePageData = ({
         blockName: 'Media Block',
         blockType: 'mediaBlock',
         media: primaryHeroImage,
-      },
-      {
-        blockName: 'CTA',
-        blockType: 'cta',
-        links: [
-          {
-            link: {
-              type: 'custom',
-              appearance: 'default',
-              label: 'All products',
-              url: '/products',
-            },
-          },
-        ],
-        richText: {
-          root: {
-            type: 'root',
-            children: [
-              {
-                type: 'heading',
-                children: [
-                  {
-                    type: 'text',
-                    detail: 0,
-                    format: 0,
-                    mode: 'normal',
-                    style: '',
-                    text: 'This is a call to action',
-                    version: 1,
-                  },
-                ],
-                direction: 'ltr',
-                format: '',
-                indent: 0,
-                tag: 'h3',
-                version: 1,
-              },
-              {
-                type: 'paragraph',
-                children: [
-                  {
-                    type: 'text',
-                    detail: 0,
-                    format: 0,
-                    mode: 'normal',
-                    style: '',
-                    text: 'This is a custom layout building block ',
-                    version: 1,
-                  },
-                  {
-                    type: 'link',
-                    children: [
-                      {
-                        type: 'text',
-                        detail: 0,
-                        format: 0,
-                        mode: 'normal',
-                        style: '',
-                        text: 'configured in the admin dashboard',
-                        version: 1,
-                      },
-                    ],
-                    direction: 'ltr',
-                    fields: {
-                      linkType: 'custom',
-                      newTab: false,
-                      url: '/admin',
-                    },
-                    format: '',
-                    indent: 0,
-                    version: 2,
-                  },
-                  {
-                    type: 'text',
-                    detail: 0,
-                    format: 0,
-                    mode: 'normal',
-                    style: '',
-                    text: '.',
-                    version: 1,
-                  },
-                ],
-                direction: 'ltr',
-                format: '',
-                indent: 0,
-                textFormat: 0,
-                version: 1,
-              },
-            ],
-            direction: 'ltr',
-            format: '',
-            indent: 0,
-            version: 1,
-          },
-        },
       },
     ],
     meta: {

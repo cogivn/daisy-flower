@@ -233,7 +233,7 @@ export function HeaderClient({ header, categories }: Props) {
                       className="px-4 py-2 hover:bg-muted transition-colors border-b last:border-none border-border/50"
                     >
                       <Link
-                        href={`/shop?category=${cat.slug ?? ''}`}
+                        href={`/shop?category=${cat.id}`}
                         className="block w-full text-sm font-medium"
                       >
                         {cat.title}

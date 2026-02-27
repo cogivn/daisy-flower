@@ -46,7 +46,7 @@ export const CategoryCarouselBlock: React.FC<CategoryCarouselProps> = ({ categor
                   key={i}
                   className="flex-[0_0_100%] sm:flex-[0_0_50%] lg:flex-[0_0_25%] min-w-0 px-4"
                 >
-                  <Link href={`/shop?category=${categoryData?.slug}`} className="block group/item">
+                  <Link href={`/shop?category=${categoryData?.id}`} className="block group/item">
                     <div className="relative aspect-4/5 overflow-hidden bg-neutral-100 mb-6">
                       {categoryData?.image && (
                         <Media

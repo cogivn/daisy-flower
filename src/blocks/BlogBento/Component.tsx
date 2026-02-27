@@ -37,8 +37,8 @@ export const BlogBentoBlock: React.FC<Props> = ({
   const renderImage = (item: BlogItem, variant: 'hero' | 'small' = 'small') => {
     const baseClasses =
       variant === 'hero'
-        ? 'w-full overflow-hidden bg-muted rounded-2xl'
-        : 'w-full overflow-hidden bg-muted rounded-2xl h-40 md:h-48'
+        ? 'w-full overflow-hidden bg-muted'
+        : 'w-full overflow-hidden bg-muted h-40 md:h-48'
 
     if (!item.image || typeof item.image !== 'object') {
       return <div className={baseClasses} />
@@ -68,7 +68,7 @@ export const BlogBentoBlock: React.FC<Props> = ({
   ]
 
   return (
-    <section className="bg-white section-spacing border-b debug-outline debug-grid">
+    <section className="bg-white section-spacing debug-outline debug-grid">
       <div className="container space-y-4 md:space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-xl space-y-2">
@@ -107,7 +107,11 @@ export const BlogBentoBlock: React.FC<Props> = ({
               return (
                 <BentoItem
                   key={item.id || item.title || index}
-                  className={cn(isHero && 'lg:col-span-2 lg:row-span-2', layoutClass)}
+                  className={cn(
+                    'rounded-none',
+                    isHero && 'lg:col-span-2 lg:row-span-2',
+                    layoutClass,
+                  )}
                 >
                   <Link href={href} className="block">
                     {renderImage(item, isHero ? 'hero' : 'small')}

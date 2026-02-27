@@ -49,7 +49,7 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
       <div className="relative group/search-cat border-r border-neutral-200 h-full hidden lg:block overflow-visible">
         <div className="h-full flex items-center px-4 cursor-pointer min-w-40 justify-between text-sm font-medium hover:text-primary transition-colors">
           <span>
-            {categoryList.find((c) => c.slug === selectedCategory)?.title || 'All Categories'}
+            {categoryList.find((c) => String(c.id) === selectedCategory)?.title || 'All Categories'}
           </span>
           <ChevronDown size={14} />
         </div>
@@ -63,7 +63,7 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
           {categoryList.map((cat) => (
             <div
               key={cat.id}
-              onClick={() => setSelectedCategory(cat.slug || '')}
+              onClick={() => setSelectedCategory(String(cat.id))}
               className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
             >
               {cat.title}

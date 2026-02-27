@@ -55,12 +55,12 @@ export const ShopByCategoriesBlockComponent: React.FC<Props> = (props) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           {list.map((category) => {
             const media = category.image && typeof category.image === 'object' ? (category.image as MediaType) : null
-            const slug = category.slug ?? ''
+            const id = category.id
 
             return (
               <Link
                 key={category.id}
-                href={`/shop?category=${slug}`}
+                href={`/shop?category=${id}`}
                 className="group/card block relative overflow-hidden rounded-lg aspect-4/3 min-h-[220px] sm:min-h-[260px] md:aspect-6/5"
               >
                 {/* Background image */}

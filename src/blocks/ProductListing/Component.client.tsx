@@ -51,7 +51,7 @@ export const ProductListingClient: React.FC<ProductListingClientProps> = ({
   const visible = filteredProducts.length
 
   return (
-    <section className="bg-white section-spacing border-b">
+    <section className="bg-white section-spacing">
       <div className="container space-y-4 md:space-y-6">
         {/* Section heading + description */}
         <div className="mb-2 md:mb-4 lg:mb-6 max-w-xl space-y-2">
