@@ -23,6 +23,7 @@ export const refreshSaleEventsHandler = (async ({ req }) => {
     collection: 'sale-events',
     where: {
       and: [
+        { status: { not_equals: 'active' } },
         { startsAt: { less_than_equal: now } },
         { endsAt: { greater_than_equal: now } },
       ],

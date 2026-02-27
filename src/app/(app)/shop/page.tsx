@@ -1,5 +1,5 @@
 import { Grid } from '@/components/Grid'
-import { ProductGridItem } from '@/components/ProductGridItem'
+import { ProductCard } from '@/components/product/ProductCard'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import React from 'react'
@@ -92,9 +92,9 @@ export default async function ShopPage({ searchParams }: Props) {
 
       {products?.docs.length > 0 ? (
         <Grid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.docs.map((product) => {
-            return <ProductGridItem key={product.id} product={product} />
-          })}
+          {products.docs.map((product) => (
+            <ProductCard key={product.id} product={product as any} />
+          ))}
         </Grid>
       ) : null}
     </div>

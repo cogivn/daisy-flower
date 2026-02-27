@@ -235,6 +235,7 @@ export function HeaderClient({ header, categories }: Props) {
                       <Link
                         href={`/shop?category=${cat.id}`}
                         className="block w-full text-sm font-medium"
+                        onClick={() => setShowCategories(false)}
                       >
                         {cat.title}
                       </Link>

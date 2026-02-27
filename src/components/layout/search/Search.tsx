@@ -3,7 +3,7 @@
 import { cn } from '@/utilities/cn'
 import { createUrl } from '@/utilities/createUrl'
 import { ChevronDown, SearchIcon, X } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import React from 'react'
 
 import type { Category } from '@/payload-types'
@@ -16,10 +16,12 @@ type Props = {
 export const Search: React.FC<Props> = ({ className, categories }) => {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [selectedCategory, setSelectedCategory] = React.useState<string>('all')
   const [query, setQuery] = React.useState<string>(searchParams.get('q') || '')
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const didMountRef = React.useRef(false)
+  const [showCategoryDropdown, setShowCategoryDropdown] = React.useState(false)
 
   const categoryList =
     categories?.filter((cat): cat is Category => typeof cat === 'object' && cat !== null) || []
@@ -38,6 +40,11 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
       return
     }
 
+    // Chỉ auto-search khi đang đứng trên trang /shop
+    if (!pathname.startsWith('/shop')) {
+      return
+    }
+
     const trimmed = query.trim()
 
     if (debounceRef.current) {
@@ -53,7 +60,7 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
         clearTimeout(debounceRef.current)
       }
     }
-  }, [query, selectedCategory])
+  }, [query, selectedCategory, pathname])
 
   function applySearch(nextQuery: string, nextCategory: string) {
     const newParams = new URLSearchParams(searchParams.toString())
@@ -89,16 +96,31 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
   return (
     <form className={cn('relative w-full flex items-center', className)} onSubmit={onSubmit}>
       {/* Category Dropdown */}
-      <div className="relative group/search-cat border-r border-neutral-200 h-full hidden lg:block overflow-visible">
-        <div className="h-full flex items-center px-4 cursor-pointer min-w-40 justify-between text-sm font-medium hover:text-primary transition-colors">
+      <div className="relative border-r border-neutral-200 h-full hidden lg:block overflow-visible">
+        <button
+          type="button"
+          className="h-full flex items-center px-4 cursor-pointer min-w-40 justify-between text-sm font-medium hover:text-primary transition-colors w-full text-left"
+          onClick={() => setShowCategoryDropdown((prev) => !prev)}
+          aria-haspopup="listbox"
+          aria-expanded={showCategoryDropdown}
+        >
           <span>
             {categoryList.find((c) => String(c.id) === selectedCategory)?.title || 'All Categories'}
           </span>
           <ChevronDown size={14} />
-        </div>
-        <div className="absolute top-full left-0 bg-background border shadow-lg hidden group-hover/search-cat:block z-60 min-w-full py-2 max-h-75 overflow-y-auto">
+        </button>
+        <div
+          className={cn(
+            'absolute top-full left-0 bg-background border shadow-lg z-60 min-w-full py-2 max-h-75 overflow-y-auto',
+            showCategoryDropdown ? 'block' : 'hidden',
+          )}
+          role="listbox"
+        >
           <div
-            onClick={() => setSelectedCategory('all')}
+            onClick={() => {
+              setSelectedCategory('all')
+              setShowCategoryDropdown(false)
+            }}
             className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
           >
             All Categories
@@ -106,7 +128,10 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
           {categoryList.map((cat) => (
             <div
               key={cat.id}
-              onClick={() => setSelectedCategory(String(cat.id))}
+              onClick={() => {
+                setSelectedCategory(String(cat.id))
+                setShowCategoryDropdown(false)
+              }}
               className="px-4 py-2 hover:bg-muted cursor-pointer text-sm"
             >
               {cat.title}
