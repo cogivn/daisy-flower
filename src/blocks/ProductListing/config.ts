@@ -62,8 +62,10 @@ export const ProductListing: Block = {
         {
           name: 'limit',
           type: 'number',
-          label: 'Max products to show',
+          label: 'Max products to show (up to 8)',
           defaultValue: 8,
+          min: 1,
+          max: 8,
           admin: {
             step: 1,
           },

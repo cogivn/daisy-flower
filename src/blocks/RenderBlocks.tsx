@@ -14,6 +14,7 @@ import { ShopByCategoriesBlockComponent } from '@/blocks/ShopByCategories/Compon
 import { ThreeItemGridBlock } from '@/blocks/ThreeItemGrid/Component'
 import { ProductListingBlock } from '@/blocks/ProductListing/Component'
 import { BlogBentoBlock } from '@/blocks/BlogBento/Component'
+import { NewsletterBlock } from '@/blocks/Newsletter/Component'
 import { toKebabCase } from '@/utilities/toKebabCase'
 import React, { Fragment } from 'react'
 
@@ -36,6 +37,7 @@ const blockComponents = {
   shopByCategories: ShopByCategoriesBlockComponent,
   productListing: ProductListingBlock,
   blogBento: BlogBentoBlock,
+  newsletter: NewsletterBlock,
 }
 
 export const RenderBlocks: React.FC<{

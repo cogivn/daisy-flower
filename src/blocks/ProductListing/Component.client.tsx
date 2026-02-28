@@ -72,12 +72,13 @@ export const ProductListingClient: React.FC<ProductListingClientProps> = ({
                 <Button
                   key={tab.id}
                   type="button"
-                  variant={index === activeIndex ? 'default' : 'ghost'}
+                  // Use a single variant so font metrics stay identical and avoid \"jitter\"
+                  variant="ghost"
                   size="sm"
                   className={cn(
                     'px-4 py-1.5 text-xs md:text-sm normal-case tracking-normal font-medium',
                     index === activeIndex
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground hover:text-primary-foreground focus-visible:text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                   onClick={() => setActiveIndex(index)}

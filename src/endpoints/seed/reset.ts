@@ -1,13 +1,20 @@
 import type { CollectionSlug, GlobalSlug, Payload, PayloadRequest } from 'payload'
 
+// Delete in dependency-aware order to avoid foreign key / NOT NULL constraint issues.
+// For example, `form-submissions` depends on `forms`, so it must be cleared first.
 const collections: CollectionSlug[] = [
+  // Content + media with minimal dependencies
   'categories',
   'media',
   'pages',
   'sale-events',
   'products',
-  'forms',
+
+  // Form submissions depend on forms
   'form-submissions',
+  'forms',
+
+  // Ecommerce + checkout data
   'variants',
   'variantOptions',
   'variantTypes',

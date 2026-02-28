@@ -1,6 +1,6 @@
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
-import { Plugin } from 'payload'
+import { APIError, Plugin, ValidationError } from 'payload'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
@@ -43,6 +43,52 @@ export const plugins: Plugin[] = [
       },
       admin: {
         group: 'Content',
+      },
+      hooks: {
+        beforeValidate: [
+          async ({ data, req, operation }) => {
+            if (operation !== 'create') return data
+
+            const emailField = data?.submissionData?.find?.(
+              (field: { field: string; value: string }) => field.field === 'email',
+            )
+
+            if (!emailField?.value || !data?.form) return data
+
+            const formID =
+              typeof data.form === 'object' && data.form !== null ? data.form.id : data.form
+
+            if (!formID) return data
+
+            // Only enforce de-duplication for the Newsletter form
+            const formDoc = await req.payload.findByID({
+              collection: 'forms',
+              id: formID,
+              depth: 0,
+            })
+
+            if (formDoc?.title !== 'Newsletter') return data
+
+            const existing = await req.payload.find({
+              collection: 'form-submissions',
+              where: {
+                and: [
+                  { form: { equals: formID } },
+                  { 'submissionData.field': { equals: 'email' } },
+                  { 'submissionData.value': { equals: emailField.value } },
+                ],
+              },
+              limit: 1,
+            })
+
+            if (existing.totalDocs > 0) {
+              // Signal duplicate subscription without creating a new record
+              throw new APIError('newsletter-already-subscribed', 409, null, true)
+            }
+
+            return data
+          },
+        ],
       },
     },
     formOverrides: {

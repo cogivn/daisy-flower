@@ -558,6 +558,7 @@ export interface Page {
     | BrandSliderBlock
     | CategoryCarouselBlock
     | BlogBentoBlock
+    | NewsletterBlock
   )[];
   meta?: {
     title?: string | null;
@@ -1175,6 +1176,24 @@ export interface BlogBentoBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock".
+ */
+export interface NewsletterBlock {
+  title: string;
+  /**
+   * Short text shown next to the signup form.
+   */
+  description?: string | null;
+  /**
+   * Form must include an email field. Create a form in Content → Forms if needed.
+   */
+  form: number | Form;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "variants".
  */
 export interface Variant {
@@ -1721,6 +1740,7 @@ export interface PagesSelect<T extends boolean = true> {
         brandSlider?: T | BrandSliderBlockSelect<T>;
         categoryCarousel?: T | CategoryCarouselBlockSelect<T>;
         blogBento?: T | BlogBentoBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
       };
   meta?:
     | T
@@ -1999,6 +2019,17 @@ export interface BlogBentoBlockSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterBlock_select".
+ */
+export interface NewsletterBlockSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  form?: T;
   id?: T;
   blockName?: T;
 }

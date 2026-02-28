@@ -5,6 +5,7 @@ import { Address, Transaction, VariantOption } from '@/payload-types'
 import { contactFormData } from './contact-form'
 import { contactPageData } from './contact-page'
 import { homePageData } from './home'
+import { newsletterFormData } from './newsletter-form'
 import { imageHatData } from './image-hat'
 import { imageHero1Data } from './image-hero-1'
 import { imageHero2Data } from './image-hero-2'
@@ -672,6 +673,12 @@ export const seed = async ({
     data: contactFormData(),
   })
 
+  const newsletterForm = await payload.create({
+    collection: 'forms',
+    depth: 0,
+    data: newsletterFormData(),
+  })
+
   payload.logger.info(`— Seeding pages...`)
 
   const [_, contactPage] = await Promise.all([
@@ -684,6 +691,7 @@ export const seed = async ({
         categories: [accessoriesCategory, tshirtsCategory, hatsCategory, plantsCategory],
         product: productHat,
         blogImages: blogMediaDocs,
+        newsletterForm,
       }),
       context: {
         disableRevalidate: true,

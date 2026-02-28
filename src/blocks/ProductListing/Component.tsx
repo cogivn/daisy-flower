@@ -13,15 +13,24 @@ export const ProductListingBlock: React.FC<Props> = async (props) => {
 
   const payload = await getPayload({ config: configPromise })
 
-  const normalizedTabs = Array.isArray(tabs) && tabs.length > 0 ? tabs : []
+  const adminTabs = Array.isArray(tabs) ? tabs : []
 
-  if (!normalizedTabs.length) {
-    return null
-  }
+  // Always inject an implicit \"All\" tab as the first tab.
+  // Admin can configure additional tabs (Bouquets, Indoor Plants, etc.)
+  const tabsToUse = [
+    {
+      id: 'all',
+      label: 'All',
+      categories: null,
+      limit: 8,
+    },
+    ...adminTabs,
+  ]
 
   const tabsWithProducts = await Promise.all(
-    normalizedTabs.map(async (tab, index) => {
-      const limit = typeof tab.limit === 'number' && tab.limit > 0 ? tab.limit : 8
+    tabsToUse.map(async (tab, index) => {
+      const rawLimit = typeof tab.limit === 'number' && tab.limit > 0 ? tab.limit : 8
+      const limit = Math.min(8, rawLimit)
 
       const flattenedCategories = tab.categories?.length
         ? tab.categories.map((category) => {
@@ -47,17 +56,14 @@ export const ProductListingBlock: React.FC<Props> = async (props) => {
 
       return {
         id: `${tab.id ?? `tab-${index}`}`,
-        label: tab.label || `Tab ${index + 1}`,
+        label: tab.label || (index === 0 ? 'All' : `Tab ${index}`),
         products: fetched.docs as Product[],
       }
     }),
   )
 
-  const nonEmptyTabs = tabsWithProducts.filter((tab) => tab.products.length > 0)
-
-  if (!nonEmptyTabs.length) {
-    return null
-  }
+  // Always keep the first (All) tab, even if it is empty; drop other empty tabs.
+  const nonEmptyTabs = tabsWithProducts.filter((tab, index) => tab.products.length > 0 || index === 0)
 
   return (
     <ProductListingClient
