@@ -78,6 +78,7 @@ export interface Config {
     media: Media;
     brands: Brand;
     'sale-events': SaleEvent;
+    vouchers: Voucher;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -115,6 +116,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
     'sale-events': SaleEventsSelect<false> | SaleEventsSelect<true>;
+    vouchers: VouchersSelect<false> | VouchersSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -138,11 +140,13 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    'user-level-settings': UserLevelSetting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    'user-level-settings': UserLevelSettingsSelect<false> | UserLevelSettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
@@ -200,6 +204,18 @@ export interface User {
   id: number;
   name?: string | null;
   roles?: ('admin' | 'customer')[] | null;
+  /**
+   * Auto-calculated from total spending. Admin can override.
+   */
+  level?: ('bronze' | 'silver' | 'gold' | 'platinum') | null;
+  /**
+   * Prevents auto-downgrade only. Auto-cleared when user upgrades.
+   */
+  levelLocked?: boolean | null;
+  /**
+   * Total spent on completed orders (USD). Auto-calculated.
+   */
+  totalSpent?: number | null;
   orders?: {
     docs?: (number | Order)[];
     hasNextPage?: boolean;
@@ -1370,6 +1386,79 @@ export interface Address {
   createdAt: string;
 }
 /**
+ * Discount codes customers can apply at checkout.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vouchers".
+ */
+export interface Voucher {
+  id: number;
+  /**
+   * Voucher code. Leave empty to auto-generate (e.g. XKPR-4M2N). Override with a custom code if needed.
+   */
+  code: string;
+  type: 'percent' | 'fixed';
+  /**
+   * Discount value. For percent: 20 = 20%. For fixed: 10 = $10 off.
+   */
+  value: number;
+  /**
+   * Max discount cap for percent type (e.g. 50 = max $50 off). Leave empty for no cap.
+   */
+  maxDiscount?: number | null;
+  /**
+   * Apply to entire order or only selected products.
+   */
+  scope: 'all' | 'specific';
+  /**
+   * Select products this voucher applies to.
+   */
+  applicableProducts?: (number | Product)[] | null;
+  /**
+   * Minimum order subtotal to use this voucher (USD). Leave empty for no minimum.
+   */
+  minOrderAmount?: number | null;
+  /**
+   * Total uses allowed across all users. Leave empty for unlimited.
+   */
+  maxUses?: number | null;
+  /**
+   * Max uses per user. Leave empty for unlimited.
+   */
+  maxUsesPerUser?: number | null;
+  /**
+   * How many times this voucher has been used.
+   */
+  usedCount?: number | null;
+  /**
+   * Start date. Leave empty for immediate.
+   */
+  validFrom?: string | null;
+  /**
+   * Expiry date. Leave empty for no expiry.
+   */
+  validTo?: string | null;
+  /**
+   * Who can use this voucher.
+   */
+  assignMode: 'all' | 'level' | 'users';
+  /**
+   * Only these levels can use this voucher.
+   */
+  allowedUserLevels?: ('bronze' | 'silver' | 'gold' | 'platinum')[] | null;
+  /**
+   * Select specific users who can use this voucher.
+   */
+  assignedUsers?: (number | User)[] | null;
+  /**
+   * Internal notes about this voucher campaign.
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions".
  */
@@ -1536,6 +1625,10 @@ export interface PayloadLockedDocument {
         value: number | SaleEvent;
       } | null)
     | ({
+        relationTo: 'vouchers';
+        value: number | Voucher;
+      } | null)
+    | ({
         relationTo: 'forms';
         value: number | Form;
       } | null)
@@ -1624,6 +1717,9 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
+  level?: T;
+  levelLocked?: T;
+  totalSpent?: T;
   orders?: T;
   cart?: T;
   addresses?: T;
@@ -2090,6 +2186,31 @@ export interface SaleEventsSelect<T extends boolean = true> {
   notes?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "vouchers_select".
+ */
+export interface VouchersSelect<T extends boolean = true> {
+  code?: T;
+  type?: T;
+  value?: T;
+  maxDiscount?: T;
+  scope?: T;
+  applicableProducts?: T;
+  minOrderAmount?: T;
+  maxUses?: T;
+  maxUsesPerUser?: T;
+  usedCount?: T;
+  validFrom?: T;
+  validTo?: T;
+  assignMode?: T;
+  allowedUserLevels?: T;
+  assignedUsers?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2603,6 +2724,42 @@ export interface Footer {
   createdAt?: string | null;
 }
 /**
+ * Configure spending thresholds and discount benefits for each user level.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-level-settings".
+ */
+export interface UserLevelSetting {
+  id: number;
+  /**
+   * If no levels are configured, auto-upgrade is disabled and all users remain at Bronze. When thresholds are saved, existing users are automatically re-evaluated and upgraded based on their total spending.
+   */
+  levels?:
+    | {
+        level: 'bronze' | 'silver' | 'gold' | 'platinum';
+        /**
+         * Min total spent (USD) to reach this level.
+         */
+        minSpending: number;
+        /**
+         * Discount % at checkout.
+         */
+        discountPercent: number;
+        /**
+         * Free shipping?
+         */
+        freeShipping?: boolean | null;
+        /**
+         * Benefit summary shown to customers (e.g. "5% off all orders").
+         */
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
@@ -2693,6 +2850,25 @@ export interface FooterSelect<T extends boolean = true> {
         id?: T;
       };
   copyrightText?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-level-settings_select".
+ */
+export interface UserLevelSettingsSelect<T extends boolean = true> {
+  levels?:
+    | T
+    | {
+        level?: T;
+        minSpending?: T;
+        discountPercent?: T;
+        freeShipping?: T;
+        description?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

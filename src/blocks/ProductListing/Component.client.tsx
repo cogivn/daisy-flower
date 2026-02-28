@@ -4,11 +4,9 @@
 import type { Product } from '@/payload-types'
 
 import { ProductCard } from '@/components/product/ProductCard'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/utilities/cn'
-import { Heart } from 'lucide-react'
-import Link from 'next/link'
 import React from 'react'
 
 type TabWithProducts = {

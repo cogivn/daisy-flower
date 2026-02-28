@@ -6,9 +6,11 @@ import React, { Suspense } from 'react'
 import type { Media as MediaType, Product, SaleEvent, SaleOfferBlock as SaleOfferBlockType } from '@/payload-types'
 
 import { Price } from '@/components/Price'
+import { SalePrice } from '@/components/SalePrice'
 import { Gallery } from '@/components/product/Gallery'
 import { RichText } from '@/components/RichText'
 import { Button } from '@/components/ui/button'
+import { getEffectivePrice } from '@/utilities/saleEvents'
 
 type CountdownParts = {
   days: string
@@ -90,32 +92,28 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
 
   const isSaleActive = Boolean(activeSaleEvent && !isCountdownExpired)
 
+  // Calculate price directly since we have activeSaleEvent from separate query
   let basePrice = linkedProduct.priceInUSD
-
-  if (linkedProduct.enableVariants && linkedProduct?.variants?.docs?.length) {
-    basePrice = linkedProduct?.variants?.docs?.reduce((acc, variant) => {
-      if (typeof variant === 'object' && variant?.priceInUSD && acc && variant?.priceInUSD > acc) {
-        return variant.priceInUSD
-      }
-      return acc
-    }, basePrice)
+  
+  // Handle variants
+  const variants = linkedProduct.variants?.docs
+  if (variants && variants.length > 0) {
+    const variant = variants[0]
+    if (
+      variant &&
+      typeof variant === 'object' &&
+      variant?.priceInUSD &&
+      typeof variant.priceInUSD === 'number'
+    ) {
+      basePrice = variant.priceInUSD
+    }
   }
 
-  let displayPrice = basePrice
-  let originalPrice: number | null = null
+  const displayPrice = activeSaleEvent ? activeSaleEvent.salePrice : (basePrice || 0)
+  const originalPrice = activeSaleEvent ? basePrice : undefined
+  const isOnSale = Boolean(activeSaleEvent)
 
-  if (isSaleActive && activeSaleEvent?.salePrice && typeof activeSaleEvent.salePrice === 'number') {
-    originalPrice = basePrice ?? null
-    const configuredSalePrice = activeSaleEvent.salePrice
 
-    // Treat salePrice as a normal USD amount (e.g. 39.99) for editor UX, but
-    // keep compatibility with existing values stored in minor units (e.g. 3999).
-    // Heuristic: values <= 1000 are treated as whole-unit dollars and converted to cents.
-    const salePriceInMinorUnits =
-      configuredSalePrice <= 1000 ? Math.round(configuredSalePrice * 100) : configuredSalePrice
-
-    displayPrice = salePriceInMinorUnits
-  }
 
   const displayTitle = linkedProduct?.title
   const productHref = `/products/${linkedProduct.slug}`
@@ -170,17 +168,13 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
 
             {typeof displayPrice === 'number' && (
               <div className="mt-2 flex items-baseline gap-3 flex-wrap">
-                {originalPrice && originalPrice !== displayPrice ? (
-                  <>
-                    <Price
-                      amount={originalPrice}
-                      className="text-lg md:text-xl font-semibold text-muted-foreground line-through"
-                    />
-                    <Price
-                      amount={displayPrice}
-                      className="text-2xl md:text-3xl font-bold text-primary"
-                    />
-                  </>
+                {isOnSale && originalPrice ? (
+                  <SalePrice
+                    salePrice={displayPrice}
+                    originalPrice={originalPrice}
+                    salePriceClassName="text-2xl md:text-3xl font-bold text-green-600"
+                    originalPriceClassName="text-lg md:text-xl font-semibold text-muted-foreground line-through"
+                  />
                 ) : (
                   <Price
                     amount={displayPrice}
@@ -189,6 +183,7 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
                 )}
               </div>
             )}
+
 
             {highlight && (
               <h3 className="text-xs md:text-sm font-semibold tracking-[0.18em] uppercase text-foreground mt-2">

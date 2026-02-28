@@ -20,8 +20,10 @@ import { Media } from '@/collections/Media'
 import { Pages } from '@/collections/Pages'
 import { SaleEvents } from '@/collections/SaleEvents'
 import { Users } from '@/collections/Users'
+import { Vouchers } from '@/collections/Vouchers'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
+import { UserLevelSettings } from '@/globals/UserLevelSettings'
 import { refreshSaleEventsTask } from '@/jobs/saleEvents'
 import { plugins } from './plugins'
 
@@ -40,7 +42,7 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Pages, Categories, Media, Brands, SaleEvents],
+  collections: [Users, Pages, Categories, Media, Brands, SaleEvents, Vouchers],
   db: sqliteAdapter({
     client: {
       url: process.env.DATABASE_URL || '',
@@ -92,7 +94,7 @@ export default buildConfig({
     tasks: [refreshSaleEventsTask],
   },
   endpoints: [],
-  globals: [Header, Footer],
+  globals: [Header, Footer, UserLevelSettings],
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

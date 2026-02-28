@@ -204,14 +204,7 @@ const queryProductBySlug = async ({ slug }: { slug: string }) => {
         ...(draft ? [] : [{ _status: { equals: 'published' } }]),
       ],
     },
-    populate: {
-      variants: {
-        title: true,
-        priceInUSD: true,
-        inventory: true,
-        options: true,
-      },
-    },
+    // Rely on defaultPopulate which includes saleEvents: true
   })
 
   return result.docs?.[0] || null

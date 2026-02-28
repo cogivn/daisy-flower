@@ -2,6 +2,10 @@ import type { Media, Product } from '@/payload-types'
 
 import { Price } from '@/components/Price'
 import { Button } from '@/components/ui/button'
+import { SaleBadge } from '@/components/SaleBadge'
+import { SalePrice } from '@/components/SalePrice'
+import { CountdownBadge } from '@/components/CountdownBadge'
+import { getEffectivePrice } from '@/utilities/saleEvents'
 import { Heart } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
@@ -16,15 +20,8 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
       ? (product.gallery[0] as any).image
       : null)) as Media | null
 
-  let price = product.priceInUSD
-
-  if (product.enableVariants && product.variants?.docs?.length) {
-    const variant = product.variants.docs[0]
-
-    if (variant && typeof variant === 'object' && (variant as any).priceInUSD) {
-      price = (variant as any).priceInUSD
-    }
-  }
+  const priceInfo = getEffectivePrice(product)
+  const { price, originalPrice, isOnSale, saleEvent } = priceInfo
 
   return (
     <article
@@ -45,6 +42,20 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
         ) : (
           <div className="h-full w-full bg-muted" />
         )}
+        
+        {/* Sale Badge */}
+        {isOnSale && originalPrice && (
+          <SaleBadge
+            originalPrice={originalPrice}
+            salePrice={price}
+            variant="corner"
+          />
+        )}
+
+        {/* Countdown Timer Badge - Top Right */}
+        {isOnSale && saleEvent?.endsAt && (
+          <CountdownBadge endDate={saleEvent.endsAt} />
+        )}
       </Link>
 
       {/* Content */}
@@ -52,11 +63,24 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
         <div className="space-y-1.5">
           <h3 className="line-clamp-1 text-sm font-medium text-foreground">{product.title}</h3>
           {typeof price === 'number' && (
-            <Price
-              as="p"
-              amount={price}
-              className="text-sm font-semibold text-foreground"
-            />
+            <>
+              {isOnSale && originalPrice ? (
+                <SalePrice
+                  salePrice={price}
+                  originalPrice={originalPrice}
+                  as="div"
+                  className="flex-col items-start gap-0"
+                  salePriceClassName="text-sm font-semibold"
+                  originalPriceClassName="text-xs"
+                />
+              ) : (
+                <Price
+                  as="p"
+                  amount={price}
+                  className="text-sm font-semibold text-foreground"
+                />
+              )}
+            </>
           )}
         </div>
 

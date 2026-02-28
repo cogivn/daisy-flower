@@ -4,6 +4,9 @@ import type { Product, Variant } from '@/payload-types'
 import { RichText } from '@/components/RichText'
 import { AddToCart } from '@/components/Cart/AddToCart'
 import { Price } from '@/components/Price'
+import { SaleBadge } from '@/components/SaleBadge'
+import { SalePrice } from '@/components/SalePrice'
+import { getEffectivePrice } from '@/utilities/saleEvents'
 import React, { Suspense } from 'react'
 
 import { VariantSelector } from './VariantSelector'
@@ -17,6 +20,10 @@ export function ProductDescription({ product }: { product: Product }) {
     highestAmount = 0
   const priceField = `priceIn${currency.code}` as keyof Product
   const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
+
+  // Get sale information for non-variant products
+  const priceInfo = getEffectivePrice(product)
+  const { price: effectivePrice, originalPrice, isOnSale, saleEvent } = priceInfo
 
   if (hasVariants) {
     const priceField = `priceIn${currency.code}` as keyof Variant
@@ -54,12 +61,37 @@ export function ProductDescription({ product }: { product: Product }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="text-2xl font-medium">{product.title}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-medium">{product.title}</h1>
+          {!hasVariants && isOnSale && originalPrice && (
+            <SaleBadge
+              originalPrice={originalPrice}
+              salePrice={effectivePrice}
+              variant="compact"
+            />
+          )}
+        </div>
         <div className="uppercase font-mono">
           {hasVariants ? (
             <Price highestAmount={highestAmount} lowestAmount={lowestAmount} />
           ) : (
-            <Price amount={amount} />
+            <>
+              {isOnSale && originalPrice ? (
+                <SalePrice
+                  salePrice={effectivePrice}
+                  originalPrice={originalPrice}
+                  as="div"
+                  className="flex-col items-end gap-0"
+                  salePriceClassName="text-lg font-bold"
+                  originalPriceClassName="text-sm"
+                  saleEndDate={saleEvent?.endsAt}
+                  showCountdown={true}
+                  countdownCompact={false}
+                />
+              ) : (
+                <Price amount={amount} />
+              )}
+            </>
           )}
         </div>
       </div>

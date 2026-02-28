@@ -5,6 +5,7 @@ import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { publicAccess } from '@/access/publicAccess'
 import { adminOrSelf } from '@/access/adminOrSelf'
 import { checkRole } from '@/access/utilities'
+import { USER_LEVELS } from '@/config/userLevels'
 
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
 
@@ -20,7 +21,7 @@ export const Users: CollectionConfig = {
   },
   admin: {
     group: 'Users',
-    defaultColumns: ['name', 'email', 'roles'],
+    defaultColumns: ['name', 'email', 'roles', 'level'],
     useAsTitle: 'name',
   },
   auth: {
@@ -54,6 +55,53 @@ export const Users: CollectionConfig = {
           value: 'customer',
         },
       ],
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'level',
+      type: 'select',
+      defaultValue: 'bronze',
+      options: USER_LEVELS.map((l) => ({
+        label: l.charAt(0).toUpperCase() + l.slice(1),
+        value: l,
+      })),
+      saveToJWT: true,
+      access: {
+        update: adminOnlyFieldAccess,
+      },
+      admin: {
+        description: 'Auto-calculated from total spending. Admin can override.',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'levelLocked',
+      type: 'checkbox',
+      defaultValue: false,
+      access: {
+        read: adminOnlyFieldAccess,
+        update: adminOnlyFieldAccess,
+      },
+      admin: {
+        description: 'Prevents auto-downgrade only. Auto-cleared when user upgrades.',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'totalSpent',
+      type: 'number',
+      defaultValue: 0,
+      min: 0,
+      access: {
+        update: adminOnlyFieldAccess,
+      },
+      admin: {
+        description: 'Total spent on completed orders (USD). Auto-calculated.',
+        readOnly: true,
+        position: 'sidebar',
+      },
     },
     {
       name: 'orders',
