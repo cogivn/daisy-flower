@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
 import { cn } from '@/utilities/cn'
+import React, { useEffect, useState } from 'react'
 
 interface CountdownTimerProps {
   endDate: string | Date
@@ -65,7 +65,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
   if (compact) {
     return (
-      <div className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-full text-xs font-medium', className)}>
+      <div className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 bg-linear-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-full text-xs font-medium', className)}>
         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
         <span className="text-green-700 font-mono tracking-tight">
           {timeLeft.days > 0 && (

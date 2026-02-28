@@ -284,6 +284,22 @@ export interface Order {
   amount?: number | null;
   currency?: 'USD' | null;
   accessToken?: string | null;
+  /**
+   * Voucher applied to this order.
+   */
+  voucher?: (number | null) | Voucher;
+  /**
+   * Snapshot of voucher code at time of order.
+   */
+  voucherCode?: string | null;
+  /**
+   * Voucher discount amount (USD).
+   */
+  discountAmount?: number | null;
+  /**
+   * User level discount amount (USD).
+   */
+  levelDiscount?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1321,67 +1337,26 @@ export interface Cart {
   status?: ('active' | 'purchased' | 'abandoned') | null;
   subtotal?: number | null;
   currency?: 'USD' | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "addresses".
- */
-export interface Address {
-  id: number;
-  customer?: (number | null) | User;
-  title?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  company?: string | null;
-  addressLine1?: string | null;
-  addressLine2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  postalCode?: string | null;
-  country:
-    | 'US'
-    | 'GB'
-    | 'CA'
-    | 'AU'
-    | 'AT'
-    | 'BE'
-    | 'BR'
-    | 'BG'
-    | 'CY'
-    | 'CZ'
-    | 'DK'
-    | 'EE'
-    | 'FI'
-    | 'FR'
-    | 'DE'
-    | 'GR'
-    | 'HK'
-    | 'HU'
-    | 'IN'
-    | 'IE'
-    | 'IT'
-    | 'JP'
-    | 'LV'
-    | 'LT'
-    | 'LU'
-    | 'MY'
-    | 'MT'
-    | 'MX'
-    | 'NL'
-    | 'NZ'
-    | 'NO'
-    | 'PL'
-    | 'PT'
-    | 'RO'
-    | 'SG'
-    | 'SK'
-    | 'SI'
-    | 'ES'
-    | 'SE'
-    | 'CH';
-  phone?: string | null;
+  /**
+   * Voucher currently applied to this cart.
+   */
+  appliedVoucher?: (number | null) | Voucher;
+  /**
+   * Applied voucher code.
+   */
+  voucherCode?: string | null;
+  /**
+   * Subtotal before discounts (auto-calculated).
+   */
+  originalSubtotal?: number | null;
+  /**
+   * Voucher discount amount (auto-calculated).
+   */
+  voucherDiscount?: number | null;
+  /**
+   * User level discount amount (auto-calculated).
+   */
+  levelDiscount?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1457,6 +1432,67 @@ export interface Voucher {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses".
+ */
+export interface Address {
+  id: number;
+  customer?: (number | null) | User;
+  title?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  company?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country:
+    | 'US'
+    | 'GB'
+    | 'CA'
+    | 'AU'
+    | 'AT'
+    | 'BE'
+    | 'BR'
+    | 'BG'
+    | 'CY'
+    | 'CZ'
+    | 'DK'
+    | 'EE'
+    | 'FI'
+    | 'FR'
+    | 'DE'
+    | 'GR'
+    | 'HK'
+    | 'HU'
+    | 'IN'
+    | 'IE'
+    | 'IT'
+    | 'JP'
+    | 'LV'
+    | 'LT'
+    | 'LU'
+    | 'MY'
+    | 'MT'
+    | 'MX'
+    | 'NL'
+    | 'NZ'
+    | 'NO'
+    | 'PL'
+    | 'PT'
+    | 'RO'
+    | 'SG'
+    | 'SK'
+    | 'SI'
+    | 'ES'
+    | 'SE'
+    | 'CH';
+  phone?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2485,6 +2521,11 @@ export interface CartsSelect<T extends boolean = true> {
   status?: T;
   subtotal?: T;
   currency?: T;
+  appliedVoucher?: T;
+  voucherCode?: T;
+  originalSubtotal?: T;
+  voucherDiscount?: T;
+  levelDiscount?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2523,6 +2564,10 @@ export interface OrdersSelect<T extends boolean = true> {
   amount?: T;
   currency?: T;
   accessToken?: T;
+  voucher?: T;
+  voucherCode?: T;
+  discountAmount?: T;
+  levelDiscount?: T;
   updatedAt?: T;
   createdAt?: T;
 }

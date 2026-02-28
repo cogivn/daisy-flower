@@ -15,6 +15,10 @@ import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
+import { syncUserOnOrderChange } from '@/hooks/orders/syncUserOnOrderChange'
+import { incrementVoucherUsage } from '@/hooks/orders/incrementVoucherUsage'
+import { copyVoucherToOrder } from '@/hooks/orders/copyVoucherToOrder'
+import { applyCartDiscounts } from '@/hooks/carts/applyCartDiscounts'
 
 const generateTitle: GenerateTitle<Product | Page> = ({ doc }) => {
   return doc?.title ? `${doc.title} | Payload Ecommerce Template` : 'Payload Ecommerce Template'
@@ -130,12 +134,88 @@ export const plugins: Plugin[] = [
       isAdmin,
       isDocumentOwner,
     },
+    carts: {
+      cartsCollectionOverride: ({ defaultCollection }) => ({
+        ...defaultCollection,
+        hooks: {
+          ...(defaultCollection.hooks || {}),
+          beforeChange: [
+            ...(defaultCollection.hooks?.beforeChange || []),
+            applyCartDiscounts,
+          ],
+        },
+        fields: [
+          ...defaultCollection.fields,
+          {
+            name: 'appliedVoucher',
+            type: 'relationship',
+            relationTo: 'vouchers',
+            admin: {
+              readOnly: true,
+              position: 'sidebar',
+              description: 'Voucher currently applied to this cart.',
+            },
+          },
+          {
+            name: 'voucherCode',
+            type: 'text',
+            admin: {
+              readOnly: true,
+              position: 'sidebar',
+              description: 'Applied voucher code.',
+            },
+          },
+          {
+            name: 'originalSubtotal',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'Subtotal before discounts (auto-calculated).',
+            },
+          },
+          {
+            name: 'voucherDiscount',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'Voucher discount amount (auto-calculated).',
+            },
+          },
+          {
+            name: 'levelDiscount',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'User level discount amount (auto-calculated).',
+            },
+          },
+        ],
+      }),
+    },
     customers: {
       slug: 'users',
     },
     orders: {
       ordersCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
+        hooks: {
+          ...(defaultCollection.hooks || {}),
+          beforeChange: [
+            ...(defaultCollection.hooks?.beforeChange || []),
+            copyVoucherToOrder,
+          ],
+          afterChange: [
+            ...(defaultCollection.hooks?.afterChange || []),
+            syncUserOnOrderChange,
+            incrementVoucherUsage,
+          ],
+        },
         fields: [
           ...defaultCollection.fields,
           {
@@ -156,6 +236,45 @@ export const plugins: Plugin[] = [
                   return value
                 },
               ],
+            },
+          },
+          {
+            name: 'voucher',
+            type: 'relationship',
+            relationTo: 'vouchers',
+            admin: {
+              readOnly: true,
+              position: 'sidebar',
+              description: 'Voucher applied to this order.',
+            },
+          },
+          {
+            name: 'voucherCode',
+            type: 'text',
+            admin: {
+              readOnly: true,
+              position: 'sidebar',
+              description: 'Snapshot of voucher code at time of order.',
+            },
+          },
+          {
+            name: 'discountAmount',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'Voucher discount amount (USD).',
+            },
+          },
+          {
+            name: 'levelDiscount',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'User level discount amount (USD).',
             },
           },
         ],

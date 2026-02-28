@@ -69,19 +69,71 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 | Access control | Khi gọi Local API với `user` thì đặt `overrideAccess: false`; hooks luôn truyền `req` cho nested operations. |
 | Security | Đọc `.cursor/rules/security-critical.mdc` hoặc AGENTS.md; không hardcode secret. |
 
-#### Voucher & User levels (theo docs — chưa implement)
-
-| Task | File / vị trí dự kiến | Ghi chú |
-|------|------------------------|--------|
-| Collection Vouchers | `src/collections/Vouchers.ts` | code, type, value, minOrderAmount, maxUses, usedCount, validFrom, validTo, active; access adminOnly write. |
-| Đăng ký Vouchers | `src/payload.config.ts` | Thêm vào `collections: [..., Vouchers]`. |
-| Field level trên Users | `src/collections/Users/index.ts` | level (select: bronze, silver, gold, platinum); optional saveToJWT. |
-| Mở rộng Orders (voucher) | `src/plugins/index.ts` | ordersCollectionOverride: thêm voucher (relationship), discountAmount, voucherCode. |
-| Validate & apply voucher | Endpoint hoặc server action / API route | Validate code; kiểm tra validFrom/validTo, usedCount < maxUses, total >= minOrderAmount; trả về discount; khi tạo order tăng usedCount (hook hoặc trong flow). |
-| Checkout UI voucher | `src/components/checkout/` hoặc form checkout | Ô nhập mã; gọi validate; hiển thị discount; gửi voucher khi submit order. |
-| Hiển thị level | Trang account, optional checkout | Đọc user.level (từ JWT hoặc query); hiển thị ưu đãi theo level nếu có logic. |
+#### Voucher & User Levels — Sprint Tracking
 
 *Chi tiết yêu cầu và thiết kế: [01-planning § US8, US9](01-planning/requirements.md), [02-design § 11](02-design/architecture-decisions.md#11-voucher--user-levels-theo-docs--chưa-implement).*
+
+##### Sprint 1 — Data Model & Admin (Xong)
+
+| Task | File | Trạng thái |
+|------|------|------------|
+| Collection Vouchers (code, type, value, scope, assignMode, date range, usage limits, drafts) | `src/collections/Vouchers.ts` | **Xong** |
+| Auto-gen voucher code + beforeValidate (normalize, clamp %, strict validation skip draft) | `src/collections/Vouchers.ts` hooks | **Xong** |
+| Đăng ký Vouchers vào config | `src/payload.config.ts` | **Xong** |
+| Global UserLevelSettings (levels array: level, minSpending, discountPercent, freeShipping) | `src/globals/UserLevelSettings.ts` | **Xong** |
+| Duplicate level prevention (beforeValidate) | `src/globals/UserLevelSettings.ts` hooks | **Xong** |
+| recalculateUserLevels hook (afterChange on global → re-eval all users) | `src/globals/hooks/recalculateUserLevels.ts` | **Xong** |
+| Users: level, levelLocked, totalSpent fields (sidebar, admin-only update) | `src/collections/Users/index.ts` | **Xong** |
+| USER_LEVELS constants (avoid circular dep) | `src/config/userLevels.ts` | **Xong** |
+
+##### Sprint 2 — Business Logic (Xong)
+
+| Task | File | Trạng thái |
+|------|------|------------|
+| Orders override: voucher (rel), voucherCode (snapshot), discountAmount, levelDiscount | `src/plugins/index.ts` ordersCollectionOverride | **Xong** |
+| Carts override: appliedVoucher, voucherCode, originalSubtotal, voucherDiscount, levelDiscount | `src/plugins/index.ts` cartsCollectionOverride | **Xong** |
+| applyCartDiscounts hook (re-validate voucher, calc level discount, adjust subtotal) | `src/hooks/carts/applyCartDiscounts.ts` | **Xong** |
+| copyVoucherToOrder hook (copy discount metadata from cart to order on creation) | `src/hooks/orders/copyVoucherToOrder.ts` | **Xong** |
+| syncUserOnOrderChange hook (totalSpent recalc + level upgrade/downgrade on order complete/refund) | `src/hooks/orders/syncUserOnOrderChange.ts` | **Xong** |
+| incrementVoucherUsage hook (usedCount++ on create, usedCount-- on cancel/refund from any active status) | `src/hooks/orders/incrementVoucherUsage.ts` | **Xong** |
+| Voucher validate endpoint `POST /api/vouchers/validate` (auth, dates, limits, assignMode, minOrder, scope, discount calc) | `src/endpoints/validateVoucher.ts` | **Xong** |
+| Apply voucher to cart endpoint `POST /api/vouchers/apply-to-cart` | `src/endpoints/applyVoucherToCart.ts` | **Xong** |
+| Remove voucher from cart endpoint `POST /api/vouchers/remove-from-cart` | `src/endpoints/removeVoucherFromCart.ts` | **Xong** |
+| Integration test suite (33 tests, seed data, full workflow coverage) | `tests/int/voucher-system.int.spec.ts` | **Xong** |
+| Register hooks + endpoints in config | `src/plugins/index.ts`, `src/payload.config.ts` | **Xong** |
+
+##### Sprint 3 — Frontend UI (Chưa làm)
+
+| Task | File / vị trí dự kiến | Trạng thái |
+|------|------------------------|------------|
+| Checkout: VoucherInput (nhập mã, nút áp dụng, hiển thị discount) | `src/components/checkout/` | **Chưa làm** |
+| Checkout: Price breakdown (subtotal, voucher discount, level discount, total) | `src/components/checkout/` | **Chưa làm** |
+| Account: Level display (level hiện tại + ưu đãi) | `src/app/(app)/account/` | **Chưa làm** |
+| Pass voucher + levelDiscount to order creation flow | Checkout form / server action | **Chưa làm** |
+
+##### Stacking Rules
+
+- **Sale price + Voucher**: Voucher tính trên giá đã sale (không trên giá gốc).
+- **Level discount + Voucher**: Level discount và voucher discount đều stack, áp dụng lên giá đã sale.
+- **Voucher scope `specific`**: Chỉ áp dụng discount lên sản phẩm được chọn, không phải toàn bộ order.
+
+##### levelLocked Behavior
+
+- `levelLocked = true` → chỉ ngăn auto-downgrade, cho phép auto-upgrade (lock giữ nguyên khi upgrade — admin intent = floor).
+- Admin có thể set level + lock thủ công cho user VIP/compensation.
+
+##### Bug Fixes Applied (Sprint 2 QA)
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | Critical | Cancel order từ `processing` không giảm `usedCount` | Decrement khi chuyển từ bất kỳ active → cancelled/refunded |
+| 2 | High | `scope: 'specific'` discount toàn bộ cart | Tính `discountBase` từ eligible items only |
+| 3 | Medium | `minOrderAmount` không re-check khi cart thay đổi | Thêm `meetsMinOrder` trong re-validation |
+| 4 | Medium | `parseInt` vs `String` ID comparison | Thống nhất `String()` |
+| 5 | Medium | `orderSubtotal` có thể âm | `Math.max(0, orderSubtotal)` |
+| 6 | Medium | Admin tạo order → lấy nhầm admin's cart | Chỉ dùng `data.customer`, không fallback `req.user` |
+| 7 | Low | `levelLocked` bị xóa khi upgrade | Giữ nguyên lock khi upgrade |
+| 8 | Low | Tổng discount có thể vượt subtotal | Cap tổng discount tại `baseSubtotal` |
 
 ---
 
@@ -125,10 +177,11 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 
 ## 5. Sprint tiếp theo (định hướng)
 
+- **Sprint 3 (US8+US9 Frontend)**: Checkout voucher input + price breakdown, account level display, pass discount data to order creation.
 - **Soft launch**: Deploy (Vercel hoặc host khác), cấu hình domain, SSL, env production.
-- **Nội dung**: Seed hoặc nhập sản phẩm/danh mục thật; tạo 1–2 sale events mẫu.
+- **Nội dung**: Seed hoặc nhập sản phẩm/danh mục thật; tạo 1–2 sale events mẫu; tạo voucher mẫu.
 - **Monitoring**: Log lỗi, health check cơ bản (tùy chọn).
-- **Nice-to-have**: Wishlist, coupon, SEO (meta, sitemap) theo requirements.
+- **Nice-to-have**: Wishlist, coupon nâng cao, SEO (meta, sitemap) theo requirements.
 
 ---
 

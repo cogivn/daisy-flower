@@ -25,6 +25,9 @@ import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { UserLevelSettings } from '@/globals/UserLevelSettings'
 import { refreshSaleEventsTask } from '@/jobs/saleEvents'
+import { validateVoucher } from '@/endpoints/validateVoucher'
+import { applyVoucherToCart } from '@/endpoints/applyVoucherToCart'
+import { removeVoucherFromCart } from '@/endpoints/removeVoucherFromCart'
 import { plugins } from './plugins'
 
 const filename = fileURLToPath(import.meta.url)
@@ -93,7 +96,7 @@ export default buildConfig({
     ],
     tasks: [refreshSaleEventsTask],
   },
-  endpoints: [],
+  endpoints: [validateVoucher, applyVoucherToCart, removeVoucherFromCart],
   globals: [Header, Footer, UserLevelSettings],
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',
