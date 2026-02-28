@@ -49,6 +49,7 @@ export const removeVoucherFromCart: Endpoint = {
         appliedVoucher: null,
         voucherCode: null,
         voucherDiscount: 0,
+        reservedVoucherExpiresAt: null,
       } as never,
       depth: 0,
       overrideAccess: true,

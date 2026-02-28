@@ -131,11 +131,12 @@ export const validateVoucher: Endpoint = {
     }
 
     // 6. Check minimum order amount
-    if (voucher.minOrderAmount != null && orderSubtotal < voucher.minOrderAmount) {
+    const minAmountInCents = (voucher.minOrderAmount ?? 0) * 100
+    if (voucher.minOrderAmount != null && orderSubtotal < minAmountInCents) {
       return Response.json(
         {
           valid: false,
-          error: `Minimum order of $${(voucher.minOrderAmount / 100).toFixed(2)} required.`,
+          error: `Minimum order of $${voucher.minOrderAmount.toFixed(2)} required.`,
         },
         { status: 400 },
       )
@@ -166,15 +167,16 @@ export const validateVoucher: Endpoint = {
     let discountAmount = 0
 
     if (voucher.type === 'percent') {
-      discountAmount = (discountableSubtotal * (voucher.value ?? 0)) / 100
-      if (voucher.maxDiscount != null && discountAmount > voucher.maxDiscount) {
-        discountAmount = voucher.maxDiscount
+      discountAmount = Math.floor((discountableSubtotal * (voucher.value ?? 0)) / 100)
+      const maxDiscountInCents = (voucher.maxDiscount ?? 0) * 100
+      if (voucher.maxDiscount != null && discountAmount > maxDiscountInCents) {
+        discountAmount = maxDiscountInCents
       }
     } else {
-      discountAmount = Math.min(voucher.value ?? 0, discountableSubtotal)
+      discountAmount = Math.min((voucher.value ?? 0) * 100, discountableSubtotal)
     }
 
-    discountAmount = Math.round(discountAmount * 100) / 100
+    discountAmount = Math.floor(discountAmount)
 
     return Response.json({
       valid: true,

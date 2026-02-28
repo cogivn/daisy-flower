@@ -24,10 +24,12 @@ import { Vouchers } from '@/collections/Vouchers'
 import { applyVoucherToCart } from '@/endpoints/applyVoucherToCart'
 import { removeVoucherFromCart } from '@/endpoints/removeVoucherFromCart'
 import { validateVoucher } from '@/endpoints/validateVoucher'
+import { validateVoucherForPayment } from '@/endpoints/validateVoucherForPayment'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { UserLevelSettings } from '@/globals/UserLevelSettings'
 import { cleanupAbandonedOrdersTask } from '@/jobs/abandonedOrders'
+import { cleanupExpiredVoucherReservationsTask } from '@/jobs/cleanupExpiredVoucherReservations'
 import { refreshSaleEventsTask } from '@/jobs/saleEvents'
 import { plugins } from './plugins'
 
@@ -95,9 +97,9 @@ export default buildConfig({
         queue: 'default',
       },
     ],
-    tasks: [refreshSaleEventsTask, cleanupAbandonedOrdersTask],
+    tasks: [refreshSaleEventsTask, cleanupAbandonedOrdersTask, cleanupExpiredVoucherReservationsTask],
   },
-  endpoints: [validateVoucher, applyVoucherToCart, removeVoucherFromCart],
+  endpoints: [validateVoucher, applyVoucherToCart, removeVoucherFromCart, validateVoucherForPayment],
   globals: [Header, Footer, UserLevelSettings],
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',

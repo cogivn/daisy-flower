@@ -191,6 +191,74 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
   const initiatePaymentIntent = useCallback(
     async (paymentID: string) => {
       try {
+        setProcessingPayment(true)
+
+        // 1. Validate voucher reservation before payment (if voucher is applied)
+        if (user && voucherCode) {
+          const validateRes = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/voucher-validate-for-payment`,
+            {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+            },
+          )
+
+          if (!validateRes.ok) {
+            const validateData = await validateRes.json()
+            toast.error(validateData.error || 'Voucher is no longer valid.')
+            setVoucherCode(null)
+            setVoucherDiscount(0)
+            setProcessingPayment(false)
+            return // Abort payment
+          }
+
+          const validateResult = await validateRes.json()
+          if (!validateResult.valid) {
+            toast.error(validateResult.error || 'Voucher is no longer valid.')
+            setVoucherCode(null)
+            setVoucherDiscount(0)
+            setProcessingPayment(false)
+            return // Abort payment
+          }
+        }
+
+        // 2. Re-validate cart state to prevent Stale Checkout (e.g. Voucher Expired)
+        if (user && cart && typeof cart === 'object' && 'id' in cart) {
+          const patchRes = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/carts/${cart.id}`,
+            {
+              method: 'PATCH',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({}),
+            },
+          )
+
+          if (patchRes.ok) {
+            const patchData = await patchRes.json()
+            const activeCart = patchData?.doc
+
+            if (activeCart) {
+              // If we thought we had a voucher code, but the server says no, it means it expired!
+              if (voucherCode && !activeCart.voucherCode) {
+                toast.error(
+                  'Voucher has expired or is no longer valid. Your cart has been updated.',
+                )
+                setVoucherCode(null)
+                setVoucherDiscount(0)
+                setLevelDiscount(activeCart.levelDiscount || 0)
+                setOriginalSubtotal(activeCart.originalSubtotal || activeCart.subtotal || 0)
+                setProcessingPayment(false)
+                return // Abort payment
+              }
+
+              // Could also check if price changed drastically due to sale events expiring
+              // But strictly handling voucherCode disappearance is the most critical here.
+            }
+          }
+        }
+
         const paymentData = (await initiatePayment(paymentID, {
           additionalData: {
             ...(email ? { customerEmail: email } : {}),
@@ -212,9 +280,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
 
         setError(errorMessage)
         toast.error(errorMessage)
+      } finally {
+        setProcessingPayment(false)
       }
     },
-    [billingAddress, billingAddressSameAsShipping, shippingAddress, email, initiatePayment],
+    [
+      billingAddress,
+      billingAddressSameAsShipping,
+      shippingAddress,
+      email,
+      initiatePayment,
+      user,
+      cart,
+      voucherCode,
+    ],
   )
 
   if (!stripe) return null

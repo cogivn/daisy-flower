@@ -18,7 +18,11 @@ interface CartDoc {
   voucherDiscount?: number | null
   levelDiscount?: number | null
   items?: CartItem[]
+  reservedVoucherExpiresAt?: string | null
 }
+
+// Reservation duration in milliseconds (15 minutes)
+const VOUCHER_RESERVATION_DURATION_MS = 15 * 60 * 1000
 
 /**
  * POST /api/voucher-apply
@@ -148,9 +152,10 @@ export const applyVoucherToCart: Endpoint = {
 
     // 7. Check min order amount
     const cartSubtotal = cart.originalSubtotal ?? cart.subtotal ?? 0
-    if (voucher.minOrderAmount != null && cartSubtotal < voucher.minOrderAmount) {
+    const minAmountInCents = (voucher.minOrderAmount ?? 0) * 100
+    if (voucher.minOrderAmount != null && cartSubtotal < minAmountInCents) {
       return Response.json(
-        { error: `Minimum order of $${(voucher.minOrderAmount / 100).toFixed(2)} required.` },
+        { error: `Minimum order of $${voucher.minOrderAmount.toFixed(2)} required.` },
         { status: 400 },
       )
     }
@@ -174,12 +179,18 @@ export const applyVoucherToCart: Endpoint = {
     }
 
     // 9. Apply voucher to cart — beforeChange hook will calculate discounts
+    // Set reservation expiration to 15 minutes from now
+    const reservationExpiresAt = new Date(
+      Date.now() + VOUCHER_RESERVATION_DURATION_MS,
+    ).toISOString()
+
     const updatedCart = await req.payload.update({
       collection: 'carts' as never,
       id: cart.id,
       data: {
         appliedVoucher: voucher.id,
         voucherCode: voucher.code,
+        reservedVoucherExpiresAt: reservationExpiresAt,
       } as never,
       depth: 0,
       overrideAccess: true,
@@ -197,6 +208,7 @@ export const applyVoucherToCart: Endpoint = {
         voucherDiscount: result.voucherDiscount,
         levelDiscount: result.levelDiscount,
         subtotal: result.subtotal,
+        reservedVoucherExpiresAt: result.reservedVoucherExpiresAt,
       },
     })
   },

@@ -25,6 +25,7 @@ Core features:
 - [Guest checkout](#guests)
 - [Orders & Transactions](#orders-and-transactions)
 - [Stripe Payments](#stripe)
+- [Voucher System](#voucher-system)
 - [Currencies](#currencies)
 - [Automated Tests](#tests)
 
@@ -81,13 +82,23 @@ See the [Collections](https://payloadcms.com/docs/configuration/collections) doc
 
   Used to track user and guest carts within Payload. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#carts).
 
+- ### Vouchers
+
+  Discount codes that customers can apply at checkout. Supports:
+  - **Discount types**: Percentage (%) or Fixed Amount ($)
+  - **Scope**: Entire order or specific products only
+  - **Assignment**: All users, by user level, or specific users
+  - **Limits**: Max uses (global), max uses per user, minimum order amount
+  - **Validity**: Date range (validFrom, validTo)
+  - **Reservation**: Vouchers are reserved for 15 minutes during checkout to prevent race conditions
+
 - ### Addresses
 
   Saves user's addresses for easier checkout. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#addresses).
 
 - ### Orders
 
-  Tracks orders once a transaction successfully completes. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#orders).
+  Tracks orders once a transaction successfully completes. Added by the [ecommerce plugin](https://payloadcms.com/docs/ecommerce/plugin#orders). When an order is created, voucher usage is automatically incremented and voucher details are copied to the order for record keeping.
 
 - ### Transactions
 
@@ -204,6 +215,64 @@ By default the template ships with support only for USD however you can change t
 ## Stripe
 
 By default we ship with the Stripe adapter configured, so you'll need to setup the `secretKey`, `publishableKey` and `webhookSecret` from your Stripe dashboard. Follow [Stripe's guide](https://docs.stripe.com/get-started/api-request?locale=en-GB) on how to set this up.
+
+## Voucher System
+
+The voucher system provides discount code functionality with race condition protection:
+
+### How it Works
+
+1. **Apply Voucher**: Customer enters voucher code at checkout
+   - Voucher is validated (active, not expired, within usage limits)
+   - Reservation is created with 15-minute expiration
+   - Cart is updated with discount calculations
+
+2. **During Checkout**: Before payment is initiated
+   - System validates voucher reservation is still valid
+   - If expired, voucher is automatically removed
+   - Cart state is refreshed to ensure accurate pricing
+
+3. **Order Completion**: When payment succeeds
+   - Voucher usage count is incremented
+   - Voucher details are copied to the order for record keeping
+
+4. **Cleanup**: Background job runs every 5 minutes
+   - Removes expired voucher reservations
+   - Frees up voucher usage for other customers
+
+### Voucher Fields
+
+| Field | Description |
+|-------|-------------|
+| `code` | Unique voucher code (auto-generated or custom) |
+| `type` | Percentage (%) or Fixed Amount ($) |
+| `value` | Discount value |
+| `maxDiscount` | Maximum discount cap for percentage type |
+| `scope` | Entire order or specific products |
+| `applicableProducts` | Products eligible for the voucher |
+| `minOrderAmount` | Minimum cart subtotal required |
+| `maxUses` | Total uses allowed (global) |
+| `maxUsesPerUser` | Maximum uses per customer |
+| `validFrom` / `validTo` | Validity date range |
+| `assignMode` | All users, by user level, or specific users |
+| `allowedUserLevels` | User levels that can use this voucher |
+| `assignedUsers` | Specific users assigned to this voucher |
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/vouchers/validate` | POST | Validate voucher code without applying |
+| `/api/voucher-apply` | POST | Apply voucher to cart |
+| `/api/voucher-remove` | POST | Remove voucher from cart |
+| `/api/voucher-validate-for-payment` | POST | Validate reservation before payment |
+
+### Background Jobs
+
+| Job | Schedule | Description |
+|-----|----------|-------------|
+| `cleanup-expired-voucher-reservations` | Every 5 min | Clear expired reservations |
+| `cleanup-abandoned-orders` | Every 15 min | Cancel orders without payment |
 
 ## Tests
 

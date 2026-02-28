@@ -190,12 +190,14 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
       const isNotExpired = !voucher.validTo || new Date(voucher.validTo) > now
       const isStarted = !voucher.validFrom || new Date(voucher.validFrom) <= now
       const withinUsageLimit = voucher.maxUses == null || (voucher.usedCount ?? 0) < voucher.maxUses
-      const meetsMinOrder = voucher.minOrderAmount == null || baseSubtotal >= voucher.minOrderAmount
+      const meetsMinOrder =
+        voucher.minOrderAmount == null || baseSubtotal >= voucher.minOrderAmount * 100
 
       if (!isPublished || !isNotExpired || !isStarted || !withinUsageLimit || !meetsMinOrder) {
         data.appliedVoucher = null
         data.voucherCode = null
         data.voucherDiscount = 0
+        data.reservedVoucherExpiresAt = null
       } else {
         // For scope:specific, only discount eligible items' subtotal
         let discountBase = baseSubtotal
@@ -229,15 +231,16 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
         }
 
         if (voucher.type === 'percent') {
-          voucherDiscount = (discountBase * (voucher.value ?? 0)) / 100
-          if (voucher.maxDiscount != null && voucherDiscount > voucher.maxDiscount) {
-            voucherDiscount = voucher.maxDiscount
+          voucherDiscount = Math.floor((discountBase * (voucher.value ?? 0)) / 100)
+          const maxDiscountInCents = (voucher.maxDiscount ?? 0) * 100
+          if (voucher.maxDiscount != null && voucherDiscount > maxDiscountInCents) {
+            voucherDiscount = maxDiscountInCents
           }
         } else {
-          voucherDiscount = Math.min(voucher.value ?? 0, discountBase)
+          voucherDiscount = Math.min((voucher.value ?? 0) * 100, discountBase)
         }
 
-        voucherDiscount = Math.round(voucherDiscount * 100) / 100
+        voucherDiscount = Math.floor(voucherDiscount)
         data.voucherDiscount = voucherDiscount
       }
     } catch {
@@ -245,10 +248,12 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
       data.appliedVoucher = null
       data.voucherCode = null
       data.voucherDiscount = 0
+      data.reservedVoucherExpiresAt = null
     }
   } else {
     data.voucherDiscount = 0
     data.voucherCode = data.voucherCode ?? null
+    data.reservedVoucherExpiresAt = null
   }
 
   // --- Level discount ---
@@ -281,8 +286,7 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
 
       const match = levels.find((l) => l.level === userLevel)
       if (match && match.discountPercent > 0) {
-        levelDiscount = (baseSubtotal * match.discountPercent) / 100
-        levelDiscount = Math.round(levelDiscount * 100) / 100
+        levelDiscount = Math.floor((baseSubtotal * match.discountPercent) / 100)
       }
     } catch {
       // If we can't fetch user level, skip level discount

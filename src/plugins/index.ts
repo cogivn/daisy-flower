@@ -165,6 +165,15 @@ export const plugins: Plugin[] = [
             },
           },
           {
+            name: 'reservedVoucherExpiresAt',
+            type: 'date',
+            admin: {
+              readOnly: true,
+              position: 'sidebar',
+              description: 'When the voucher reservation expires (15 min from apply).',
+            },
+          },
+          {
             name: 'voucherCode',
             type: 'text',
             admin: {

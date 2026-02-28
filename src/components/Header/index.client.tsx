@@ -83,7 +83,7 @@ export function HeaderClient({ header, categories }: Props) {
               <span className="flex items-center gap-1 hover:text-primary transition-colors">
                 English <ChevronDown size={12} />
               </span>
-              <div className="absolute top-full right-0 bg-background border shadow-lg hidden group-hover:block z-50 min-w-30 py-2">
+              <div className="absolute top-full right-0 bg-background border shadow-lg hidden group-hover:block z-70 min-w-30 py-2">
                 <div className="px-4 py-1.5 hover:bg-muted transition-colors">English</div>
                 <div className="px-4 py-1.5 hover:bg-muted transition-colors">Vietnam</div>
               </div>
@@ -95,7 +95,7 @@ export function HeaderClient({ header, categories }: Props) {
               >
                 Theme: {themeLabel} <ChevronDown size={12} />
               </button>
-              <div className="absolute top-full right-0 bg-background border shadow-lg hidden group-hover:block z-50 min-w-30 py-2">
+              <div className="absolute top-full right-0 bg-background border shadow-lg hidden group-hover:block z-70 min-w-30 py-2">
                 <button
                   type="button"
                   className="block w-full text-left px-4 py-1.5 hover:bg-muted transition-colors"
