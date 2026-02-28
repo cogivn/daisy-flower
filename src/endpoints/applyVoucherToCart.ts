@@ -1,13 +1,27 @@
+import type { UserLevel } from '@/config/userLevels'
 import type { Endpoint } from 'payload'
 import { APIError } from 'payload'
-import type { UserLevel } from '@/config/userLevels'
 
 interface ApplyVoucherBody {
   code: string
 }
 
+interface CartItem {
+  product: string | number | { id: string | number }
+}
+
+interface CartDoc {
+  id: string | number
+  subtotal?: number
+  originalSubtotal?: number
+  voucherCode?: string | null
+  voucherDiscount?: number | null
+  levelDiscount?: number | null
+  items?: CartItem[]
+}
+
 /**
- * POST /api/vouchers/apply-to-cart
+ * POST /api/voucher-apply
  *
  * Validates a voucher and applies it to the authenticated user's active cart.
  * The cart's beforeChange hook will recalculate subtotal with discount on next save.
@@ -15,7 +29,7 @@ interface ApplyVoucherBody {
  * Body: { code: string }
  */
 export const applyVoucherToCart: Endpoint = {
-  path: '/vouchers/apply-to-cart',
+  path: '/voucher-apply',
   method: 'post',
   handler: async (req) => {
     if (!req.user) {
@@ -34,10 +48,7 @@ export const applyVoucherToCart: Endpoint = {
     const { docs: carts } = await req.payload.find({
       collection: 'carts',
       where: {
-        and: [
-          { customer: { equals: req.user.id } },
-          { purchasedAt: { exists: false } },
-        ],
+        and: [{ customer: { equals: req.user.id } }, { purchasedAt: { exists: false } }],
       },
       sort: '-updatedAt',
       limit: 1,
@@ -46,7 +57,7 @@ export const applyVoucherToCart: Endpoint = {
       req,
     })
 
-    const cart = carts[0]
+    const cart = carts[0] as unknown as CartDoc | undefined
 
     if (!cart) {
       return Response.json({ error: 'No active cart found.' }, { status: 400 })
@@ -82,10 +93,7 @@ export const applyVoucherToCart: Endpoint = {
 
     // 4. Check global usage
     if (voucher.maxUses != null && (voucher.usedCount ?? 0) >= voucher.maxUses) {
-      return Response.json(
-        { error: 'This voucher has reached its usage limit.' },
-        { status: 400 },
-      )
+      return Response.json({ error: 'This voucher has reached its usage limit.' }, { status: 400 })
     }
 
     // 5. Check per-user usage
@@ -128,9 +136,9 @@ export const applyVoucherToCart: Endpoint = {
     if (voucher.assignMode === 'users') {
       const assignedUsers = (voucher.assignedUsers as (number | string)[]) || []
       const assignedIds = assignedUsers.map((u) =>
-        typeof u === 'object' ? (u as any).id : u,
+        typeof u === 'object' ? String((u as { id: string | number }).id) : String(u),
       )
-      if (!assignedIds.includes(req.user.id)) {
+      if (!assignedIds.includes(String(req.user.id))) {
         return Response.json(
           { error: 'This voucher is not assigned to your account.' },
           { status: 400 },
@@ -139,23 +147,23 @@ export const applyVoucherToCart: Endpoint = {
     }
 
     // 7. Check min order amount
-    const cartSubtotal = (cart as any).originalSubtotal ?? (cart as any).subtotal ?? 0
+    const cartSubtotal = cart.originalSubtotal ?? cart.subtotal ?? 0
     if (voucher.minOrderAmount != null && cartSubtotal < voucher.minOrderAmount) {
       return Response.json(
-        { error: `Minimum order of $${voucher.minOrderAmount.toFixed(2)} required.` },
+        { error: `Minimum order of $${(voucher.minOrderAmount / 100).toFixed(2)} required.` },
         { status: 400 },
       )
     }
 
     // 8. Check product scope
     if (voucher.scope === 'specific') {
-      const applicableIds = ((voucher.applicableProducts as (number | string)[]) || []).map(
-        (p) => (typeof p === 'object' ? (p as any).id : p),
+      const applicableIds = ((voucher.applicableProducts as (number | string)[]) || []).map((p) =>
+        typeof p === 'object' ? String((p as { id: string | number }).id) : String(p),
       )
-      const cartItems = (cart as any).items || []
-      const hasMatch = cartItems.some((item: any) => {
+      const cartItems = cart.items || []
+      const hasMatch = cartItems.some((item) => {
         const pid = typeof item.product === 'object' ? item.product.id : item.product
-        return applicableIds.some((aid: any) => String(aid) === String(pid))
+        return applicableIds.some((aid) => String(aid) === String(pid))
       })
       if (!hasMatch) {
         return Response.json(
@@ -167,18 +175,18 @@ export const applyVoucherToCart: Endpoint = {
 
     // 9. Apply voucher to cart — beforeChange hook will calculate discounts
     const updatedCart = await req.payload.update({
-      collection: 'carts' as any,
+      collection: 'carts' as never,
       id: cart.id,
       data: {
         appliedVoucher: voucher.id,
         voucherCode: voucher.code,
-      } as any,
+      } as never,
       depth: 0,
       overrideAccess: true,
       req,
     })
 
-    const result = updatedCart as any
+    const result = updatedCart as unknown as CartDoc
 
     return Response.json({
       success: true,

@@ -21,13 +21,14 @@ import { Pages } from '@/collections/Pages'
 import { SaleEvents } from '@/collections/SaleEvents'
 import { Users } from '@/collections/Users'
 import { Vouchers } from '@/collections/Vouchers'
+import { applyVoucherToCart } from '@/endpoints/applyVoucherToCart'
+import { removeVoucherFromCart } from '@/endpoints/removeVoucherFromCart'
+import { validateVoucher } from '@/endpoints/validateVoucher'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
 import { UserLevelSettings } from '@/globals/UserLevelSettings'
+import { cleanupAbandonedOrdersTask } from '@/jobs/abandonedOrders'
 import { refreshSaleEventsTask } from '@/jobs/saleEvents'
-import { validateVoucher } from '@/endpoints/validateVoucher'
-import { applyVoucherToCart } from '@/endpoints/applyVoucherToCart'
-import { removeVoucherFromCart } from '@/endpoints/removeVoucherFromCart'
 import { plugins } from './plugins'
 
 const filename = fileURLToPath(import.meta.url)
@@ -94,7 +95,7 @@ export default buildConfig({
         queue: 'default',
       },
     ],
-    tasks: [refreshSaleEventsTask],
+    tasks: [refreshSaleEventsTask, cleanupAbandonedOrdersTask],
   },
   endpoints: [validateVoucher, applyVoucherToCart, removeVoucherFromCart],
   globals: [Header, Footer, UserLevelSettings],
@@ -107,7 +108,10 @@ export default buildConfig({
     const jobsConfig = payload.config.jobs
 
     if (jobsConfig?.autoRun && Array.isArray(jobsConfig.autoRun)) {
-      const queues = jobsConfig.autoRun.map((cfg: any) => cfg.queue).filter(Boolean).join(', ')
+      const queues = jobsConfig.autoRun
+        .map((cfg: { cron?: string; queue?: string }) => cfg.queue)
+        .filter(Boolean)
+        .join(', ')
 
       payload.logger.info(
         queues && queues.length

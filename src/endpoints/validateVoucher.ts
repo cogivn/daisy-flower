@@ -1,6 +1,6 @@
+import type { UserLevel } from '@/config/userLevels'
 import type { Endpoint } from 'payload'
 import { APIError } from 'payload'
-import type { UserLevel } from '@/config/userLevels'
 
 interface ValidateVoucherBody {
   code: string
@@ -9,7 +9,7 @@ interface ValidateVoucherBody {
 }
 
 /**
- * POST /api/vouchers/validate
+ * POST /api/voucher-validate
  *
  * Validates a voucher code for the authenticated user.
  * Returns discount info if valid, or an error explaining why not.
@@ -17,7 +17,7 @@ interface ValidateVoucherBody {
  * Body: { code: string, orderSubtotal?: number, productIds?: string[] }
  */
 export const validateVoucher: Endpoint = {
-  path: '/vouchers/validate',
+  path: '/voucher-validate',
   method: 'post',
   handler: async (req) => {
     if (!req.user) {
@@ -96,7 +96,10 @@ export const validateVoucher: Endpoint = {
 
       if (userUsageCount >= voucher.maxUsesPerUser) {
         return Response.json(
-          { valid: false, error: 'You have already used this voucher the maximum number of times.' },
+          {
+            valid: false,
+            error: 'You have already used this voucher the maximum number of times.',
+          },
           { status: 400 },
         )
       }
@@ -116,8 +119,10 @@ export const validateVoucher: Endpoint = {
 
     if (voucher.assignMode === 'users') {
       const assignedUsers = (voucher.assignedUsers as (number | string)[]) || []
-      const assignedIds = assignedUsers.map((u) => (typeof u === 'object' ? (u as any).id : u))
-      if (!assignedIds.includes(req.user.id)) {
+      const assignedIds = assignedUsers.map((u) =>
+        typeof u === 'object' ? String((u as { id: string | number }).id) : String(u),
+      )
+      if (!assignedIds.includes(String(req.user.id))) {
         return Response.json(
           { valid: false, error: 'This voucher is not assigned to your account.' },
           { status: 400 },
@@ -130,23 +135,21 @@ export const validateVoucher: Endpoint = {
       return Response.json(
         {
           valid: false,
-          error: `Minimum order of $${voucher.minOrderAmount.toFixed(2)} required.`,
+          error: `Minimum order of $${(voucher.minOrderAmount / 100).toFixed(2)} required.`,
         },
         { status: 400 },
       )
     }
 
     // 7. Calculate discount amount
-    let discountableSubtotal = Math.max(0, orderSubtotal)
+    const discountableSubtotal = Math.max(0, orderSubtotal)
 
     if (voucher.scope === 'specific' && productIds.length > 0) {
       const applicableIds = ((voucher.applicableProducts as (number | string)[]) || []).map((p) =>
-        String(typeof p === 'object' ? (p as any).id : p),
+        String(typeof p === 'object' ? (p as { id: string | number }).id : p),
       )
 
-      const matchingIds = productIds.filter((pid) =>
-        applicableIds.includes(String(pid)),
-      )
+      const matchingIds = productIds.filter((pid) => applicableIds.includes(String(pid)))
 
       if (matchingIds.length === 0) {
         return Response.json(

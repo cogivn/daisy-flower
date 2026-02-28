@@ -1,15 +1,16 @@
 import type { Metadata } from 'next'
 
-import { Button } from '@/components/ui/button'
-import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import Link from 'next/link'
-import { headers as getHeaders } from 'next/headers.js'
-import configPromise from '@payload-config'
+import { UserLevelCard } from '@/components/account/UserLevelCard'
 import { AccountForm } from '@/components/forms/AccountForm'
-import { Order } from '@/payload-types'
 import { OrderItem } from '@/components/OrderItem'
-import { getPayload } from 'payload'
+import { Button } from '@/components/ui/button'
+import { Order } from '@/payload-types'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import configPromise from '@payload-config'
+import { headers as getHeaders } from 'next/headers.js'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { getPayload } from 'payload'
 
 export default async function AccountPage() {
   const headers = await getHeaders()
@@ -22,6 +23,27 @@ export default async function AccountPage() {
     redirect(
       `/login?warning=${encodeURIComponent('Please login to access your account settings.')}`,
     )
+  }
+
+  // Fetch level settings
+  let levelSettings: Array<{
+    level: string
+    minSpending: number
+    discountPercent: number
+    freeShipping: boolean
+    description?: string
+  }> = []
+
+  try {
+    const settings = await payload.findGlobal({
+      slug: 'user-level-settings',
+    })
+    levelSettings =
+      (settings?.levels as typeof levelSettings)?.filter(
+        (l) => l.level && typeof l.minSpending === 'number',
+      ) || []
+  } catch {
+    // Silently fail — level display is non-critical
   }
 
   try {
@@ -39,12 +61,15 @@ export default async function AccountPage() {
     })
 
     orders = ordersResult?.docs || []
-  } catch (error) {
+  } catch (_error) {
     // when deploying this template on Payload Cloud, this page needs to build before the APIs are live
     // so swallow the error here and simply render the page with fallback data where necessary
     // in production you may want to redirect to a 404  page or at least log the error somewhere
     // console.error(error)
   }
+
+  const currentLevel = (user.level as string) || 'bronze'
+  const totalSpent = (user.totalSpent as number) || 0
 
   return (
     <>
@@ -52,6 +77,15 @@ export default async function AccountPage() {
         <h1 className="text-3xl font-medium mb-8">Account settings</h1>
         <AccountForm />
       </div>
+
+      {/* User Level Card */}
+      {levelSettings.length > 0 && (
+        <UserLevelCard
+          currentLevel={currentLevel}
+          totalSpent={totalSpent}
+          levelSettings={levelSettings}
+        />
+      )}
 
       <div className=" border p-8 rounded-lg bg-primary-foreground">
         <h2 className="text-3xl font-medium mb-8">Recent Orders</h2>
@@ -69,7 +103,7 @@ export default async function AccountPage() {
 
         {orders && orders.length > 0 && (
           <ul className="flex flex-col gap-6 mb-8">
-            {orders?.map((order, index) => (
+            {orders?.map((order, _index) => (
               <li key={order.id}>
                 <OrderItem order={order} />
               </li>

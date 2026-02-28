@@ -14,22 +14,34 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
 
-import { cssVariables } from '@/cssVariables'
-import { CheckoutForm } from '@/components/forms/CheckoutForm'
-import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
-import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses'
-import { CreateAddressModal } from '@/components/addresses/CreateAddressModal'
-import { Address } from '@/payload-types'
-import { Checkbox } from '@/components/ui/checkbox'
 import { AddressItem } from '@/components/addresses/AddressItem'
+import { CreateAddressModal } from '@/components/addresses/CreateAddressModal'
+import { CheckoutAddresses } from '@/components/checkout/CheckoutAddresses'
+import { PriceBreakdown } from '@/components/checkout/PriceBreakdown'
+import { VoucherInput } from '@/components/checkout/VoucherInput'
+import { CheckoutForm } from '@/components/forms/CheckoutForm'
 import { FormItem } from '@/components/forms/FormItem'
-import { toast } from 'sonner'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { Checkbox } from '@/components/ui/checkbox'
+import { cssVariables } from '@/cssVariables'
+import { Address } from '@/payload-types'
+import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
+import { toast } from 'sonner'
 
 const apiKey = `${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`
 const stripe = loadStripe(apiKey)
 
-export const CheckoutPage: React.FC = () => {
+type LevelInfo = {
+  name: string
+  discountPercent: number
+}
+
+type CheckoutPageProps = {
+  salePrices?: Record<string, number>
+  levels?: Array<{ level: string; discountPercent: number }>
+}
+
+export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, levels = [] }) => {
   const { user } = useAuth()
   const router = useRouter()
   const { cart } = useCart()
@@ -42,17 +54,103 @@ export const CheckoutPage: React.FC = () => {
   const [emailEditable, setEmailEditable] = useState(true)
   const [paymentData, setPaymentData] = useState<null | Record<string, unknown>>(null)
   const { initiatePayment } = usePayments()
-  const { addresses } = useAddresses()
+  const { addresses: rawAddresses } = useAddresses()
+
+  const addresses = React.useMemo(() => {
+    if (!rawAddresses || !user) return []
+    return rawAddresses.filter((address) => {
+      const customerId =
+        typeof address.customer === 'object' ? address.customer?.id : address.customer
+      return customerId === user.id
+    })
+  }, [rawAddresses, user])
+
   const [shippingAddress, setShippingAddress] = useState<Partial<Address>>()
   const [billingAddress, setBillingAddress] = useState<Partial<Address>>()
   const [billingAddressSameAsShipping, setBillingAddressSameAsShipping] = useState(true)
   const [isProcessingPayment, setProcessingPayment] = useState(false)
+
+  // --- Discount state ---
+  const [voucherCode, setVoucherCode] = useState<string | null>(null)
+  const [voucherDiscount, setVoucherDiscount] = useState(0)
+  const [levelDiscount, setLevelDiscount] = useState(0)
+  const [originalSubtotal, setOriginalSubtotal] = useState(0)
 
   const cartIsEmpty = !cart || !cart.items || !cart.items.length
 
   const canGoToPayment = Boolean(
     (email || user) && billingAddress && (billingAddressSameAsShipping || shippingAddress),
   )
+
+  const userLevel = ((user as unknown as Record<string, unknown>)?.level as string) || 'bronze'
+
+  const levelInfo = React.useMemo<LevelInfo | null>(() => {
+    const match = levels.find((l) => l.level === userLevel)
+    if (match && match.discountPercent > 0) {
+      return {
+        name: userLevel.charAt(0).toUpperCase() + userLevel.slice(1),
+        discountPercent: match.discountPercent,
+      }
+    }
+    return null
+  }, [levels, userLevel])
+
+  // Fetch cart discount data on mount (logged-in users only)
+  useEffect(() => {
+    if (!user) return
+
+    const touchCart = async () => {
+      try {
+        let cartId = (cart as Record<string, unknown>)?.id
+
+        // Fallback: If cart.id is missing (e.g. strict plugin types), fetch it
+        if (!cartId) {
+          const cartListRes = await fetch(
+            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/carts?where[customer][equals]=${user.id}&where[purchasedAt][exists]=false&sort=-updatedAt&limit=1&depth=0&select[id]=true`,
+            { credentials: 'include' },
+          )
+
+          if (!cartListRes.ok) return
+
+          const cartListData = await cartListRes.json()
+          cartId = cartListData?.docs?.[0]?.id
+        }
+
+        if (!cartId) return
+
+        // 2. "Touch" cart via PATCH (triggers beforeChange hooks for sale price recalc)
+        const patchRes = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/carts/${cartId}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+
+        if (patchRes.ok) {
+          const patchData = await patchRes.json()
+          const activeCart = patchData?.doc
+          if (activeCart) {
+            setVoucherCode(activeCart.voucherCode || null)
+            setVoucherDiscount(activeCart.voucherDiscount || 0)
+            setLevelDiscount(activeCart.levelDiscount || 0)
+            setOriginalSubtotal(activeCart.originalSubtotal || activeCart.subtotal || 0)
+          }
+        }
+      } catch {
+        // Silently fail — discount display is non-critical
+      }
+    }
+
+    void touchCart()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  // Keep originalSubtotal in sync with cart.subtotal when no discounts are applied
+  useEffect(() => {
+    if (cart?.subtotal != null && !voucherCode && levelDiscount === 0) {
+      setOriginalSubtotal(cart.subtotal)
+    }
+  }, [cart?.subtotal, voucherCode, levelDiscount])
 
   // On initial load wait for addresses to be loaded and check to see if we can prefill a default one
   useEffect(() => {
@@ -64,7 +162,7 @@ export const CheckoutPage: React.FC = () => {
         }
       }
     }
-  }, [addresses])
+  }, [addresses, shippingAddress])
 
   useEffect(() => {
     return () => {
@@ -74,6 +172,20 @@ export const CheckoutPage: React.FC = () => {
       setEmail('')
       setEmailEditable(true)
     }
+  }, [])
+
+  const handleVoucherApplied = useCallback((data: Record<string, unknown>) => {
+    setVoucherCode((data.voucherCode as string) || null)
+    setVoucherDiscount((data.voucherDiscount as number) || 0)
+    setLevelDiscount((data.levelDiscount as number) || 0)
+    setOriginalSubtotal((data.originalSubtotal as number) || 0)
+  }, [])
+
+  const handleVoucherRemoved = useCallback((data: Record<string, unknown>) => {
+    setVoucherCode(null)
+    setVoucherDiscount(0)
+    setLevelDiscount((data.levelDiscount as number) || 0)
+    setOriginalSubtotal((data.originalSubtotal as number) || 0)
   }, [])
 
   const initiatePaymentIntent = useCallback(
@@ -102,7 +214,7 @@ export const CheckoutPage: React.FC = () => {
         toast.error(errorMessage)
       }
     },
-    [billingAddress, billingAddressSameAsShipping, shippingAddress],
+    [billingAddress, billingAddressSameAsShipping, shippingAddress, email, initiatePayment],
   )
 
   if (!stripe) return null
@@ -126,6 +238,12 @@ export const CheckoutPage: React.FC = () => {
       </div>
     )
   }
+
+  const hasDiscounts = voucherDiscount > 0 || levelDiscount > 0
+  const displaySubtotal = hasDiscounts ? originalSubtotal : cart.subtotal || 0
+  const displayTotal = hasDiscounts
+    ? Math.max(0, originalSubtotal - voucherDiscount - levelDiscount)
+    : cart.subtotal || 0
 
   return (
     <div className="flex flex-col items-stretch justify-stretch my-8 md:flex-row grow gap-10 md:gap-6 lg:gap-8">
@@ -299,7 +417,7 @@ export const CheckoutPage: React.FC = () => {
         )}
 
         <Suspense fallback={<React.Fragment />}>
-          {/* @ts-ignore */}
+          {/* @ts-expect-error - Known typing issue with rendering */}
           {paymentData && paymentData?.['clientSecret'] && (
             <div className="pb-16">
               <h2 className="font-medium text-3xl">Payment</h2>
@@ -358,7 +476,7 @@ export const CheckoutPage: React.FC = () => {
             if (typeof item.product === 'object' && item.product) {
               const {
                 product,
-                product: { id, meta, title, gallery },
+                product: { meta, title, gallery },
                 quantity,
                 variant,
               } = item
@@ -373,20 +491,24 @@ export const CheckoutPage: React.FC = () => {
               if (isVariant) {
                 price = variant?.priceInUSD
 
-                const imageVariant = product.gallery?.find((item) => {
-                  if (!item.variantOption) return false
-                  const variantOptionID =
-                    typeof item.variantOption === 'object'
-                      ? item.variantOption.id
-                      : item.variantOption
+                const imageVariant = product.gallery?.find(
+                  (item: { variantOption?: string | number | { id: string | number } }) => {
+                    if (!item.variantOption) return false
+                    const variantOptionID =
+                      typeof item.variantOption === 'object'
+                        ? item.variantOption.id
+                        : item.variantOption
 
-                  const hasMatch = variant?.options?.some((option) => {
-                    if (typeof option === 'object') return option.id === variantOptionID
-                    else return option === variantOptionID
-                  })
+                    const hasMatch = variant?.options?.some(
+                      (option: string | number | { id: string | number }) => {
+                        if (typeof option === 'object') return option.id === variantOptionID
+                        else return option === variantOptionID
+                      },
+                    )
 
-                  return hasMatch
-                })
+                    return hasMatch
+                  },
+                )
 
                 if (imageVariant && typeof imageVariant.image !== 'string') {
                   image = imageVariant.image
@@ -408,10 +530,14 @@ export const CheckoutPage: React.FC = () => {
                       {variant && typeof variant === 'object' && (
                         <p className="text-sm font-mono text-primary/50 tracking-widest">
                           {variant.options
-                            ?.map((option) => {
-                              if (typeof option === 'object') return option.label
-                              return null
-                            })
+                            ?.map(
+                              (
+                                option: string | number | { label?: string; id?: string | number },
+                              ) => {
+                                if (typeof option === 'object') return option.label
+                                return null
+                              },
+                            )
                             .join(', ')}
                         </p>
                       )}
@@ -421,18 +547,58 @@ export const CheckoutPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {typeof price === 'number' && <Price amount={price} />}
+                    {typeof price === 'number' &&
+                      (() => {
+                        const productId = String(
+                          typeof item.product === 'object' ? item.product.id : item.product,
+                        )
+                        const salePrice = salePrices[productId]
+                        if (salePrice != null && salePrice < price) {
+                          return (
+                            <div className="flex flex-col items-end">
+                              <Price
+                                className="text-sm text-muted-foreground line-through"
+                                amount={price}
+                              />
+                              <Price className="text-green-600 font-semibold" amount={salePrice} />
+                            </div>
+                          )
+                        }
+                        return <Price amount={price} />
+                      })()}
                   </div>
                 </div>
               )
             }
             return null
           })}
-          <hr />
-          <div className="flex justify-between items-center gap-2">
-            <span className="uppercase">Total</span>{' '}
-            <Price className="text-3xl font-medium" amount={cart.subtotal || 0} />
-          </div>
+
+          {/* Voucher Input — only for logged-in users */}
+          {user && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Voucher Code
+              </h3>
+              <VoucherInput
+                onApplied={handleVoucherApplied}
+                onRemoved={handleVoucherRemoved}
+                currentVoucherCode={voucherCode}
+                currentVoucherDiscount={voucherDiscount}
+                disabled={Boolean(paymentData)}
+              />
+            </div>
+          )}
+
+          {/* Price Breakdown */}
+          <PriceBreakdown
+            originalSubtotal={displaySubtotal}
+            voucherDiscount={voucherDiscount}
+            levelDiscount={levelDiscount}
+            finalTotal={displayTotal}
+            voucherCode={voucherCode}
+            levelName={levelInfo?.name}
+            levelDiscountPercent={levelInfo?.discountPercent}
+          />
         </div>
       )}
     </div>

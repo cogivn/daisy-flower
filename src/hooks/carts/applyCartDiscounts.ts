@@ -1,5 +1,5 @@
-import type { CollectionBeforeChangeHook } from 'payload'
 import type { UserLevel } from '@/config/userLevels'
+import type { CollectionBeforeChangeHook } from 'payload'
 
 interface VoucherDoc {
   id: number | string
@@ -21,18 +21,148 @@ interface VoucherDoc {
   _status?: string
 }
 
+type CartItem = {
+  product: number | string | { id: number | string }
+  variant?: number | string | { id: number | string } | null
+  quantity: number
+}
+
+function extractId(ref: number | string | { id: number | string }): string {
+  return String(typeof ref === 'object' ? ref.id : ref)
+}
+
 /**
  * Cart beforeChange hook — runs AFTER the plugin's subtotal calculation.
  *
- * 1. Stores originalSubtotal (base price before any discounts)
- * 2. Re-validates the applied voucher (still published, not expired, etc.)
- * 3. Calculates level discount from UserLevelSettings
- * 4. Subtracts both discounts from subtotal
+ * 0. Batch-fetches active sale events + product/variant prices (1-2 queries total)
+ * 1. Adjusts subtotal for active sale events (plugin uses original prices)
+ * 2. Stores originalSubtotal (base price before any discounts)
+ * 3. Re-validates the applied voucher (still published, not expired, etc.)
+ * 4. Calculates level discount from UserLevelSettings
+ * 5. Subtracts both discounts from subtotal
  *
  * If voucher is no longer valid, auto-removes it from the cart.
  */
 export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req }) => {
-  // At this point, the plugin's hook has already set data.subtotal from item prices
+  const items = (data.items || []) as CartItem[]
+
+  // --- Build a price cache for all cart items in minimal queries ---
+  const salePriceMap = new Map<string, number>()
+  const productPriceMap = new Map<string, number>()
+  const variantPriceMap = new Map<string, number>()
+
+  if (items.length > 0) {
+    const productIdsToFetch = new Set<string>()
+    const variantIdsToFetch = new Set<string>()
+
+    // 1 query: fetch ALL active sale events for cart products
+    const allProductIds = items.map((item) => extractId(item.product))
+    try {
+      const { docs: activeSales } = await req.payload.find({
+        collection: 'sale-events',
+        where: {
+          and: [{ product: { in: [...new Set(allProductIds)] } }, { status: { equals: 'active' } }],
+        },
+        limit: 100,
+        depth: 0,
+        sort: '-createdAt',
+        overrideAccess: true,
+        req,
+      })
+
+      // Keep only the most recent sale per product
+      for (const sale of activeSales) {
+        const pid = extractId(sale.product as number | string | { id: number | string })
+        if (!salePriceMap.has(pid) && sale.salePrice != null) {
+          salePriceMap.set(pid, sale.salePrice as number)
+        }
+      }
+    } catch {
+      // Non-critical: fallback to original prices
+    }
+
+    // Determine which items need their original prices looked up
+    for (const item of items) {
+      const pid = extractId(item.product)
+      if (!salePriceMap.has(pid)) {
+        if (item.variant) {
+          variantIdsToFetch.add(extractId(item.variant))
+        } else {
+          productIdsToFetch.add(pid)
+        }
+      }
+    }
+
+    // Batch fetch product prices (1 query)
+    if (productIdsToFetch.size > 0) {
+      try {
+        const uniqueProductIds = Array.from(productIdsToFetch)
+        const { docs: productDocs } = await req.payload.find({
+          collection: 'products',
+          where: { id: { in: uniqueProductIds } },
+          limit: uniqueProductIds.length,
+          depth: 0,
+          select: { priceInUSD: true },
+          overrideAccess: true,
+          req,
+        })
+        for (const doc of productDocs) {
+          productPriceMap.set(String(doc.id), doc.priceInUSD ?? 0)
+        }
+      } catch {
+        // Fallback to 0
+      }
+    }
+
+    // Batch fetch variant prices (1 query)
+    if (variantIdsToFetch.size > 0) {
+      try {
+        const uniqueVariantIds = Array.from(variantIdsToFetch)
+        const { docs: variantDocs } = await req.payload.find({
+          collection: 'variants' as 'users',
+          where: { id: { in: uniqueVariantIds } },
+          limit: uniqueVariantIds.length,
+          depth: 0,
+          overrideAccess: true,
+          req,
+        })
+        for (const doc of variantDocs) {
+          variantPriceMap.set(
+            String(doc.id),
+            (doc as unknown as { priceInUSD?: number }).priceInUSD ?? 0,
+          )
+        }
+      } catch {
+        // Fallback to 0
+      }
+    }
+
+    // Helper to resolve the correct price for an item
+    const getItemPrice = (item: CartItem): number => {
+      const pid = extractId(item.product)
+      if (salePriceMap.has(pid)) return salePriceMap.get(pid)!
+
+      if (item.variant) {
+        const vid = extractId(item.variant)
+        return variantPriceMap.get(vid) ?? 0
+      }
+
+      return productPriceMap.get(pid) ?? 0
+    }
+
+    // Recalculate subtotal using effective prices
+    let adjustedSubtotal = 0
+    for (const item of items) {
+      const price = getItemPrice(item)
+      adjustedSubtotal += price * (item.quantity ?? 1)
+    }
+
+    if (adjustedSubtotal > 0 || salePriceMap.size > 0) {
+      data.subtotal = adjustedSubtotal
+    }
+  }
+
+  // At this point, data.subtotal reflects sale prices (if any)
   const baseSubtotal = data.subtotal ?? 0
   data.originalSubtotal = baseSubtotal
 
@@ -59,10 +189,8 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
       const isPublished = voucher._status === 'published'
       const isNotExpired = !voucher.validTo || new Date(voucher.validTo) > now
       const isStarted = !voucher.validFrom || new Date(voucher.validFrom) <= now
-      const withinUsageLimit =
-        voucher.maxUses == null || (voucher.usedCount ?? 0) < voucher.maxUses
-      const meetsMinOrder =
-        voucher.minOrderAmount == null || baseSubtotal >= voucher.minOrderAmount
+      const withinUsageLimit = voucher.maxUses == null || (voucher.usedCount ?? 0) < voucher.maxUses
+      const meetsMinOrder = voucher.minOrderAmount == null || baseSubtotal >= voucher.minOrderAmount
 
       if (!isPublished || !isNotExpired || !isStarted || !withinUsageLimit || !meetsMinOrder) {
         data.appliedVoucher = null
@@ -73,20 +201,31 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
         let discountBase = baseSubtotal
         if (voucher.scope === 'specific' && voucher.applicableProducts?.length) {
           const applicableIds = voucher.applicableProducts.map((p) =>
-            String(typeof p === 'object' ? (p as any).id : p),
+            String(typeof p === 'object' ? (p as { id: number | string }).id : p),
           )
-          const items = (data.items || []) as Array<{
-            product: number | string | { id: number | string }
-            quantity: number
-            priceInUSD?: number
-          }>
-          discountBase = items.reduce((sum, item) => {
-            const pid = String(typeof item.product === 'object' ? item.product.id : item.product)
-            if (applicableIds.includes(pid)) {
-              return sum + (item.priceInUSD ?? 0) * (item.quantity ?? 1)
-            }
-            return sum
-          }, 0)
+
+          let eligibleSubtotal = 0
+          // Only defined if items.length > 0
+          const resolver =
+            items.length > 0
+              ? (item: CartItem) => {
+                  const pid = extractId(item.product)
+                  if (salePriceMap.has(pid)) return salePriceMap.get(pid)!
+                  if (item.variant) {
+                    return variantPriceMap.get(extractId(item.variant)) ?? 0
+                  }
+                  return productPriceMap.get(pid) ?? 0
+                }
+              : () => 0
+
+          for (const item of items) {
+            const pid = extractId(item.product)
+            if (!applicableIds.includes(pid)) continue
+            const price = resolver(item)
+            eligibleSubtotal += price * (item.quantity ?? 1)
+          }
+
+          discountBase = eligibleSubtotal
         }
 
         if (voucher.type === 'percent') {
@@ -134,10 +273,11 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
         req,
       })
 
-      const levels = (settings?.levels as Array<{
-        level: string
-        discountPercent: number
-      }>) || []
+      const levels =
+        (settings?.levels as Array<{
+          level: string
+          discountPercent: number
+        }>) || []
 
       const match = levels.find((l) => l.level === userLevel)
       if (match && match.discountPercent > 0) {

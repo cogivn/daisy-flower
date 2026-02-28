@@ -1,24 +1,24 @@
+import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
-import { APIError, Plugin, ValidationError } from 'payload'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
-import { ecommercePlugin } from '@payloadcms/plugin-ecommerce'
+import { APIError, Plugin } from 'payload'
 
 import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
 
-import { Page, Product } from '@/payload-types'
-import { getServerSideURL } from '@/utilities/getURL'
-import { ProductsCollection } from '@/collections/Products'
-import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
+import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
 import { customerOnlyFieldAccess } from '@/access/customerOnlyFieldAccess'
 import { isAdmin } from '@/access/isAdmin'
 import { isDocumentOwner } from '@/access/isDocumentOwner'
-import { syncUserOnOrderChange } from '@/hooks/orders/syncUserOnOrderChange'
-import { incrementVoucherUsage } from '@/hooks/orders/incrementVoucherUsage'
-import { copyVoucherToOrder } from '@/hooks/orders/copyVoucherToOrder'
+import { ProductsCollection } from '@/collections/Products'
 import { applyCartDiscounts } from '@/hooks/carts/applyCartDiscounts'
+import { copyVoucherToOrder } from '@/hooks/orders/copyVoucherToOrder'
+import { incrementVoucherUsage } from '@/hooks/orders/incrementVoucherUsage'
+import { syncUserOnOrderChange } from '@/hooks/orders/syncUserOnOrderChange'
+import { Page, Product } from '@/payload-types'
+import { getServerSideURL } from '@/utilities/getURL'
 
 const generateTitle: GenerateTitle<Product | Page> = ({ doc }) => {
   return doc?.title ? `${doc.title} | Payload Ecommerce Template` : 'Payload Ecommerce Template'
@@ -134,15 +134,23 @@ export const plugins: Plugin[] = [
       isAdmin,
       isDocumentOwner,
     },
+    addresses: {
+      addressesCollectionOverride: ({ defaultCollection }) => ({
+        ...defaultCollection,
+        access: {
+          ...defaultCollection.access,
+          read: isDocumentOwner,
+          update: isDocumentOwner,
+          delete: isDocumentOwner,
+        },
+      }),
+    },
     carts: {
       cartsCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
         hooks: {
           ...(defaultCollection.hooks || {}),
-          beforeChange: [
-            ...(defaultCollection.hooks?.beforeChange || []),
-            applyCartDiscounts,
-          ],
+          beforeChange: [...(defaultCollection.hooks?.beforeChange || []), applyCartDiscounts],
         },
         fields: [
           ...defaultCollection.fields,
@@ -206,10 +214,7 @@ export const plugins: Plugin[] = [
         ...defaultCollection,
         hooks: {
           ...(defaultCollection.hooks || {}),
-          beforeChange: [
-            ...(defaultCollection.hooks?.beforeChange || []),
-            copyVoucherToOrder,
-          ],
+          beforeChange: [...(defaultCollection.hooks?.beforeChange || []), copyVoucherToOrder],
           afterChange: [
             ...(defaultCollection.hooks?.afterChange || []),
             syncUserOnOrderChange,

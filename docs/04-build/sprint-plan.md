@@ -102,14 +102,14 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 | Integration test suite (33 tests, seed data, full workflow coverage) | `tests/int/voucher-system.int.spec.ts` | **Xong** |
 | Register hooks + endpoints in config | `src/plugins/index.ts`, `src/payload.config.ts` | **Xong** |
 
-##### Sprint 3 — Frontend UI (Chưa làm)
+##### Sprint 3 — Frontend UI (Đang làm)
 
 | Task | File / vị trí dự kiến | Trạng thái |
 |------|------------------------|------------|
-| Checkout: VoucherInput (nhập mã, nút áp dụng, hiển thị discount) | `src/components/checkout/` | **Chưa làm** |
-| Checkout: Price breakdown (subtotal, voucher discount, level discount, total) | `src/components/checkout/` | **Chưa làm** |
-| Account: Level display (level hiện tại + ưu đãi) | `src/app/(app)/account/` | **Chưa làm** |
-| Pass voucher + levelDiscount to order creation flow | Checkout form / server action | **Chưa làm** |
+| Checkout: VoucherInput (nhập mã, nút áp dụng, hiển thị discount) | `src/components/checkout/VoucherInput.tsx` | **Xong** |
+| Checkout: Price breakdown (subtotal, voucher discount, level discount, total) | `src/components/checkout/PriceBreakdown.tsx` | **Xong** |
+| Account: Level display (level hiện tại + ưu đãi) | `src/components/account/UserLevelCard.tsx` | **Xong** |
+| Pass voucher + levelDiscount to order creation flow | `copyVoucherToOrder` hook (existing) | **Xong** (hook đã handle) |
 
 ##### Stacking Rules
 

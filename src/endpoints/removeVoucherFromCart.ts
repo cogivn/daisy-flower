@@ -2,13 +2,13 @@ import type { Endpoint } from 'payload'
 import { APIError } from 'payload'
 
 /**
- * POST /api/vouchers/remove-from-cart
+ * POST /api/voucher-remove
  *
  * Removes the applied voucher from the authenticated user's active cart.
  * The cart's beforeChange hook will recalculate subtotal without discount.
  */
 export const removeVoucherFromCart: Endpoint = {
-  path: '/vouchers/remove-from-cart',
+  path: '/voucher-remove',
   method: 'post',
   handler: async (req) => {
     if (!req.user) {
@@ -18,10 +18,7 @@ export const removeVoucherFromCart: Endpoint = {
     const { docs: carts } = await req.payload.find({
       collection: 'carts',
       where: {
-        and: [
-          { customer: { equals: req.user.id } },
-          { purchasedAt: { exists: false } },
-        ],
+        and: [{ customer: { equals: req.user.id } }, { purchasedAt: { exists: false } }],
       },
       sort: '-updatedAt',
       limit: 1,
@@ -36,20 +33,29 @@ export const removeVoucherFromCart: Endpoint = {
       return Response.json({ error: 'No active cart found.' }, { status: 400 })
     }
 
+    interface CartDoc {
+      id: string | number
+      subtotal?: number
+      originalSubtotal?: number
+      voucherCode?: string | null
+      voucherDiscount?: number | null
+      levelDiscount?: number | null
+    }
+
     const updatedCart = await req.payload.update({
-      collection: 'carts' as any,
+      collection: 'carts' as never,
       id: cart.id,
       data: {
         appliedVoucher: null,
         voucherCode: null,
         voucherDiscount: 0,
-      } as any,
+      } as never,
       depth: 0,
       overrideAccess: true,
       req,
     })
 
-    const result = updatedCart as any
+    const result = updatedCart as unknown as CartDoc
 
     return Response.json({
       success: true,

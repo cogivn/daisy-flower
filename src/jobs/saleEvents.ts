@@ -7,10 +7,7 @@ export const refreshSaleEventsHandler = (async ({ req }) => {
   await payload.update({
     collection: 'sale-events',
     where: {
-      and: [
-        { status: { not_equals: 'expired' } },
-        { endsAt: { less_than: now } },
-      ],
+      and: [{ status: { not_equals: 'expired' } }, { endsAt: { less_than: now } }],
     },
     data: {
       status: 'expired',
@@ -35,7 +32,7 @@ export const refreshSaleEventsHandler = (async ({ req }) => {
   })
 
   return { output: {}, state: 'succeeded' }
-}) satisfies TaskHandler<any>
+}) satisfies TaskHandler<'refresh-sale-events'>
 
 export const refreshSaleEventsTask = {
   slug: 'refresh-sale-events',
@@ -47,4 +44,3 @@ export const refreshSaleEventsTask = {
     },
   ],
 }
-
