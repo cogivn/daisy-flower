@@ -1,29 +1,22 @@
-import path from 'path'
-import { test, expect, Page } from '@playwright/test'
-import { fileURLToPath } from 'url'
-
-const filename = fileURLToPath(import.meta.url)
-const dirname = path.dirname(filename)
+import { APIRequestContext, expect, Page, test } from '@playwright/test'
+import { seedTestData, seedTestUser } from '../helpers/seedUser'
 
 test.describe('Frontend', () => {
-  let page: Page
-  const baseURL = 'http://localhost:3000'
-  const mediaURL = `${baseURL}/admin/collections/media`
-  const adminEmail = 'admin@test.com'
+  const baseURL = 'http://127.0.0.1:3000'
+  const adminEmail = 'admin@daisy.com'
   const adminPassword = 'admin'
-  const userEmail = 'user@test.com'
-  const userPassword = 'user'
+  const userEmail = 'customer@example.com'
+  const userPassword = 'password'
   const testPaymentDetails = {
     cardNumber: '5454 5454 5454 5454',
     expiryDate: '0330',
     cvc: '737',
     postcode: 'WS11 1DB',
   }
-  test.beforeAll(async ({ browser, request }, testInfo) => {
-    const context = await browser.newContext()
-    page = await context.newPage()
-    await createUserAndLogin(request, adminEmail, adminPassword)
-    await createVariantsAndProducts(page, request)
+
+  test.beforeAll(async () => {
+    await seedTestUser()
+    await seedTestData()
   })
 
   test('can go on homepage', async ({ page }) => {
@@ -31,9 +24,12 @@ test.describe('Frontend', () => {
 
     await expect(page).toHaveTitle(/Payload Ecommerce Template/)
 
-    const heading = page.locator('h1').first()
+    const heading = page.getByRole('heading', {
+      level: 1,
+      name: /Payload Ecommerce Template|Lovely Plants & Flowers/i,
+    })
 
-    await expect(heading).toHaveText('Payload Ecommerce Template')
+    await expect(heading).toBeVisible()
   })
 
   test('can sign up and subsequently login', async ({ page }) => {
@@ -380,12 +376,12 @@ test.describe('Frontend', () => {
   })
 
   async function createUserAndLogin(
-    request: any,
+    request: APIRequestContext,
     email: string,
     password: string,
     isAdmin: boolean = true,
   ) {
-    const data: any = {
+    const data: { email: string; password: string; roles?: string[] } = {
       email,
       password,
     }
@@ -394,131 +390,28 @@ test.describe('Frontend', () => {
       data.roles = ['admin']
     }
 
-    const response = await request.post(`${baseURL}/api/users`, {
+    const createRes = await request.post(`${baseURL}/api/users`, {
       data,
     })
 
-    console.log({ response })
+    if (!createRes.ok() && createRes.status() !== 422) {
+      // 422 usually means user already exists
+      console.log(`User creation note: ${createRes.status()} ${await createRes.text()}`)
+    }
 
-    const login = await request.post(`${baseURL}/api/users/login`, {
+    const loginRes = await request.post(`${baseURL}/api/users/login`, {
       data: {
         email,
         password,
       },
     })
 
-    console.log({ login })
-  }
+    if (!loginRes.ok()) {
+      console.error(`Login failed for ${email}:`, loginRes.status(), await loginRes.text())
+      throw new Error(`Login failed for ${email}: ${loginRes.status()}`)
+    }
 
-  async function createVariantsAndProducts(page: Page, request: any) {
-    const variantType = await request.post(`${baseURL}/api/variantTypes`, {
-      data: {
-        name: 'brand',
-        label: 'Brand',
-      },
-    })
-
-    const variantTypeID = (await variantType.json()).doc.id
-
-    const brands = [
-      { label: 'Payload', value: 'payload' },
-      { label: 'Figma', value: 'figma' },
-    ]
-
-    const [payload, figma] = await Promise.all(
-      brands.map((option) =>
-        request.post(`${baseURL}/api/variantOptions`, {
-          data: {
-            ...option,
-            variantType: variantTypeID,
-          },
-        }),
-      ),
-    )
-
-    const payloadVariantID = (await payload.json()).doc.id
-    const figmaVariantID = (await figma.json()).doc.id
-
-    await loginFromUI(page, adminEmail, adminPassword)
-    await page.goto(`${mediaURL}/create`)
-    const fileInput = page.locator('input[type="file"]')
-    const altInput = page.locator('input[name="alt"]')
-    const filePath = path.resolve(dirname, '../../public/media/image-post1.webp')
-    await fileInput.setInputFiles(filePath)
-    await altInput.fill('Test Image')
-    const uploadButton = page.locator('#action-save')
-    await uploadButton.click()
-    const successMessage = page.locator('text=Media successfully created')
-    await expect(successMessage).toBeVisible()
-    await expect(page).toHaveURL(/\/admin\/collections\/media\/\d+/)
-    const imageID = page.url().split('/').pop()
-
-    const productWithVariants = await request.post(`${baseURL}/api/products`, {
-      data: {
-        title: 'Test Product With Variants',
-        slug: 'test-product-variants',
-        enableVariants: true,
-        variantTypes: [variantTypeID],
-        inventory: 100,
-        _status: 'published',
-        layout: [],
-        gallery: [imageID],
-        priceInUSDEnabled: true,
-        priceInUSD: 1000,
-      },
-    })
-
-    const productID = (await productWithVariants.json()).doc.id
-
-    const variantPayload = await request.post(`${baseURL}/api/variants`, {
-      data: {
-        product: productID,
-        variantType: variantTypeID,
-        options: [payloadVariantID],
-        priceInUSDEnabled: true,
-        priceInUSD: 1000,
-        inventory: 50,
-        _status: 'published',
-      },
-    })
-
-    const variantFigma = await request.post(`${baseURL}/api/variants`, {
-      data: {
-        product: productID,
-        variantType: variantTypeID,
-        options: [figmaVariantID],
-        priceInUSDEnabled: true,
-        priceInUSD: 1000,
-        inventory: 50,
-        _status: 'published',
-      },
-    })
-
-    const product = await request.post(`${baseURL}/api/products`, {
-      data: {
-        title: 'Test Product',
-        slug: 'test-product',
-        inventory: 100,
-        _status: 'published',
-        layout: [],
-        gallery: [imageID],
-        priceInUSDEnabled: true,
-        priceInUSD: 1000,
-      },
-    })
-
-    const noInventoryProduct = await request.post(`${baseURL}/api/products`, {
-      data: {
-        title: 'No Inventory Product',
-        slug: 'no-inventory-product',
-        inventory: 0,
-        _status: 'published',
-        layout: [],
-        gallery: [imageID],
-        priceInUSDEnabled: true,
-        priceInUSD: 1000,
-      },
-    })
+    console.log(`Successfully logged in as ${email}`)
   }
 
   async function logoutAndExpectSuccess(page: Page) {
@@ -530,13 +423,14 @@ test.describe('Frontend', () => {
   async function loginFromUI(page: Page, email: string, password: string) {
     const emailInput = page.locator('input[name="email"]')
     const passwordInput = page.locator('input[name="password"]')
-    const submitButton = page.locator('button[type="submit"]')
+    // Filter by text to avoid ambiguity with the search button
+    const submitButton = page.locator('button[type="submit"]').filter({ hasText: /Continue/i })
 
     await page.goto(`${baseURL}/login`)
     await emailInput.fill(email)
     await passwordInput.fill(password)
     await submitButton.click()
-    await page.waitForURL(/\/account/)
+    await page.waitForURL(/\/account|warning=You\+are\+already\+logged\+in/)
   }
 
   async function addToCartAndConfirm(

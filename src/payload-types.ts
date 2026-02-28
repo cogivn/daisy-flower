@@ -155,6 +155,7 @@ export interface Config {
     tasks: {
       'refresh-sale-events': TaskRefreshSaleEvents;
       'cleanup-abandoned-orders': TaskCleanupAbandonedOrders;
+      'cleanup-expired-voucher-reservations': TaskCleanupExpiredVoucherReservations;
       inline: {
         input: unknown;
         output: unknown;
@@ -1343,6 +1344,10 @@ export interface Cart {
    */
   appliedVoucher?: (number | null) | Voucher;
   /**
+   * When the voucher reservation expires (15 min from apply).
+   */
+  reservedVoucherExpiresAt?: string | null;
+  /**
    * Applied voucher code.
    */
   voucherCode?: string | null;
@@ -1581,7 +1586,11 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'refresh-sale-events' | 'cleanup-abandoned-orders';
+        taskSlug:
+          | 'inline'
+          | 'refresh-sale-events'
+          | 'cleanup-abandoned-orders'
+          | 'cleanup-expired-voucher-reservations';
         taskID: string;
         input?:
           | {
@@ -1614,7 +1623,9 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'refresh-sale-events' | 'cleanup-abandoned-orders') | null;
+  taskSlug?:
+    | ('inline' | 'refresh-sale-events' | 'cleanup-abandoned-orders' | 'cleanup-expired-voucher-reservations')
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -2523,6 +2534,7 @@ export interface CartsSelect<T extends boolean = true> {
   subtotal?: T;
   currency?: T;
   appliedVoucher?: T;
+  reservedVoucherExpiresAt?: T;
   voucherCode?: T;
   originalSubtotal?: T;
   voucherDiscount?: T;
@@ -2942,6 +2954,14 @@ export interface TaskRefreshSaleEvents {
  * via the `definition` "TaskCleanup-abandoned-orders".
  */
 export interface TaskCleanupAbandonedOrders {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskCleanup-expired-voucher-reservations".
+ */
+export interface TaskCleanupExpiredVoucherReservations {
   input?: unknown;
   output?: unknown;
 }

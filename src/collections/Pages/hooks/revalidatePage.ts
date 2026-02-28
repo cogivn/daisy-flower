@@ -1,8 +1,18 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
-
 import type { Page } from '../../../payload-types'
+
+// Helper to safely get revalidation functions in non-Next environments (e.g. scripts/tests)
+const getRevalidateFunctions = () => {
+  try {
+    return require('next/cache')
+  } catch (e) {
+    return {
+      revalidatePath: () => {},
+      revalidateTag: () => {},
+    }
+  }
+}
 
 export const revalidatePage: CollectionAfterChangeHook<Page> = ({
   doc,
@@ -15,6 +25,7 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
 
       payload.logger.info(`Revalidating page at path: ${path}`)
 
+      const { revalidatePath } = getRevalidateFunctions()
       revalidatePath(path)
       //revalidateTag('pages-sitemap')
     }
@@ -25,6 +36,7 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
 
       payload.logger.info(`Revalidating old page at path: ${oldPath}`)
 
+      const { revalidatePath } = getRevalidateFunctions()
       revalidatePath(oldPath)
       //revalidateTag('pages-sitemap')
     }
@@ -35,6 +47,7 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
 export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({ doc, req: { context } }) => {
   if (!context.disableRevalidate) {
     const path = doc?.slug === 'home' ? '/' : `/${doc?.slug}`
+    const { revalidatePath } = getRevalidateFunctions()
     revalidatePath(path)
     //revalidateTag('pages-sitemap')
   }

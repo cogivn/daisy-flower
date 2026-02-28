@@ -1,0 +1,158 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - region "Notifications alt+T"
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: "Free Delivery: Take advantage of our limited time offer!"
+      - generic [ref=e6]:
+        - generic [ref=e8] [cursor=pointer]:
+          - text: English
+          - img [ref=e9]
+        - 'button "Theme: Light" [ref=e12]':
+          - text: "Theme: Light"
+          - img [ref=e13]
+    - generic [ref=e16]:
+      - link "LUKANI." [ref=e17] [cursor=pointer]:
+        - /url: /
+        - heading "LUKANI." [level=1] [ref=e18]
+      - generic [ref=e20]:
+        - button "All Categories" [ref=e22] [cursor=pointer]:
+          - generic [ref=e23]: All Categories
+          - img [ref=e24]
+        - textbox "Search product..." [ref=e26]
+        - button "Search products" [ref=e27]:
+          - img [ref=e28]
+      - generic [ref=e31]:
+        - link [ref=e32] [cursor=pointer]:
+          - /url: /account
+          - img [ref=e33]
+        - link "0" [ref=e36] [cursor=pointer]:
+          - /url: /wishlist
+          - img [ref=e37]
+          - generic [ref=e39]: "0"
+        - button "My Cart $0.00" [ref=e40] [cursor=pointer]:
+          - img [ref=e42]
+          - generic [ref=e46]:
+            - generic [ref=e47]: My Cart
+            - generic [ref=e48]: $0.00
+    - generic [ref=e50]:
+      - button "Categories" [ref=e52] [cursor=pointer]:
+        - generic [ref=e53]:
+          - img [ref=e54]
+          - generic [ref=e55]: Categories
+        - img [ref=e56]
+      - navigation [ref=e58]:
+        - list [ref=e59]:
+          - listitem [ref=e60]:
+            - link "Home" [ref=e61] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e62]:
+            - link "Shop" [ref=e63] [cursor=pointer]:
+              - /url: /shop
+      - generic [ref=e65]:
+        - img [ref=e66]
+        - generic [ref=e68]:
+          - generic [ref=e69]: Call us 24/7
+          - generic [ref=e70]: (+84)123.456.789
+  - main [ref=e71]:
+    - generic [ref=e73]:
+      - heading "You are already logged out." [level=1] [ref=e74]
+      - paragraph [ref=e75]:
+        - text: What would you like to do next?
+        - link "Click here" [ref=e76] [cursor=pointer]:
+          - /url: /search
+        - text: to shop. To log back in,
+        - link "click here" [ref=e77] [cursor=pointer]:
+          - /url: /login
+        - text: .
+  - contentinfo [ref=e78]:
+    - generic [ref=e80]:
+      - generic [ref=e81]:
+        - link "LUKANI." [ref=e82] [cursor=pointer]:
+          - /url: /
+          - heading "LUKANI." [level=2] [ref=e83]
+        - paragraph [ref=e84]: We are a team of designers and developers that create high quality plants and flower shop themes for your business.
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e87]
+            - generic [ref=e90]: 1234 Street Name, City, United States
+          - generic [ref=e91]:
+            - img [ref=e92]
+            - generic [ref=e94]: +01 23456789
+      - generic [ref=e95]:
+        - heading "Information" [level=4] [ref=e96]
+        - list [ref=e97]:
+          - listitem [ref=e98]:
+            - link "About Us" [ref=e99] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e100]:
+            - link "Checkout" [ref=e101] [cursor=pointer]:
+              - /url: /checkout
+          - listitem [ref=e102]:
+            - link "Contact" [ref=e103] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e104]:
+            - link "Frequently Questions" [ref=e105] [cursor=pointer]:
+              - /url: /faq
+      - generic [ref=e106]:
+        - heading "My Account" [level=4] [ref=e107]
+        - list [ref=e108]:
+          - listitem [ref=e109]:
+            - link "My Account" [ref=e110] [cursor=pointer]:
+              - /url: /account
+          - listitem [ref=e111]:
+            - link "Shopping Cart" [ref=e112] [cursor=pointer]:
+              - /url: /cart
+          - listitem [ref=e113]:
+            - link "Checkout" [ref=e114] [cursor=pointer]:
+              - /url: /checkout
+          - listitem [ref=e115]:
+            - link "Shop" [ref=e116] [cursor=pointer]:
+              - /url: /shop
+      - generic [ref=e117]:
+        - heading "Opening Hours" [level=4] [ref=e118]
+        - list [ref=e119]:
+          - listitem [ref=e120]:
+            - generic [ref=e121]: "Monday - Friday:"
+            - generic [ref=e122]: 8AM - 10PM
+          - listitem [ref=e123]:
+            - generic [ref=e124]: "Saturday:"
+            - generic [ref=e125]: 9AM - 8PM
+          - listitem [ref=e126]:
+            - generic [ref=e127]: "Sunday:"
+            - generic [ref=e128]: Closed
+    - generic [ref=e130]:
+      - paragraph [ref=e131]: © 2026 LUKANI. Made with ❤️ for plants.
+      - generic [ref=e132]:
+        - generic [ref=e133]:
+          - link [ref=e134] [cursor=pointer]:
+            - /url: "#"
+            - img [ref=e135]
+          - link [ref=e137] [cursor=pointer]:
+            - /url: "#"
+            - img [ref=e138]
+          - link [ref=e140] [cursor=pointer]:
+            - /url: "#"
+            - img [ref=e141]
+          - link [ref=e144] [cursor=pointer]:
+            - /url: "#"
+            - img [ref=e145]
+        - generic [ref=e148]:
+          - generic [ref=e149]: VISA
+          - generic [ref=e150]: PAYPAL
+          - generic [ref=e151]: MC
+  - generic [ref=e156] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e157]:
+      - img [ref=e158]
+    - generic [ref=e161]:
+      - button "Open issues overlay" [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]: "0"
+          - generic [ref=e165]: "1"
+        - generic [ref=e166]: Issue
+      - button "Collapse issues badge" [ref=e167]:
+        - img [ref=e168]
+  - alert [ref=e170]
+```

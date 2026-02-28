@@ -1,18 +1,18 @@
-import type { Payload, PayloadRequest } from 'payload'
 import type { Transaction } from '@/payload-types'
+import type { Payload, PayloadRequest } from 'payload'
 
-import { createSeedContext, seedMediaBatch, withRetry, rt } from './helpers'
 import type { SeedContext } from './helpers'
+import { createSeedContext, rt, seedMediaBatch, withRetry } from './helpers'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { heroMedia, productMedia, bannerMedia, blogMedia, legacyMedia } from './data/media-urls'
-import { categories as categorySeedData } from './data/categories'
-import { simpleProducts } from './data/products'
-import { headerData, footerData } from './data/globals'
 import { contactFormData } from './contact-form'
-import { newsletterFormData } from './newsletter-form'
-import { homePageData } from './home'
 import { contactPageData } from './contact-page'
+import { categories as categorySeedData } from './data/categories'
+import { footerData, headerData } from './data/globals'
+import { bannerMedia, blogMedia, heroMedia, legacyMedia, productMedia } from './data/media-urls'
+import { simpleProducts } from './data/products'
+import { homePageData } from './home'
+import { newsletterFormData } from './newsletter-form'
 import { resetDatabase } from './reset'
 
 export const seed = async ({
@@ -47,7 +47,13 @@ export const seed = async ({
 async function stepMedia(ctx: SeedContext) {
   ctx.payload.logger.info('— Seeding media...')
 
-  await seedMediaBatch(ctx, [...legacyMedia, ...heroMedia, ...productMedia, ...bannerMedia, ...blogMedia])
+  await seedMediaBatch(ctx, [
+    ...legacyMedia,
+    ...heroMedia,
+    ...productMedia,
+    ...bannerMedia,
+    ...blogMedia,
+  ])
 }
 
 // ──────────────────────────────────────────────
@@ -57,6 +63,7 @@ async function stepMedia(ctx: SeedContext) {
 async function stepUsers(ctx: SeedContext) {
   ctx.payload.logger.info('— Seeding users...')
 
+  // Seed Customer
   await ctx.payload.delete({
     collection: 'users',
     depth: 0,
@@ -74,6 +81,23 @@ async function stepUsers(ctx: SeedContext) {
   })
 
   ctx.users.customer = { id: customer.id, email: customer.email }
+
+  // Seed Admin
+  await ctx.payload.delete({
+    collection: 'users',
+    depth: 0,
+    where: { email: { equals: 'admin@daisy.com' } },
+  })
+
+  await ctx.payload.create({
+    collection: 'users',
+    data: {
+      name: 'Admin',
+      email: 'admin@daisy.com',
+      password: 'admin',
+      roles: ['admin'],
+    },
+  })
 }
 
 // ──────────────────────────────────────────────
@@ -121,7 +145,7 @@ async function stepProducts(ctx: SeedContext) {
   const auroraRose = await ctx.payload.create({
     collection: 'products',
     depth: 0,
-    data: ({
+    data: {
       _status: 'published',
       title: 'Aurora Rose Bouquet',
       slug: 'aurora-rose-bouquet',
@@ -140,9 +164,13 @@ async function stepProducts(ctx: SeedContext) {
         description: 'A lush hand‑tied bouquet of premium roses and seasonal greenery.',
         image: hatMedia?.id,
       },
-    }) as any,
+    } as any,
   })
-  ctx.products['aurora-rose-bouquet'] = { id: auroraRose.id, title: auroraRose.title, slug: 'aurora-rose-bouquet' }
+  ctx.products['aurora-rose-bouquet'] = {
+    id: auroraRose.id,
+    title: auroraRose.title,
+    slug: 'aurora-rose-bouquet',
+  }
 
   // 4b. Variant product: Evergreen Desk Plant
   const sizeType = await ctx.payload.create({
@@ -186,13 +214,16 @@ async function stepProducts(ctx: SeedContext) {
     ),
   )
   for (let i = 0; i < colorOptions.length; i++) {
-    ctx.variantOptions[colorOptions[i].value] = { id: colorDocs[i].id, value: colorOptions[i].value }
+    ctx.variantOptions[colorOptions[i].value] = {
+      id: colorDocs[i].id,
+      value: colorOptions[i].value,
+    }
   }
 
   const evergreenPlant = await ctx.payload.create({
     collection: 'products',
     depth: 0,
-    data: ({
+    data: {
       _status: 'published',
       title: 'Evergreen Desk Plant',
       slug: 'evergreen-desk-plant',
@@ -211,18 +242,20 @@ async function stepProducts(ctx: SeedContext) {
           'Evergreen Desk Plant is a low‑maintenance, air‑purifying plant that thrives in indirect light. Each plant is potted in a ceramic container with drainage and decorative stones, making it a ready‑to‑gift piece of decor.',
         ),
       ]),
-      layout: [
-        { blockType: 'mediaBlock', media: ctx.media.hero1?.id },
-      ],
+      layout: [{ blockType: 'mediaBlock', media: ctx.media.hero1?.id }],
       meta: {
         title: 'Evergreen Desk Plant',
         description: 'A compact evergreen plant in a minimalist pot.',
         image: ctx.media.tshirtBlack?.id,
       },
       relatedProducts: [auroraRose],
-    }) as any,
+    } as any,
   })
-  ctx.products['evergreen-desk-plant'] = { id: evergreenPlant.id, title: evergreenPlant.title, slug: 'evergreen-desk-plant' }
+  ctx.products['evergreen-desk-plant'] = {
+    id: evergreenPlant.id,
+    title: evergreenPlant.title,
+    slug: 'evergreen-desk-plant',
+  }
 
   // Create variants for desk plant
   const white = ctx.variantOptions.white
@@ -234,16 +267,24 @@ async function stepProducts(ctx: SeedContext) {
       collection: 'variants',
       depth: 0,
       data: {
-        product: evergreenPlant, options: [sizeOpt, white],
-        inventory: 492, priceInUSDEnabled: true, priceInUSD: 4999, _status: 'published',
+        product: evergreenPlant,
+        options: [sizeOpt, white],
+        inventory: 492,
+        priceInUSDEnabled: true,
+        priceInUSD: 4999,
+        _status: 'published',
       } as any,
     })
     await ctx.payload.create({
       collection: 'variants',
       depth: 0,
       data: {
-        product: evergreenPlant, options: [sizeOpt, black],
-        inventory: sizeVal === 'medium' ? 0 : 492, priceInUSDEnabled: true, priceInUSD: 4999, _status: 'published',
+        product: evergreenPlant,
+        options: [sizeOpt, black],
+        inventory: sizeVal === 'medium' ? 0 : 492,
+        priceInUSDEnabled: true,
+        priceInUSD: 4999,
+        _status: 'published',
       } as any,
     })
   }
@@ -252,9 +293,7 @@ async function stepProducts(ctx: SeedContext) {
   const mediumWhiteVariant = await ctx.payload.find({
     collection: 'variants',
     where: {
-      and: [
-        { product: { equals: evergreenPlant.id } },
-      ],
+      and: [{ product: { equals: evergreenPlant.id } }],
     },
     limit: 1,
     depth: 0,
@@ -266,9 +305,7 @@ async function stepProducts(ctx: SeedContext) {
   const smallVariant = await ctx.payload.find({
     collection: 'variants',
     where: {
-      and: [
-        { product: { equals: evergreenPlant.id } },
-      ],
+      and: [{ product: { equals: evergreenPlant.id } }],
     },
     limit: 2,
     depth: 0,
@@ -418,35 +455,55 @@ async function stepEcommerce(ctx: SeedContext) {
   const variant2 = ctx.misc.sampleVariant2 as number | string
 
   await Promise.all([
-    ctx.payload.create({ collection: 'addresses', depth: 0, data: { customer: customerId, ...addressUS } as any }),
-    ctx.payload.create({ collection: 'addresses', depth: 0, data: { customer: customerId, ...addressUK } as any }),
+    ctx.payload.create({
+      collection: 'addresses',
+      depth: 0,
+      data: { customer: customerId, ...addressUS } as any,
+    }),
+    ctx.payload.create({
+      collection: 'addresses',
+      depth: 0,
+      data: { customer: customerId, ...addressUK } as any,
+    }),
   ])
 
   const txnData = {
-    currency: 'USD', customer: customerId, paymentMethod: 'stripe',
+    currency: 'USD',
+    customer: customerId,
+    paymentMethod: 'stripe',
     stripe: { customerID: 'cus_123', paymentIntentID: 'pi_123' },
     billingAddress: addressUS,
   }
 
-  await ctx.payload.create({ collection: 'transactions', data: { ...txnData, status: 'pending' } as any })
-  const txn = await ctx.payload.create({ collection: 'transactions', data: { ...txnData, status: 'succeeded' } as any })
+  await ctx.payload.create({
+    collection: 'transactions',
+    data: { ...txnData, status: 'pending' } as any,
+  })
+  const txn = await ctx.payload.create({
+    collection: 'transactions',
+    data: { ...txnData, status: 'succeeded' } as any,
+  })
 
   const createCart = (data: Record<string, unknown>) =>
     withRetry(() => ctx.payload.create({ collection: 'carts', data: data as any }))
 
   await createCart({
-    customer: customerId, currency: 'USD',
+    customer: customerId,
+    currency: 'USD',
     items: [{ product: plantId, variant: variant1, quantity: 1 }],
   })
 
   await createCart({
-    currency: 'USD', createdAt: new Date('2023-01-01T00:00:00Z').toISOString(),
+    currency: 'USD',
+    createdAt: new Date('2023-01-01T00:00:00Z').toISOString(),
     items: [{ product: roseId, quantity: 1 }],
   })
 
   await createCart({
-    customer: customerId, currency: 'USD',
-    purchasedAt: new Date().toISOString(), subtotal: 7499,
+    customer: customerId,
+    currency: 'USD',
+    purchasedAt: new Date().toISOString(),
+    subtotal: 7499,
     items: [
       { product: plantId, variant: variant1, quantity: 1 },
       { product: plantId, variant: variant2, quantity: 1 },
@@ -461,18 +518,26 @@ async function stepEcommerce(ctx: SeedContext) {
   await ctx.payload.create({
     collection: 'orders',
     data: {
-      amount: 7499, currency: 'USD', customer: customerId,
-      shippingAddress: addressUS, items: orderItems,
-      status: 'completed', transactions: [txn.id],
+      amount: 7499,
+      currency: 'USD',
+      customer: customerId,
+      shippingAddress: addressUS,
+      items: orderItems,
+      status: 'completed',
+      transactions: [txn.id],
     } as any,
   })
 
   await ctx.payload.create({
     collection: 'orders',
     data: {
-      amount: 7499, currency: 'USD', customer: customerId,
-      shippingAddress: addressUS, items: orderItems,
-      status: 'processing', transactions: [txn.id],
+      amount: 7499,
+      currency: 'USD',
+      customer: customerId,
+      shippingAddress: addressUS,
+      items: orderItems,
+      status: 'processing',
+      transactions: [txn.id],
     } as any,
   })
 }
