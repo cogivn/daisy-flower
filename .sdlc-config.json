@@ -1,0 +1,24 @@
+{
+  "_comment": "SDLC 6.1.0 LITE — Daisy Flower ecommerce (hoa & sản phẩm liên quan). Tham chiếu: docs/sdlc/04-templates/sdlc-config-template.json",
+  "sdlc_version": "6.1.0",
+  "tier": "LITE",
+  "project_name": "daisy-flower",
+  "active_stages": [
+    "00-foundation",
+    "01-planning",
+    "02-design",
+    "03-integrate",
+    "04-build"
+  ],
+  "quality_gates": {
+    "G0.1": { "name": "Problem Validated", "between": "00 → 01", "required": true },
+    "G1": { "name": "Requirements Complete", "between": "01 → 02", "required": true },
+    "G2": { "name": "Design Approved", "between": "02 → 04", "required": true },
+    "G3": { "name": "Ship Ready", "between": "04 → 06", "required": true }
+  },
+  "documentation": {
+    "structure": "docs/NN-stage/",
+    "naming": "kebab-case",
+    "header_required": true
+  }
+}
