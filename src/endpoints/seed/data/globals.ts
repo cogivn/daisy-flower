@@ -22,7 +22,6 @@ export const footerData = {
       title: 'My Account',
       navItems: [
         { link: { type: 'custom' as const, label: 'My Account', url: '/account' } },
-        { link: { type: 'custom' as const, label: 'Shopping Cart', url: '/cart' } },
         { link: { type: 'custom' as const, label: 'Checkout', url: '/checkout' } },
         { link: { type: 'custom' as const, label: 'Shop', url: '/shop' } },
       ],

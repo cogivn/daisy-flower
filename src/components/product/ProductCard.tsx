@@ -1,12 +1,16 @@
+'use client'
+
 import type { Media, Product } from '@/payload-types'
 
+import { CountdownBadge } from '@/components/CountdownBadge'
 import { Price } from '@/components/Price'
-import { Button } from '@/components/ui/button'
 import { SaleBadge } from '@/components/SaleBadge'
 import { SalePrice } from '@/components/SalePrice'
-import { CountdownBadge } from '@/components/CountdownBadge'
+import { Button } from '@/components/ui/button'
+import { useWishlist } from '@/hooks/useWishlist'
 import { getEffectivePrice } from '@/utilities/saleEvents'
 import { Heart } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 
@@ -15,13 +19,21 @@ type Props = {
 }
 
 export const ProductCard: React.FC<Props> = ({ product }) => {
-  const image = (product.meta?.image ??
-    (product.gallery && product.gallery[0] && typeof product.gallery[0] === 'object'
-      ? (product.gallery[0] as any).image
-      : null)) as Media | null
+  const { isInWishlist, toggleWishlist } = useWishlist()
+  const isFavorite = isInWishlist(product.id)
+
+  const image = ((product.gallery && product.gallery[0] && typeof product.gallery[0] === 'object'
+    ? (product.gallery[0] as { image: Media }).image
+    : null) ?? product.meta?.image) as Media | null
 
   const priceInfo = getEffectivePrice(product)
   const { price, originalPrice, isOnSale, saleEvent } = priceInfo
+
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    void toggleWishlist(product.id)
+  }
 
   return (
     <article
@@ -33,29 +45,25 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
         href={`/products/${product.slug}`}
         className="relative block overflow-hidden aspect-2/3"
       >
-        {image && typeof image === 'object' && 'url' in image ? (
-          <img
-            src={(image as any).url as string}
-            alt={(image as any).alt ?? product.title ?? ''}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        {image?.url ? (
+          <Image
+            src={image.url}
+            alt={image.alt ?? product.title ?? ''}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="h-full w-full bg-muted" />
         )}
-        
+
         {/* Sale Badge */}
         {isOnSale && originalPrice && (
-          <SaleBadge
-            originalPrice={originalPrice}
-            salePrice={price}
-            variant="corner"
-          />
+          <SaleBadge originalPrice={originalPrice} salePrice={price} variant="corner" />
         )}
 
         {/* Countdown Timer Badge - Top Right */}
-        {isOnSale && saleEvent?.endsAt && (
-          <CountdownBadge endDate={saleEvent.endsAt} />
-        )}
+        {isOnSale && saleEvent?.endsAt && <CountdownBadge endDate={saleEvent.endsAt} />}
       </Link>
 
       {/* Content */}
@@ -74,11 +82,7 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
                   originalPriceClassName="text-xs"
                 />
               ) : (
-                <Price
-                  as="p"
-                  amount={price}
-                  className="text-sm font-semibold text-foreground"
-                />
+                <Price as="p" amount={price} className="text-sm font-semibold text-foreground" />
               )}
             </>
           )}
@@ -95,14 +99,18 @@ export const ProductCard: React.FC<Props> = ({ product }) => {
             type="button"
             variant="outline"
             size="icon"
-            className="bg-background text-foreground hover:bg-primary hover:text-primary-foreground"
-            aria-label="Add to wishlist"
+            className={`transition-colors ${
+              isFavorite
+                ? 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100 hover:text-red-600'
+                : 'bg-background text-foreground hover:bg-primary hover:text-primary-foreground'
+            }`}
+            aria-label={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
+            onClick={handleWishlist}
           >
-            <Heart className="h-4 w-4" />
+            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
           </Button>
         </div>
       </div>
     </article>
   )
 }
-

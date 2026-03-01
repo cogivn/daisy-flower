@@ -21,6 +21,7 @@ import { Pages } from '@/collections/Pages'
 import { SaleEvents } from '@/collections/SaleEvents'
 import { Users } from '@/collections/Users'
 import { Vouchers } from '@/collections/Vouchers'
+import { Wishlist } from '@/collections/Wishlist'
 import { applyVoucherToCart } from '@/endpoints/applyVoucherToCart'
 import { removeVoucherFromCart } from '@/endpoints/removeVoucherFromCart'
 import { validateVoucher } from '@/endpoints/validateVoucher'
@@ -48,7 +49,7 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Pages, Categories, Media, Brands, SaleEvents, Vouchers],
+  collections: [Users, Pages, Categories, Media, Brands, SaleEvents, Vouchers, Wishlist],
   db: sqliteAdapter({
     client: {
       url: process.env.DATABASE_URL || '',
@@ -97,9 +98,18 @@ export default buildConfig({
         queue: 'default',
       },
     ],
-    tasks: [refreshSaleEventsTask, cleanupAbandonedOrdersTask, cleanupExpiredVoucherReservationsTask],
+    tasks: [
+      refreshSaleEventsTask,
+      cleanupAbandonedOrdersTask,
+      cleanupExpiredVoucherReservationsTask,
+    ],
   },
-  endpoints: [validateVoucher, applyVoucherToCart, removeVoucherFromCart, validateVoucherForPayment],
+  endpoints: [
+    validateVoucher,
+    applyVoucherToCart,
+    removeVoucherFromCart,
+    validateVoucherForPayment,
+  ],
   globals: [Header, Footer, UserLevelSettings],
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',

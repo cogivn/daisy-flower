@@ -79,6 +79,7 @@ export interface Config {
     brands: Brand;
     'sale-events': SaleEvent;
     vouchers: Voucher;
+    wishlist: Wishlist;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -100,6 +101,7 @@ export interface Config {
       orders: 'orders';
       cart: 'carts';
       addresses: 'addresses';
+      wishlist: 'wishlist';
     };
     variantTypes: {
       options: 'variantOptions';
@@ -117,6 +119,7 @@ export interface Config {
     brands: BrandsSelect<false> | BrandsSelect<true>;
     'sale-events': SaleEventsSelect<false> | SaleEventsSelect<true>;
     vouchers: VouchersSelect<false> | VouchersSelect<true>;
+    wishlist: WishlistSelect<false> | WishlistSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -230,6 +233,11 @@ export interface User {
   };
   addresses?: {
     docs?: (number | Address)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  wishlist?: {
+    docs?: (number | Wishlist)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
@@ -1502,6 +1510,17 @@ export interface Address {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wishlist".
+ */
+export interface Wishlist {
+  id: number;
+  customer: number | User;
+  product: number | Product;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
@@ -1677,6 +1696,10 @@ export interface PayloadLockedDocument {
         value: number | Voucher;
       } | null)
     | ({
+        relationTo: 'wishlist';
+        value: number | Wishlist;
+      } | null)
+    | ({
         relationTo: 'forms';
         value: number | Form;
       } | null)
@@ -1771,6 +1794,7 @@ export interface UsersSelect<T extends boolean = true> {
   orders?: T;
   cart?: T;
   addresses?: T;
+  wishlist?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -2259,6 +2283,16 @@ export interface VouchersSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wishlist_select".
+ */
+export interface WishlistSelect<T extends boolean = true> {
+  customer?: T;
+  product?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

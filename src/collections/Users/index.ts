@@ -2,8 +2,8 @@ import type { CollectionConfig } from 'payload'
 
 import { adminOnly } from '@/access/adminOnly'
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
-import { publicAccess } from '@/access/publicAccess'
 import { adminOrSelf } from '@/access/adminOrSelf'
+import { publicAccess } from '@/access/publicAccess'
 import { checkRole } from '@/access/utilities'
 import { USER_LEVELS } from '@/config/userLevels'
 
@@ -110,7 +110,7 @@ export const Users: CollectionConfig = {
       on: 'customer',
       admin: {
         allowCreate: false,
-        defaultColumns: ['id', 'createdAt', 'total', 'currency', 'items'],
+        defaultColumns: ['createdAt', 'total', 'currency', 'items'],
       },
     },
     {
@@ -120,7 +120,7 @@ export const Users: CollectionConfig = {
       on: 'customer',
       admin: {
         allowCreate: false,
-        defaultColumns: ['id', 'createdAt', 'total', 'currency', 'items'],
+        defaultColumns: ['createdAt', 'total', 'currency', 'items'],
       },
     },
     {
@@ -130,7 +130,17 @@ export const Users: CollectionConfig = {
       on: 'customer',
       admin: {
         allowCreate: false,
-        defaultColumns: ['id'],
+        defaultColumns: ['firstName', 'lastName', 'addressLine1', 'city', 'phone'],
+      },
+    },
+    {
+      name: 'wishlist',
+      type: 'join',
+      collection: 'wishlist',
+      on: 'customer',
+      admin: {
+        allowCreate: false,
+        defaultColumns: ['product', 'createdAt'],
       },
     },
   ],

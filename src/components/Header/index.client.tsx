@@ -11,10 +11,11 @@ import { Category, Header } from '@/payload-types'
 import { useTheme } from '@/providers/Theme'
 import { cn } from '@/utilities/cn'
 import { ChevronDown, Heart, Menu as MenuIcon, Phone, User } from 'lucide-react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 import { MobileMenu } from '@/components/Header/MobileMenu'
 import { Search } from '@/components/layout/search/Search'
+import { useWishlist } from '@/hooks/useWishlist'
 
 type Props = {
   header: Header
@@ -24,9 +25,19 @@ type Props = {
 export function HeaderClient({ header, categories }: Props) {
   const { navItems = [], topBarContent, contactNumber } = header
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const currentCategoryId = searchParams.get('category')
+
   const [isSticky, setIsSticky] = useState(false)
   const [showCategories, setShowCategories] = useState(false)
   const { theme = 'light', setTheme } = useTheme()
+  const { wishlistIds } = useWishlist()
+
+  const selectedCategoryTitle = useMemo(() => {
+    if (!currentCategoryId) return 'Categories'
+    const found = categories?.find((cat) => String(cat.id) === currentCategoryId)
+    return found ? found.title : 'Categories'
+  }, [currentCategoryId, categories])
 
   const themeLabel = useMemo(() => {
     if (theme === 'light') return 'Light'
@@ -138,10 +149,7 @@ export function HeaderClient({ header, categories }: Props) {
 
           {/* Search Bar - Hidden on Mobile */}
           <div className="hidden md:flex grow max-w-2xl mx-12">
-            <Search
-              className="rounded-none border-2 border-primary"
-              categories={categories}
-            />
+            <Search className="rounded-none border-2 border-primary" categories={categories} />
           </div>
 
           {/* Icons */}
@@ -154,17 +162,16 @@ export function HeaderClient({ header, categories }: Props) {
               className="hidden lg:block hover:text-primary transition-colors relative"
             >
               <Heart size={26} strokeWidth={1.5} />
-              <span className="absolute -top-1.5 -right-1.5 bg-primary text-white text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
-                0
-              </span>
+              {wishlistIds.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-primary text-white text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+                  {wishlistIds.length}
+                </span>
+              )}
             </Link>
             <Suspense fallback={<OpenCartButton />}>
               <Cart
                 renderTrigger={({ quantity, subtotal }) => (
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 cursor-pointer"
-                  >
+                  <button type="button" className="flex items-center gap-3 cursor-pointer">
                     <OpenCartButton quantity={quantity} />
                     <div className="hidden xl:flex flex-col text-[11px] font-bold leading-tight text-left">
                       <span className="text-muted-foreground uppercase">My Cart</span>
@@ -207,7 +214,7 @@ export function HeaderClient({ header, categories }: Props) {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <MenuIcon size={20} className="shrink-0" />
-                <span className="truncate">Categories</span>
+                <span className="truncate">{selectedCategoryTitle}</span>
               </div>
               <ChevronDown
                 size={16}
@@ -226,6 +233,15 @@ export function HeaderClient({ header, categories }: Props) {
               style={showCategories ? undefined : { overflow: 'hidden' }}
             >
               <ul className="py-2">
+                <li className="px-4 py-2 hover:bg-muted transition-colors border-b border-border/50">
+                  <Link
+                    href="/shop"
+                    className="block w-full text-sm font-bold text-primary"
+                    onClick={() => setShowCategories(false)}
+                  >
+                    All Categories
+                  </Link>
+                </li>
                 {categories && categories.length > 0 ? (
                   categories.map((cat) => (
                     <li
@@ -269,7 +285,7 @@ export function HeaderClient({ header, categories }: Props) {
           <nav className="hidden md:block grow md:ml-6 lg:ml-8">
             <ul className="flex items-center gap-4 lg:gap-8 whitespace-nowrap py-2 md:py-0">
               {navItems &&
-                navItems.map((item: { link: any; id?: string | null }, i: number) => (
+                navItems.map((item, i: number) => (
                   <li key={item.id || i}>
                     <CMSLink
                       {...item.link}

@@ -2,12 +2,12 @@
 
 import { Price } from '@/components/Price'
 import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
 } from '@/components/ui/sheet'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { ShoppingCart } from 'lucide-react'
@@ -17,7 +17,7 @@ import { usePathname } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Product } from '@/payload-types'
+import { Cart, Product, VariantOption } from '@/payload-types'
 import { DeleteItemButton } from './DeleteItemButton'
 import { EditItemQuantityButton } from './EditItemQuantityButton'
 import { OpenCartButton } from './OpenCart'
@@ -71,7 +71,7 @@ export function CartModal({ renderTrigger }: CartModalProps) {
           <div className="grow flex px-4">
             <div className="flex flex-col justify-between w-full">
               <ul className="grow overflow-auto py-4">
-                {cart?.items?.map((item, i) => {
+                {cart?.items?.map((item: NonNullable<Cart['items']>[number], i) => {
                   const product = item.product
                   const variant = item.variant
 
@@ -96,20 +96,24 @@ export function CartModal({ renderTrigger }: CartModalProps) {
                   if (isVariant) {
                     price = variant?.priceInUSD
 
-                    const imageVariant = product.gallery?.find((item) => {
-                      if (!item.variantOption) return false
-                      const variantOptionID =
-                        typeof item.variantOption === 'object'
-                          ? item.variantOption.id
-                          : item.variantOption
+                    const imageVariant = product.gallery?.find(
+                      (galleryItem: NonNullable<Product['gallery']>[number]) => {
+                        if (!galleryItem.variantOption) return false
+                        const variantOptionID =
+                          typeof galleryItem.variantOption === 'object'
+                            ? galleryItem.variantOption.id
+                            : galleryItem.variantOption
 
-                      const hasMatch = variant?.options?.some((option) => {
-                        if (typeof option === 'object') return option.id === variantOptionID
-                        else return option === variantOptionID
-                      })
+                        const hasMatch = variant?.options?.some(
+                          (option: number | VariantOption) => {
+                            if (typeof option === 'object') return option.id === variantOptionID
+                            else return option === variantOptionID
+                          },
+                        )
 
-                      return hasMatch
-                    })
+                        return hasMatch
+                      },
+                    )
 
                     if (imageVariant && typeof imageVariant.image === 'object') {
                       image = imageVariant.image
@@ -119,7 +123,7 @@ export function CartModal({ renderTrigger }: CartModalProps) {
                   return (
                     <li className="flex w-full flex-col" key={i}>
                       <div className="relative flex w-full flex-row justify-between px-1 py-4">
-                        <div className="absolute z-40 -mt-2 ml-[55px]">
+                        <div className="absolute z-40 -mt-2 ml-13.75">
                           <DeleteItemButton item={item} />
                         </div>
                         <Link
@@ -143,7 +147,7 @@ export function CartModal({ renderTrigger }: CartModalProps) {
                             {isVariant && variant ? (
                               <p className="text-sm text-neutral-500 dark:text-neutral-400 capitalize">
                                 {variant.options
-                                  ?.map((option) => {
+                                  ?.map((option: number | VariantOption) => {
                                     if (typeof option === 'object') return option.label
                                     return null
                                   })
