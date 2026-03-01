@@ -98,7 +98,7 @@ export const Users: CollectionConfig = {
         update: adminOnlyFieldAccess,
       },
       admin: {
-        description: 'Total spent on completed orders (USD). Auto-calculated.',
+        description: 'Total spent on completed orders (VND). Auto-calculated.',
         readOnly: true,
         position: 'sidebar',
       },

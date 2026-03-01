@@ -150,12 +150,14 @@ export const applyVoucherToCart: Endpoint = {
       }
     }
 
-    // 7. Check min order amount
+    // 7. Check min order amount (minOrderAmount is plain VND)
     const cartSubtotal = cart.originalSubtotal ?? cart.subtotal ?? 0
-    const minAmountInCents = (voucher.minOrderAmount ?? 0) * 100
-    if (voucher.minOrderAmount != null && cartSubtotal < minAmountInCents) {
+    const minAmount = voucher.minOrderAmount ?? 0
+    if (voucher.minOrderAmount != null && cartSubtotal < minAmount) {
       return Response.json(
-        { error: `Minimum order of $${voucher.minOrderAmount.toFixed(2)} required.` },
+        {
+          error: `Minimum order of ${new Intl.NumberFormat('de-DE').format(voucher.minOrderAmount)} VND required.`,
+        },
         { status: 400 },
       )
     }

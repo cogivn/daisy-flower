@@ -3,10 +3,10 @@ import { EcommerceProvider } from '@payloadcms/plugin-ecommerce/client/react'
 import { stripeAdapterClient } from '@payloadcms/plugin-ecommerce/payments/stripe'
 import React from 'react'
 
+import { HeaderThemeProvider } from '@/providers/HeaderTheme'
 import { SonnerProvider } from '@/providers/Sonner'
+import { ThemeProvider } from '@/providers/Theme'
 import { WishlistProvider } from '@/providers/Wishlist'
-import { HeaderThemeProvider } from './HeaderTheme'
-import { ThemeProvider } from './Theme'
 
 export const Providers: React.FC<{
   children: React.ReactNode
@@ -19,6 +19,17 @@ export const Providers: React.FC<{
             <SonnerProvider />
             <EcommerceProvider
               enableVariants={true}
+              currenciesConfig={{
+                defaultCurrency: 'VND',
+                supportedCurrencies: [
+                  {
+                    code: 'VND',
+                    decimals: 0,
+                    label: 'Vietnamese Dong',
+                    symbol: '₫',
+                  },
+                ],
+              }}
               api={{
                 cartsFetchQuery: {
                   depth: 2,

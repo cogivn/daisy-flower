@@ -3,14 +3,18 @@
 import Link from 'next/link'
 import React, { Suspense } from 'react'
 
-import type { Media as MediaType, Product, SaleEvent, SaleOfferBlock as SaleOfferBlockType } from '@/payload-types'
+import type {
+  Media as MediaType,
+  Product,
+  SaleEvent,
+  SaleOfferBlock as SaleOfferBlockType,
+} from '@/payload-types'
 
 import { Price } from '@/components/Price'
-import { SalePrice } from '@/components/SalePrice'
 import { Gallery } from '@/components/product/Gallery'
 import { RichText } from '@/components/RichText'
+import { SalePrice } from '@/components/SalePrice'
 import { Button } from '@/components/ui/button'
-import { getEffectivePrice } from '@/utilities/saleEvents'
 
 type CountdownParts = {
   days: string
@@ -90,11 +94,9 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
     parts.minutes === '00' &&
     parts.seconds === '00'
 
-  const isSaleActive = Boolean(activeSaleEvent && !isCountdownExpired)
+  // Read priceInVND directly (stored as actual VND)
+  let basePrice = linkedProduct.priceInVND ?? 0
 
-  // Calculate price directly since we have activeSaleEvent from separate query
-  let basePrice = linkedProduct.priceInUSD
-  
   // Handle variants
   const variants = linkedProduct.variants?.docs
   if (variants && variants.length > 0) {
@@ -102,18 +104,17 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
     if (
       variant &&
       typeof variant === 'object' &&
-      variant?.priceInUSD &&
-      typeof variant.priceInUSD === 'number'
+      variant?.priceInVND &&
+      typeof variant.priceInVND === 'number'
     ) {
-      basePrice = variant.priceInUSD
+      basePrice = variant.priceInVND
     }
   }
 
-  const displayPrice = activeSaleEvent ? activeSaleEvent.salePrice : (basePrice || 0)
+  // salePrice is a plain number field — no conversion needed
+  const displayPrice = activeSaleEvent ? activeSaleEvent.salePrice : basePrice || 0
   const originalPrice = activeSaleEvent ? basePrice : undefined
   const isOnSale = Boolean(activeSaleEvent)
-
-
 
   const displayTitle = linkedProduct?.title
   const productHref = `/products/${linkedProduct.slug}`
@@ -129,9 +130,7 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
               </h2>
             )}
             {sectionDescription && (
-              <p className="text-muted-foreground text-sm md:text-base">
-                {sectionDescription}
-              </p>
+              <p className="text-muted-foreground text-sm md:text-base">{sectionDescription}</p>
             )}
           </div>
         )}
@@ -140,7 +139,7 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
           <div className="relative space-y-4">
             <Suspense
               fallback={
-                <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden bg-muted" />
+                <div className="relative aspect-square h-full max-h-137.5 w-full overflow-hidden bg-muted" />
               }
             >
               {Boolean(effectiveGallery?.length) && <Gallery gallery={effectiveGallery} />}
@@ -158,7 +157,7 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
             {linkedProduct.description && (
               <div className="text-sm md:text-base text-muted-foreground">
                 <RichText
-                  data={linkedProduct.description as any}
+                  data={linkedProduct.description}
                   enableGutter={false}
                   enableProse={false}
                   className="prose-sm max-w-none"
@@ -183,7 +182,6 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
                 )}
               </div>
             )}
-
 
             {highlight && (
               <h3 className="text-xs md:text-sm font-semibold tracking-[0.18em] uppercase text-foreground mt-2">
@@ -226,4 +224,3 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
     </section>
   )
 }
-

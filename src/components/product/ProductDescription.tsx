@@ -1,24 +1,21 @@
 'use client'
 import type { Product, Variant } from '@/payload-types'
 
-import { RichText } from '@/components/RichText'
 import { AddToCart } from '@/components/Cart/AddToCart'
 import { Price } from '@/components/Price'
+import { RichText } from '@/components/RichText'
 import { SaleBadge } from '@/components/SaleBadge'
 import { SalePrice } from '@/components/SalePrice'
 import { getEffectivePrice } from '@/utilities/saleEvents'
-import React, { Suspense } from 'react'
+import { Suspense } from 'react'
 
-import { VariantSelector } from './VariantSelector'
-import { useCurrency } from '@payloadcms/plugin-ecommerce/client/react'
 import { StockIndicator } from '@/components/product/StockIndicator'
+import { VariantSelector } from './VariantSelector'
 
 export function ProductDescription({ product }: { product: Product }) {
-  const { currency } = useCurrency()
   let amount = 0,
     lowestAmount = 0,
     highestAmount = 0
-  const priceField = `priceIn${currency.code}` as keyof Product
   const hasVariants = product.enableVariants && Boolean(product.variants?.docs?.length)
 
   // Get sale information for non-variant products
@@ -26,36 +23,35 @@ export function ProductDescription({ product }: { product: Product }) {
   const { price: effectivePrice, originalPrice, isOnSale, saleEvent } = priceInfo
 
   if (hasVariants) {
-    const priceField = `priceIn${currency.code}` as keyof Variant
     const variantsOrderedByPrice = product.variants?.docs
       ?.filter((variant) => variant && typeof variant === 'object')
       .sort((a, b) => {
         if (
           typeof a === 'object' &&
           typeof b === 'object' &&
-          priceField in a &&
-          priceField in b &&
-          typeof a[priceField] === 'number' &&
-          typeof b[priceField] === 'number'
+          'priceInVND' in a &&
+          'priceInVND' in b &&
+          typeof a.priceInVND === 'number' &&
+          typeof b.priceInVND === 'number'
         ) {
-          return a[priceField] - b[priceField]
+          return a.priceInVND - b.priceInVND
         }
 
         return 0
       }) as Variant[]
 
-    const lowestVariant = variantsOrderedByPrice[0][priceField]
-    const highestVariant = variantsOrderedByPrice[variantsOrderedByPrice.length - 1][priceField]
-    if (
-      variantsOrderedByPrice &&
-      typeof lowestVariant === 'number' &&
-      typeof highestVariant === 'number'
-    ) {
-      lowestAmount = lowestVariant
-      highestAmount = highestVariant
+    if (variantsOrderedByPrice.length > 0) {
+      const lowestVariantPrice = variantsOrderedByPrice[0].priceInVND
+      const highestVariantPrice =
+        variantsOrderedByPrice[variantsOrderedByPrice.length - 1].priceInVND
+
+      if (typeof lowestVariantPrice === 'number' && typeof highestVariantPrice === 'number') {
+        lowestAmount = lowestVariantPrice
+        highestAmount = highestVariantPrice
+      }
     }
-  } else if (product[priceField] && typeof product[priceField] === 'number') {
-    amount = product[priceField]
+  } else if (product.priceInVND && typeof product.priceInVND === 'number') {
+    amount = product.priceInVND
   }
 
   return (
@@ -63,12 +59,8 @@ export function ProductDescription({ product }: { product: Product }) {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-medium">{product.title}</h1>
-          {!hasVariants && isOnSale && originalPrice && (
-            <SaleBadge
-              originalPrice={originalPrice}
-              salePrice={effectivePrice}
-              variant="compact"
-            />
+          {!hasVariants && isOnSale && originalPrice != null && (
+            <SaleBadge originalPrice={originalPrice} salePrice={effectivePrice} variant="compact" />
           )}
         </div>
         <div className="uppercase font-mono">
@@ -76,7 +68,7 @@ export function ProductDescription({ product }: { product: Product }) {
             <Price highestAmount={highestAmount} lowestAmount={lowestAmount} />
           ) : (
             <>
-              {isOnSale && originalPrice ? (
+              {isOnSale && originalPrice != null ? (
                 <SalePrice
                   salePrice={effectivePrice}
                   originalPrice={originalPrice}

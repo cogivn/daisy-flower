@@ -134,6 +134,17 @@ export const plugins: Plugin[] = [
       isAdmin,
       isDocumentOwner,
     },
+    currencies: {
+      defaultCurrency: 'VND',
+      supportedCurrencies: [
+        {
+          code: 'VND',
+          decimals: 0,
+          label: 'Vietnamese Dong',
+          symbol: '₫',
+        },
+      ],
+    },
     addresses: {
       addressesCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
@@ -278,7 +289,7 @@ export const plugins: Plugin[] = [
             defaultValue: 0,
             admin: {
               readOnly: true,
-              description: 'Voucher discount amount (USD).',
+              description: 'Voucher discount amount (VND).',
             },
           },
           {
@@ -288,7 +299,7 @@ export const plugins: Plugin[] = [
             defaultValue: 0,
             admin: {
               readOnly: true,
-              description: 'User level discount amount (USD).',
+              description: 'User level discount amount (VND).',
             },
           },
         ],

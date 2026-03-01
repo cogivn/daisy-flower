@@ -1,11 +1,8 @@
 import { Media } from '@/components/Media'
-import { OrderStatus } from '@/components/OrderStatus'
 import { Price } from '@/components/Price'
 import { SaleBadge } from '@/components/SaleBadge'
 import { SalePrice } from '@/components/SalePrice'
-import { Button } from '@/components/ui/button'
-import { Media as MediaType, Order, Product, Variant } from '@/payload-types'
-import { formatDateTime } from '@/utilities/formatDateTime'
+import { Product, Variant } from '@/payload-types'
 import { getEffectivePrice } from '@/utilities/saleEvents'
 import Link from 'next/link'
 
@@ -20,13 +17,7 @@ type Props = {
   currencyCode?: string
 }
 
-export const ProductItem: React.FC<Props> = ({
-  product,
-  style = 'default',
-  quantity,
-  variant,
-  currencyCode,
-}) => {
+export const ProductItem: React.FC<Props> = ({ product, quantity, variant, currencyCode }) => {
   const { title } = product
 
   const metaImage =
@@ -60,10 +51,10 @@ export const ProductItem: React.FC<Props> = ({
 
   const priceInfo = getEffectivePrice(product)
   const { price: effectivePrice, originalPrice, isOnSale } = priceInfo
-  
+
   // Use variant price if available, otherwise use effective price from sale calculation
-  const itemPrice = variant?.priceInUSD || effectivePrice
-  const itemOriginalPrice = variant?.priceInUSD || originalPrice
+  const itemPrice = variant?.priceInVND ? variant.priceInVND : effectivePrice
+  const itemOriginalPrice = variant?.priceInVND ? variant.priceInVND : originalPrice
   const itemURL = `/products/${product.slug}${variant ? `?variant=${variant.id}` : ''}`
 
   return (
@@ -74,7 +65,7 @@ export const ProductItem: React.FC<Props> = ({
             <Media className="" fill imgClassName="rounded-lg object-cover" resource={image} />
           )}
         </div>
-        
+
         {/* Sale Badge for non-variant products */}
         {!variant && isOnSale && itemOriginalPrice && (
           <SaleBadge

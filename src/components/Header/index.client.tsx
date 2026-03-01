@@ -51,18 +51,18 @@ export function HeaderClient({ header, categories }: Props) {
 
     if (!digits) return raw
 
-    // Vietnam: local number starting with 0, e.g. 0388291140 -> (+84)388.291.140
+    // Vietnam: local number starting with 0, e.g. 0388291140 -> (+84)388 291 140
     if (digits.startsWith('0') && digits.length >= 9) {
       const rest = digits.slice(1)
-      const restFormatted = rest.replace(/(\d{3})(?=\d)/g, '$1.').trim()
+      const restFormatted = rest.replace(/(\d{3})(?=\d)/g, '$1 ').trim()
 
       return `(+84)${restFormatted}`
     }
 
-    // Vietnam: already with country code, e.g. 84388291140 -> (+84)388.291.140
+    // Vietnam: already with country code, e.g. 84388291140 -> (+84)388 291 140
     if (digits.startsWith('84') && digits.length > 2) {
       const rest = digits.slice(2)
-      const restFormatted = rest.replace(/(\d{3})(?=\d)/g, '$1.').trim()
+      const restFormatted = rest.replace(/(\d{3})(?=\d)/g, '$1 ').trim()
 
       return `(+84)${restFormatted}`
     }

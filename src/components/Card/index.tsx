@@ -10,7 +10,7 @@ export const Card: React.FC<{
   doc: Product
   className?: string
 }> = ({ doc, className }) => {
-  const { title, slug, priceInUSD, meta, gallery } = doc
+  const { title, slug, priceInVND, meta, gallery } = doc
   const mainImage = meta?.image as Media
   const hoverImage = (gallery?.[0]?.image as Media) || null
 
@@ -73,9 +73,9 @@ export const Card: React.FC<{
           <h3 className="text-base font-semibold tracking-tight leading-tight">{title}</h3>
         </Link>
         <div className="mt-auto">
-          {typeof priceInUSD === 'number' && (
+          {typeof priceInVND === 'number' && (
             <Price
-              amount={priceInUSD}
+              amount={priceInVND}
               className="text-xl font-black text-primary tracking-tighter"
             />
           )}

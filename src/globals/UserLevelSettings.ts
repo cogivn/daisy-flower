@@ -62,7 +62,7 @@ export const UserLevelSettings: GlobalConfig = {
               min: 0,
               defaultValue: 0,
               admin: {
-                description: 'Min total spent (USD) to reach this level.',
+                description: 'Min total spent (VND) to reach this level.',
                 width: '25%',
               },
             },

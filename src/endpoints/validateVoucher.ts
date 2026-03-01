@@ -130,13 +130,13 @@ export const validateVoucher: Endpoint = {
       }
     }
 
-    // 6. Check minimum order amount
-    const minAmountInCents = (voucher.minOrderAmount ?? 0) * 100
-    if (voucher.minOrderAmount != null && orderSubtotal < minAmountInCents) {
+    // 6. Check minimum order amount (minOrderAmount is plain VND)
+    const minAmount = voucher.minOrderAmount ?? 0
+    if (voucher.minOrderAmount != null && orderSubtotal < minAmount) {
       return Response.json(
         {
           valid: false,
-          error: `Minimum order of $${voucher.minOrderAmount.toFixed(2)} required.`,
+          error: `Minimum order of ${new Intl.NumberFormat('de-DE').format(voucher.minOrderAmount)} VND required.`,
         },
         { status: 400 },
       )
@@ -168,12 +168,14 @@ export const validateVoucher: Endpoint = {
 
     if (voucher.type === 'percent') {
       discountAmount = Math.floor((discountableSubtotal * (voucher.value ?? 0)) / 100)
-      const maxDiscountInCents = (voucher.maxDiscount ?? 0) * 100
-      if (voucher.maxDiscount != null && discountAmount > maxDiscountInCents) {
-        discountAmount = maxDiscountInCents
+      // maxDiscount is plain VND — no conversion
+      const maxDiscount = voucher.maxDiscount ?? 0
+      if (voucher.maxDiscount != null && discountAmount > maxDiscount) {
+        discountAmount = maxDiscount
       }
     } else {
-      discountAmount = Math.min((voucher.value ?? 0) * 100, discountableSubtotal)
+      // fixed value is plain VND — no conversion
+      discountAmount = Math.min(voucher.value ?? 0, discountableSubtotal)
     }
 
     discountAmount = Math.floor(discountAmount)

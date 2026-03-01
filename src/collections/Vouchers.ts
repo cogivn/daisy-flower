@@ -1,14 +1,8 @@
 import type { CollectionConfig } from 'payload'
+import { slugField } from 'payload'
 
 import { adminOnly } from '@/access/adminOnly'
 import { USER_LEVELS } from '@/config/userLevels'
-
-function generateVoucherCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  const segment = (len: number) =>
-    Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-  return `${segment(4)}-${segment(4)}`
-}
 
 export const Vouchers: CollectionConfig = {
   slug: 'vouchers',
@@ -17,9 +11,9 @@ export const Vouchers: CollectionConfig = {
     plural: 'Vouchers',
   },
   admin: {
-    useAsTitle: 'code',
+    useAsTitle: 'title',
     group: 'Ecommerce',
-    defaultColumns: ['code', 'type', 'value', 'scope', '_status', 'usedCount', 'validTo'],
+    defaultColumns: ['title', 'code', 'type', 'value', 'scope', '_status', 'usedCount'],
     description: 'Discount codes customers can apply at checkout.',
   },
   versions: {
@@ -33,13 +27,7 @@ export const Vouchers: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [
-      ({ data, operation }) => {
-        if (operation === 'create' && data && !data.code) {
-          data.code = generateVoucherCode()
-        }
-        if (data?.code) {
-          data.code = data.code.toUpperCase().trim()
-        }
+      ({ data }) => {
         if (data?.type === 'percent' && data?.value != null && data.value > 100) {
           data.value = 100
         }
@@ -52,7 +40,11 @@ export const Vouchers: CollectionConfig = {
             throw new Error('Specific scope requires at least one product.')
           }
         }
-        if (data?.validFrom && data?.validTo && new Date(data.validFrom) >= new Date(data.validTo)) {
+        if (
+          data?.validFrom &&
+          data?.validTo &&
+          new Date(data.validFrom) >= new Date(data.validTo)
+        ) {
           throw new Error('validFrom must be before validTo.')
         }
         if (data?.assignMode === 'level') {
@@ -70,20 +62,37 @@ export const Vouchers: CollectionConfig = {
         return data
       },
     ],
+    beforeChange: [
+      ({ data }) => {
+        if (data?.code) {
+          data.code = data.code.toUpperCase().trim()
+        }
+        return data
+      },
+    ],
   },
   fields: [
     {
-      name: 'code',
+      name: 'title',
       type: 'text',
-      unique: true,
       required: true,
-      index: true,
       admin: {
-        position: 'sidebar',
-        description:
-          'Voucher code. Leave empty to auto-generate (e.g. XKPR-4M2N). Override with a custom code if needed.',
+        description: 'Name of the voucher campaign (e.g. Summer Sale 2024).',
       },
     },
+    slugField({
+      name: 'code',
+      slugify: () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        let part1 = ''
+        let part2 = ''
+        for (let i = 0; i < 4; i++) {
+          part1 += chars.charAt(Math.floor(Math.random() * chars.length))
+          part2 += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        return `${part1}-${part2}`
+      },
+    }),
 
     // --- Discount config ---
     {
@@ -96,7 +105,7 @@ export const Vouchers: CollectionConfig = {
           defaultValue: 'percent',
           options: [
             { label: 'Percentage (%)', value: 'percent' },
-            { label: 'Fixed Amount ($)', value: 'fixed' },
+            { label: 'Fixed Amount (₫)', value: 'fixed' },
           ],
           admin: { width: '33%' },
         },
@@ -106,7 +115,7 @@ export const Vouchers: CollectionConfig = {
           required: true,
           min: 0,
           admin: {
-            description: 'Discount value. For percent: 20 = 20%. For fixed: 10 = $10 off.',
+            description: 'Discount value. For percent: 20 = 20%. For fixed: 50000 = 50,000₫ off.',
             width: '33%',
           },
         },
@@ -115,7 +124,8 @@ export const Vouchers: CollectionConfig = {
           type: 'number',
           min: 0,
           admin: {
-            description: 'Max discount cap for percent type (e.g. 50 = max $50 off). Leave empty for no cap.',
+            description:
+              'Max discount cap for percent type (e.g. 100000 = max 100,000₫ off). Leave empty for no cap.',
             width: '33%',
             condition: (data) => data?.type === 'percent',
           },
@@ -157,7 +167,8 @@ export const Vouchers: CollectionConfig = {
           type: 'number',
           min: 0,
           admin: {
-            description: 'Minimum order subtotal to use this voucher (USD). Leave empty for no minimum.',
+            description:
+              'Minimum order subtotal to use this voucher (VND). Leave empty for no minimum.',
             width: '33%',
           },
         },

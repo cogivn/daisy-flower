@@ -21,9 +21,10 @@ export default async function Checkout() {
     payload.findGlobal({ slug: 'user-level-settings' }),
   ])
 
+  // salePrice is a plain VND field — no conversion needed
   const salePrices: Record<string, number> = {}
   for (const sale of saleEventsRes.docs) {
-    const pid = typeof sale.product === 'object' ? sale.product?.id : sale.product
+    const pid = typeof sale.product === 'object' ? sale.product?.id : (sale.product as number)
     if (pid && typeof sale.salePrice === 'number') {
       salePrices[String(pid)] = sale.salePrice
     }

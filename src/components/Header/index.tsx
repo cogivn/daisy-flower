@@ -1,10 +1,10 @@
-import { getCachedGlobal } from '@/utilities/getGlobals'
 import type { Category } from '@/payload-types'
+import { getCachedGlobal } from '@/utilities/getGlobals'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
-import './index.css'
-import { HeaderClient } from './index.client'
+import { HeaderClient } from '@/components/Header/index.client'
+import '@/components/Header/index.css'
 
 export async function Header() {
   const header = await getCachedGlobal('header', 1)()

@@ -1,7 +1,7 @@
 import { CallToAction } from '@/blocks/CallToAction/config'
 import { Content } from '@/blocks/Content/config'
 import { MediaBlock } from '@/blocks/MediaBlock/config'
-import { slugField } from 'payload'
+import { deepMerge } from '@/utilities/deepMerge'
 import { generatePreviewPath } from '@/utilities/generatePreviewPath'
 import { CollectionOverride } from '@payloadcms/plugin-ecommerce/types'
 import {
@@ -18,7 +18,7 @@ import {
   InlineToolbarFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
-import { DefaultDocumentIDType, Where } from 'payload'
+import { type Block, DefaultDocumentIDType, type Field, slugField, type Tab, Where } from 'payload'
 
 export const ProductsCollection: CollectionOverride = ({ defaultCollection }) => ({
   ...defaultCollection,
@@ -50,7 +50,7 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
     variants: true,
     enableVariants: true,
     gallery: true,
-    priceInUSD: true,
+    priceInVND: true,
     inventory: true,
     meta: true,
     saleEvents: true,
@@ -101,12 +101,14 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
                   },
                   filterOptions: ({ data }) => {
                     if (data?.enableVariants && data?.variantTypes?.length) {
-                      const variantTypeIDs = data.variantTypes.map((item: any) => {
-                        if (typeof item === 'object' && item?.id) {
-                          return item.id
-                        }
-                        return item
-                      }) as DefaultDocumentIDType[]
+                      const variantTypeIDs = data.variantTypes.map(
+                        (item: string | number | { id: string | number }) => {
+                          if (typeof item === 'object' && item?.id) {
+                            return item.id
+                          }
+                          return item
+                        },
+                      ) as DefaultDocumentIDType[]
 
                       if (variantTypeIDs.length === 0)
                         return {
@@ -144,7 +146,52 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
         },
         {
           fields: [
-            ...defaultCollection.fields,
+            ...defaultCollection.fields.map(function fixFields(field: Field): Field {
+              if ('name' in field && field.name === 'priceInVND') {
+                const newField = deepMerge(field, {
+                  label: 'Price (VND)',
+                  admin: {
+                    description: 'Price in VND (e.g. 500000).',
+                    condition: () => true, // Always show the price input
+                    width: '100%',
+                  },
+                })
+                if (newField.admin?.components?.Field) {
+                  delete newField.admin.components.Field
+                }
+                return newField
+              }
+              if ('name' in field && field.name === 'priceInVNDEnabled') {
+                return deepMerge(field, {
+                  defaultValue: true,
+                  admin: {
+                    hidden: true, // Hide the checkbox
+                  },
+                })
+              }
+              if ('fields' in field && Array.isArray(field.fields)) {
+                return deepMerge(field, {
+                  fields: field.fields.map(fixFields),
+                })
+              }
+              if (field.type === 'tabs') {
+                return deepMerge(field, {
+                  tabs: field.tabs.map((tab: Tab) => ({
+                    ...tab,
+                    fields: tab.fields.map(fixFields),
+                  })),
+                })
+              }
+              if (field.type === 'blocks') {
+                return deepMerge(field, {
+                  blocks: field.blocks.map((block: Block) => ({
+                    ...block,
+                    fields: block.fields && block.fields.map(fixFields),
+                  })),
+                })
+              }
+              return field
+            }),
             {
               name: 'relatedProducts',
               type: 'relationship',

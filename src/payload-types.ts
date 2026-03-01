@@ -218,7 +218,7 @@ export interface User {
    */
   levelLocked?: boolean | null;
   /**
-   * Total spent on completed orders (USD). Auto-calculated.
+   * Total spent on completed orders (VND). Auto-calculated.
    */
   totalSpent?: number | null;
   orders?: {
@@ -292,7 +292,7 @@ export interface Order {
   transactions?: (number | Transaction)[] | null;
   status?: OrderStatus;
   amount?: number | null;
-  currency?: 'USD' | null;
+  currency?: 'VND' | null;
   accessToken?: string | null;
   /**
    * Voucher applied to this order.
@@ -303,11 +303,11 @@ export interface Order {
    */
   voucherCode?: string | null;
   /**
-   * Voucher discount amount (USD).
+   * Voucher discount amount (VND).
    */
   discountAmount?: number | null;
   /**
-   * User level discount amount (USD).
+   * User level discount amount (VND).
    */
   levelDiscount?: number | null;
   updatedAt: string;
@@ -351,8 +351,11 @@ export interface Product {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  priceInUSDEnabled?: boolean | null;
-  priceInUSD?: number | null;
+  priceInVNDEnabled?: boolean | null;
+  /**
+   * Price in VND (e.g. 500000).
+   */
+  priceInVND?: number | null;
   relatedProducts?: (number | Product)[] | null;
   meta?: {
     title?: string | null;
@@ -1247,8 +1250,8 @@ export interface Variant {
   product: number | Product;
   options: (number | VariantOption)[];
   inventory?: number | null;
-  priceInUSDEnabled?: boolean | null;
-  priceInUSD?: number | null;
+  priceInVNDEnabled?: boolean | null;
+  priceInVND?: number | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -1269,7 +1272,7 @@ export interface SaleEvent {
    */
   product: number | Product;
   /**
-   * Sale price in USD (e.g. 39.99). This does not change the original product price.
+   * Sale price in VND (e.g. 100000). This does not change the original product price.
    */
   salePrice: number;
   /**
@@ -1323,7 +1326,7 @@ export interface Transaction {
   order?: (number | null) | Order;
   cart?: (number | null) | Cart;
   amount?: number | null;
-  currency?: 'USD' | null;
+  currency?: 'VND' | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1346,7 +1349,7 @@ export interface Cart {
   purchasedAt?: string | null;
   status?: ('active' | 'purchased' | 'abandoned') | null;
   subtotal?: number | null;
-  currency?: 'USD' | null;
+  currency?: 'VND' | null;
   /**
    * Voucher currently applied to this cart.
    */
@@ -1383,16 +1386,21 @@ export interface Cart {
 export interface Voucher {
   id: number;
   /**
-   * Voucher code. Leave empty to auto-generate (e.g. XKPR-4M2N). Override with a custom code if needed.
+   * Name of the voucher campaign (e.g. Summer Sale 2024).
    */
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
   code: string;
   type: 'percent' | 'fixed';
   /**
-   * Discount value. For percent: 20 = 20%. For fixed: 10 = $10 off.
+   * Discount value. For percent: 20 = 20%. For fixed: 50000 = 50,000₫ off.
    */
   value: number;
   /**
-   * Max discount cap for percent type (e.g. 50 = max $50 off). Leave empty for no cap.
+   * Max discount cap for percent type (e.g. 100000 = max 100,000₫ off). Leave empty for no cap.
    */
   maxDiscount?: number | null;
   /**
@@ -1404,7 +1412,7 @@ export interface Voucher {
    */
   applicableProducts?: (number | Product)[] | null;
   /**
-   * Minimum order subtotal to use this voucher (USD). Leave empty for no minimum.
+   * Minimum order subtotal to use this voucher (VND). Leave empty for no minimum.
    */
   minOrderAmount?: number | null;
   /**
@@ -2264,6 +2272,8 @@ export interface SaleEventsSelect<T extends boolean = true> {
  * via the `definition` "vouchers_select".
  */
 export interface VouchersSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
   code?: T;
   type?: T;
   value?: T;
@@ -2472,8 +2482,8 @@ export interface VariantsSelect<T extends boolean = true> {
   product?: T;
   options?: T;
   inventory?: T;
-  priceInUSDEnabled?: T;
-  priceInUSD?: T;
+  priceInVNDEnabled?: T;
+  priceInVND?: T;
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;
@@ -2529,8 +2539,8 @@ export interface ProductsSelect<T extends boolean = true> {
   enableVariants?: T;
   variantTypes?: T;
   variants?: T;
-  priceInUSDEnabled?: T;
-  priceInUSD?: T;
+  priceInVNDEnabled?: T;
+  priceInVND?: T;
   relatedProducts?: T;
   meta?:
     | T
@@ -2830,7 +2840,7 @@ export interface UserLevelSetting {
     | {
         level: 'bronze' | 'silver' | 'gold' | 'platinum';
         /**
-         * Min total spent (USD) to reach this level.
+         * Min total spent (VND) to reach this level.
          */
         minSpending: number;
         /**

@@ -13,23 +13,23 @@ export function getActiveSaleEvent(product: Partial<Product>): SaleEvent | null 
   // Find the first active sale event
   const activeSale = product.saleEvents.docs.find((saleEventDoc) => {
     if (typeof saleEventDoc === 'number') return false
-    
+
     const saleEvent = saleEventDoc as SaleEvent
-    
+
     // Check if status is explicitly set to active
     if (saleEvent.status === 'active') {
       return true
     }
-    
+
     // Check if status is not explicitly expired and dates are valid
     if (saleEvent.status === 'expired') {
       return false
     }
-    
+
     // Check date range if status is scheduled or null
     const startsAt = new Date(saleEvent.startsAt)
     const endsAt = new Date(saleEvent.endsAt)
-    
+
     return now >= startsAt && now <= endsAt
   })
 
@@ -45,7 +45,12 @@ export function calculateDiscountPercentage(originalPrice: number, salePrice: nu
 }
 
 /**
- * Get the effective price for a product (sale price if on sale, otherwise regular price)
+ * Get the effective price for a product (sale price if on sale, otherwise regular price).
+ *
+ * With VND currency (decimals: 0), priceInVND is stored as-is (no ×100 factor).
+ * salePrice is also a plain VND number.
+ *
+ * @returns Object with prices in VND.
  */
 export function getEffectivePrice(product: Partial<Product>): {
   price: number
@@ -53,7 +58,7 @@ export function getEffectivePrice(product: Partial<Product>): {
   saleEvent?: SaleEvent
   isOnSale: boolean
 } {
-  let basePrice = product.priceInUSD
+  let basePrice = product.priceInVND ?? 0
 
   // Handle variants
   const variants = product.variants?.docs
@@ -62,22 +67,23 @@ export function getEffectivePrice(product: Partial<Product>): {
     if (
       variant &&
       typeof variant === 'object' &&
-      variant?.priceInUSD &&
-      typeof variant.priceInUSD === 'number'
+      variant?.priceInVND &&
+      typeof variant.priceInVND === 'number'
     ) {
-      basePrice = variant.priceInUSD
+      basePrice = variant.priceInVND
     }
   }
 
-  if (typeof basePrice !== 'number') {
+  if (basePrice <= 0) {
     return { price: 0, isOnSale: false }
   }
 
   const activeSale = getActiveSaleEvent(product)
-  
+
   if (activeSale) {
+    const salePrice = activeSale.salePrice
     return {
-      price: activeSale.salePrice,
+      price: salePrice,
       originalPrice: basePrice,
       saleEvent: activeSale,
       isOnSale: true,

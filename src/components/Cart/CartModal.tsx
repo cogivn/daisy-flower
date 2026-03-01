@@ -89,12 +89,12 @@ export function CartModal({ renderTrigger }: CartModalProps) {
                       : undefined
 
                   let image = firstGalleryImage || metaImage
-                  let price = product.priceInUSD
+                  let price = product.priceInVND || 0
 
                   const isVariant = Boolean(variant) && typeof variant === 'object'
 
                   if (isVariant) {
-                    price = variant?.priceInUSD
+                    price = variant?.priceInVND || 0
 
                     const imageVariant = product.gallery?.find(
                       (galleryItem: NonNullable<Product['gallery']>[number]) => {

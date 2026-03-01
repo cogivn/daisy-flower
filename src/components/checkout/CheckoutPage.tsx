@@ -581,12 +581,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
               if (!quantity) return null
 
               let image = gallery?.[0]?.image || meta?.image
-              let price = product?.priceInUSD
+              let priceMinor = product?.priceInVND || 0
 
               const isVariant = Boolean(variant) && typeof variant === 'object'
 
               if (isVariant) {
-                price = variant?.priceInUSD
+                priceMinor = variant?.priceInVND || 0
 
                 const imageVariant = product.gallery?.find(
                   (item: { variantOption?: string | number | { id: string | number } }) => {
@@ -644,24 +644,27 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
                       </div>
                     </div>
 
-                    {typeof price === 'number' &&
+                    {typeof priceMinor === 'number' &&
                       (() => {
                         const productId = String(
                           typeof item.product === 'object' ? item.product.id : item.product,
                         )
-                        const salePrice = salePrices[productId]
-                        if (salePrice != null && salePrice < price) {
+                        const salePriceMinor = salePrices[productId]
+                        if (salePriceMinor != null && salePriceMinor < priceMinor) {
                           return (
                             <div className="flex flex-col items-end">
                               <Price
                                 className="text-sm text-muted-foreground line-through"
-                                amount={price}
+                                amount={priceMinor}
                               />
-                              <Price className="text-green-600 font-semibold" amount={salePrice} />
+                              <Price
+                                className="text-green-600 font-semibold"
+                                amount={salePriceMinor}
+                              />
                             </div>
                           )
                         }
-                        return <Price amount={price} />
+                        return <Price amount={priceMinor} />
                       })()}
                   </div>
                 </div>

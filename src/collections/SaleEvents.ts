@@ -35,7 +35,8 @@ export const SaleEvents: CollectionConfig = {
       relationTo: 'products',
       required: true,
       admin: {
-        description: 'Product this sale event applies to. Set automatically when creating from a product.',
+        description:
+          'Product this sale event applies to. Set automatically when creating from a product.',
         position: 'sidebar',
         readOnly: true,
       },
@@ -49,7 +50,7 @@ export const SaleEvents: CollectionConfig = {
           required: true,
           admin: {
             description:
-              'Sale price in USD (e.g. 39.99). This does not change the original product price.',
+              'Sale price in VND (e.g. 100000). This does not change the original product price.',
           },
         },
         {
@@ -62,7 +63,8 @@ export const SaleEvents: CollectionConfig = {
             { label: 'Expired', value: 'expired' },
           ],
           admin: {
-            description: 'Status is usually derived from the start / end time, but can be overridden.',
+            description:
+              'Status is usually derived from the start / end time, but can be overridden.',
             position: 'sidebar',
           },
         },
@@ -102,4 +104,3 @@ export const SaleEvents: CollectionConfig = {
     },
   ],
 }
-

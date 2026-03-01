@@ -2,7 +2,6 @@ import { Grid } from '@/components/Grid'
 import { ProductCard } from '@/components/product/ProductCard'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
-import React from 'react'
 
 export const metadata = {
   description: 'Search for products in the store.',
@@ -28,7 +27,7 @@ export default async function ShopPage({ searchParams }: Props) {
       slug: true,
       gallery: true,
       categories: true,
-      priceInUSD: true,
+      priceInVND: true,
       saleEvents: true,
     },
     ...(sort ? { sort } : { sort: 'title' }),

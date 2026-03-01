@@ -1,8 +1,7 @@
-import type { Transaction } from '@/payload-types'
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { SeedContext } from './helpers'
-import { createSeedContext, rt, seedMediaBatch, withRetry } from './helpers'
+import { createSeedContext, rt, seedMediaBatch } from './helpers'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { contactFormData } from './contact-form'
@@ -34,7 +33,6 @@ export const seed = async ({
   await stepSaleEvents(ctx)
   await stepForms(ctx)
   await stepPages(ctx)
-  await stepEcommerce(ctx)
   await stepGlobals(ctx)
 
   payload.logger.info('Seeded database successfully!')
@@ -81,23 +79,6 @@ async function stepUsers(ctx: SeedContext) {
   })
 
   ctx.users.customer = { id: customer.id, email: customer.email }
-
-  // Seed Admin
-  await ctx.payload.delete({
-    collection: 'users',
-    depth: 0,
-    where: { email: { equals: 'admin@daisy.com' } },
-  })
-
-  await ctx.payload.create({
-    collection: 'users',
-    data: {
-      name: 'Admin',
-      email: 'admin@daisy.com',
-      password: 'admin',
-      roles: ['admin'],
-    },
-  })
 }
 
 // ──────────────────────────────────────────────
@@ -151,8 +132,8 @@ async function stepProducts(ctx: SeedContext) {
       slug: 'aurora-rose-bouquet',
       categories: [ctx.categories['bouquets']?.id].filter(Boolean),
       enableVariants: false,
-      priceInUSDEnabled: true,
-      priceInUSD: 4999,
+      priceInVNDEnabled: true,
+      priceInVND: 250000,
       gallery: galleryImages,
       description: rt.root([
         rt.paragraph(
@@ -231,8 +212,8 @@ async function stepProducts(ctx: SeedContext) {
       enableVariants: true,
       variantTypes: [sizeType, colorType],
       inventory: 0,
-      priceInUSDEnabled: true,
-      priceInUSD: 3999,
+      priceInVNDEnabled: true,
+      priceInVND: 220000,
       gallery: [
         { image: ctx.media.tshirtBlack?.id, variantOption: ctx.variantOptions.black?.id },
         { image: ctx.media.tshirtWhite?.id, variantOption: ctx.variantOptions.white?.id },
@@ -270,8 +251,8 @@ async function stepProducts(ctx: SeedContext) {
         product: evergreenPlant,
         options: [sizeOpt, white],
         inventory: 492,
-        priceInUSDEnabled: true,
-        priceInUSD: 4999,
+        priceInVNDEnabled: true,
+        priceInVND: 250000,
         _status: 'published',
       } as any,
     })
@@ -282,8 +263,8 @@ async function stepProducts(ctx: SeedContext) {
         product: evergreenPlant,
         options: [sizeOpt, black],
         inventory: sizeVal === 'medium' ? 0 : 492,
-        priceInUSDEnabled: true,
-        priceInUSD: 4999,
+        priceInVNDEnabled: true,
+        priceInVND: 250000,
         _status: 'published',
       } as any,
     })
@@ -335,8 +316,8 @@ async function stepProducts(ctx: SeedContext) {
           slug: item.slug,
           categories: categoryDoc ? [categoryDoc] : [],
           enableVariants: false,
-          priceInUSDEnabled: true,
-          priceInUSD: item.priceInUSD,
+          priceInVNDEnabled: true,
+          priceInVND: item.priceInVND,
           gallery,
           meta: { title: item.title, description: item.title, image: mediaDoc?.id },
         } as any,
@@ -362,7 +343,7 @@ async function stepSaleEvents(ctx: SeedContext) {
     data: {
       title: 'Aurora Rose Bouquet Launch Offer',
       product: aurora.id as number,
-      salePrice: Math.floor(4999 * 0.8),
+      salePrice: Math.floor(250000 * 0.8),
       status: 'active',
       startsAt: new Date(now.getTime() - 3600000).toISOString(),
       endsAt: new Date(now.getTime() + 7 * 86400000).toISOString(),
@@ -414,132 +395,6 @@ async function stepPages(ctx: SeedContext) {
       context: { disableRevalidate: true },
     }),
   ])
-}
-
-// ──────────────────────────────────────────────
-// Step 8: Ecommerce (addresses, transactions, carts, orders)
-// ──────────────────────────────────────────────
-
-const addressUS: Transaction['billingAddress'] = {
-  title: 'Dr.',
-  firstName: 'Otto',
-  lastName: 'Octavius',
-  phone: '1234567890',
-  company: 'Oscorp',
-  addressLine1: '123 Main St',
-  addressLine2: 'Suite 100',
-  city: 'New York',
-  state: 'NY',
-  postalCode: '10001',
-  country: 'US',
-}
-
-const addressUK: Transaction['billingAddress'] = {
-  title: 'Mr.',
-  firstName: 'Oliver',
-  lastName: 'Twist',
-  phone: '1234567890',
-  addressLine1: '48 Great Portland St',
-  city: 'London',
-  postalCode: 'W1W 7ND',
-  country: 'GB',
-}
-
-async function stepEcommerce(ctx: SeedContext) {
-  ctx.payload.logger.info('— Seeding ecommerce data...')
-
-  const customerId = ctx.users.customer.id
-  const plantId = ctx.products['evergreen-desk-plant']?.id
-  const roseId = ctx.products['aurora-rose-bouquet']?.id
-  const variant1 = ctx.misc.sampleVariant1 as number | string
-  const variant2 = ctx.misc.sampleVariant2 as number | string
-
-  await Promise.all([
-    ctx.payload.create({
-      collection: 'addresses',
-      depth: 0,
-      data: { customer: customerId, ...addressUS } as any,
-    }),
-    ctx.payload.create({
-      collection: 'addresses',
-      depth: 0,
-      data: { customer: customerId, ...addressUK } as any,
-    }),
-  ])
-
-  const txnData = {
-    currency: 'USD',
-    customer: customerId,
-    paymentMethod: 'stripe',
-    stripe: { customerID: 'cus_123', paymentIntentID: 'pi_123' },
-    billingAddress: addressUS,
-  }
-
-  await ctx.payload.create({
-    collection: 'transactions',
-    data: { ...txnData, status: 'pending' } as any,
-  })
-  const txn = await ctx.payload.create({
-    collection: 'transactions',
-    data: { ...txnData, status: 'succeeded' } as any,
-  })
-
-  const createCart = (data: Record<string, unknown>) =>
-    withRetry(() => ctx.payload.create({ collection: 'carts', data: data as any }))
-
-  await createCart({
-    customer: customerId,
-    currency: 'USD',
-    items: [{ product: plantId, variant: variant1, quantity: 1 }],
-  })
-
-  await createCart({
-    currency: 'USD',
-    createdAt: new Date('2023-01-01T00:00:00Z').toISOString(),
-    items: [{ product: roseId, quantity: 1 }],
-  })
-
-  await createCart({
-    customer: customerId,
-    currency: 'USD',
-    purchasedAt: new Date().toISOString(),
-    subtotal: 7499,
-    items: [
-      { product: plantId, variant: variant1, quantity: 1 },
-      { product: plantId, variant: variant2, quantity: 1 },
-    ],
-  })
-
-  const orderItems = [
-    { product: plantId, variant: variant1, quantity: 1 },
-    { product: plantId, variant: variant2, quantity: 1 },
-  ]
-
-  await ctx.payload.create({
-    collection: 'orders',
-    data: {
-      amount: 7499,
-      currency: 'USD',
-      customer: customerId,
-      shippingAddress: addressUS,
-      items: orderItems,
-      status: 'completed',
-      transactions: [txn.id],
-    } as any,
-  })
-
-  await ctx.payload.create({
-    collection: 'orders',
-    data: {
-      amount: 7499,
-      currency: 'USD',
-      customer: customerId,
-      shippingAddress: addressUS,
-      items: orderItems,
-      status: 'processing',
-      transactions: [txn.id],
-    } as any,
-  })
 }
 
 // ──────────────────────────────────────────────
