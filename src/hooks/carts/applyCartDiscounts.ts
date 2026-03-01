@@ -157,14 +157,16 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
       adjustedSubtotal += price * (item.quantity ?? 1)
     }
 
-    if (adjustedSubtotal > 0 || salePriceMap.size > 0) {
-      data.subtotal = adjustedSubtotal
-    }
+    // Always overwrite data.subtotal/originalSubtotal with the current base sum of items
+    // This prevents reusing stale discounted values between updates.
+    data.subtotal = adjustedSubtotal
+    data.originalSubtotal = adjustedSubtotal
+  } else {
+    data.subtotal = 0
+    data.originalSubtotal = 0
   }
 
-  // At this point, data.subtotal reflects sale prices (if any)
-  const baseSubtotal = data.subtotal ?? 0
-  data.originalSubtotal = baseSubtotal
+  const baseSubtotal = data.originalSubtotal
 
   let voucherDiscount = 0
   let levelDiscount = 0
@@ -201,6 +203,8 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
       } else {
         // For scope:specific, only discount eligible items' subtotal
         let discountBase = baseSubtotal
+        let isVoided = false
+
         if (voucher.scope === 'specific' && voucher.applicableProducts?.length) {
           const applicableIds = voucher.applicableProducts.map((p) =>
             String(typeof p === 'object' ? (p as { id: number | string }).id : p),
@@ -227,21 +231,32 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
             eligibleSubtotal += price * (item.quantity ?? 1)
           }
 
-          discountBase = eligibleSubtotal
-        }
-
-        if (voucher.type === 'percent') {
-          voucherDiscount = Math.floor((discountBase * (voucher.value ?? 0)) / 100)
-          const maxDiscountInCents = (voucher.maxDiscount ?? 0) * 100
-          if (voucher.maxDiscount != null && voucherDiscount > maxDiscountInCents) {
-            voucherDiscount = maxDiscountInCents
+          if (eligibleSubtotal === 0) {
+            isVoided = true
+          } else {
+            discountBase = eligibleSubtotal
           }
-        } else {
-          voucherDiscount = Math.min((voucher.value ?? 0) * 100, discountBase)
         }
 
-        voucherDiscount = Math.floor(voucherDiscount)
-        data.voucherDiscount = voucherDiscount
+        if (isVoided) {
+          data.appliedVoucher = null
+          data.voucherCode = null
+          data.voucherDiscount = 0
+          data.reservedVoucherExpiresAt = null
+        } else {
+          if (voucher.type === 'percent') {
+            voucherDiscount = Math.floor((discountBase * (voucher.value ?? 0)) / 100)
+            const maxDiscountInCents = (voucher.maxDiscount ?? 0) * 100
+            if (voucher.maxDiscount != null && voucherDiscount > maxDiscountInCents) {
+              voucherDiscount = maxDiscountInCents
+            }
+          } else {
+            voucherDiscount = Math.min((voucher.value ?? 0) * 100, discountBase)
+          }
+
+          voucherDiscount = Math.floor(voucherDiscount)
+          data.voucherDiscount = voucherDiscount
+        }
       }
     } catch {
       // Voucher not found — remove

@@ -24,7 +24,7 @@ import { FormItem } from '@/components/forms/FormItem'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cssVariables } from '@/cssVariables'
-import { Address } from '@/payload-types'
+import { Address, Cart } from '@/payload-types'
 import { useAddresses, useCart, usePayments } from '@payloadcms/plugin-ecommerce/client/react'
 import { toast } from 'sonner'
 
@@ -82,7 +82,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
     (email || user) && billingAddress && (billingAddressSameAsShipping || shippingAddress),
   )
 
-  const userLevel = ((user as unknown as Record<string, unknown>)?.level as string) || 'bronze'
+  const userLevel = user?.level || 'bronze'
 
   const levelInfo = React.useMemo<LevelInfo | null>(() => {
     const match = levels.find((l) => l.level === userLevel)
@@ -95,15 +95,16 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
     return null
   }, [levels, userLevel])
 
-  // Fetch cart discount data on mount (logged-in users only)
+  // Fetch cart discount data on mount and whenever items change (logged-in users only)
+  // This ensures that if a product removal voids a voucher, the UI reflects it immediately.
   useEffect(() => {
     if (!user) return
 
     const touchCart = async () => {
       try {
-        let cartId = (cart as Record<string, unknown>)?.id
+        let cartId = (cart as Cart)?.id
 
-        // Fallback: If cart.id is missing (e.g. strict plugin types), fetch it
+        // Fallback: If cart.id is missing, fetch it
         if (!cartId) {
           const cartListRes = await fetch(
             `${process.env.NEXT_PUBLIC_SERVER_URL}/api/carts?where[customer][equals]=${user.id}&where[purchasedAt][exists]=false&sort=-updatedAt&limit=1&depth=0&select[id]=true`,
@@ -118,7 +119,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
 
         if (!cartId) return
 
-        // 2. "Touch" cart via PATCH (triggers beforeChange hooks for sale price recalc)
+        // "Touch" cart via PATCH (triggers beforeChange hooks for sale price and voucher recalc)
         const patchRes = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/carts/${cartId}`, {
           method: 'PATCH',
           credentials: 'include',
@@ -128,7 +129,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
 
         if (patchRes.ok) {
           const patchData = await patchRes.json()
-          const activeCart = patchData?.doc
+          const activeCart = patchData?.doc as Cart
           if (activeCart) {
             setVoucherCode(activeCart.voucherCode || null)
             setVoucherDiscount(activeCart.voucherDiscount || 0)
@@ -143,7 +144,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
 
     void touchCart()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user])
+  }, [user, JSON.stringify(cart?.items || [])])
+
+  // Sync local state when cart object changes (e.g. item removed via drawer)
+  useEffect(() => {
+    if (cart && typeof cart === 'object') {
+      const activeCart = cart as Cart
+      if (activeCart.voucherCode !== undefined) setVoucherCode(activeCart.voucherCode ?? null)
+      if (activeCart.voucherDiscount !== undefined) {
+        setVoucherDiscount(activeCart.voucherDiscount ?? 0)
+      }
+      if (activeCart.levelDiscount !== undefined) setLevelDiscount(activeCart.levelDiscount ?? 0)
+      if (activeCart.originalSubtotal !== undefined) {
+        setOriginalSubtotal(activeCart.originalSubtotal ?? 0)
+      } else if (activeCart.subtotal !== undefined && !activeCart.voucherCode) {
+        setOriginalSubtotal(activeCart.subtotal ?? 0)
+      }
+    }
+  }, [cart])
 
   // Keep originalSubtotal in sync with cart.subtotal when no discounts are applied
   useEffect(() => {

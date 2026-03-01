@@ -2,12 +2,12 @@
 
 import { Price } from '@/components/Price'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 } from '@/components/ui/sheet'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { ShoppingCart } from 'lucide-react'
@@ -16,11 +16,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+import { Product } from '@/payload-types'
 import { DeleteItemButton } from './DeleteItemButton'
 import { EditItemQuantityButton } from './EditItemQuantityButton'
 import { OpenCartButton } from './OpenCart'
-import { Button } from '@/components/ui/button'
-import { Product } from '@/payload-types'
 
 export type CartModalProps = {
   renderTrigger?: (info: { quantity?: number; subtotal?: number }) => React.ReactNode
@@ -186,7 +186,7 @@ export function CartModal({ renderTrigger }: CartModalProps) {
                   )}
 
                   <Button asChild>
-                    <Link className="w-full" href="/checkout">
+                    <Link className="w-full" href="/checkout" onClick={() => setIsOpen(false)}>
                       Proceed to Checkout
                     </Link>
                   </Button>
