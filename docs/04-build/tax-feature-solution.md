@@ -213,7 +213,7 @@ Phần còn lại dùng Map trong bộ nhớ, complexity O(N) theo số items tr
 
 **SDLC Version**: 6.1.0  
 **Stage**: 04 - BUILD  
-**Status**: Design / Planning (chuẩn bị implement)
+**Status**: Core backend + checkout UI đã implement; còn lại: verify Stripe amount & bổ sung test tự động cho thuế
 
 ---
 

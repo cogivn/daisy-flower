@@ -252,7 +252,7 @@ Chi tiết contract Stripe và env: `docs/03-integrate/`.
 
 ## 13. Decision 13: Tax (VAT)
 
-**Trạng thái**: **Chưa implement.** Thiết kế và solution: [04-build/tax-feature-solution.md](04-build/tax-feature-solution.md).
+**Trạng thái**: **Đã implement (backend + checkout UI).** Core logic thuế đang chạy theo thiết kế; các điểm còn lại (verify Stripe amount, test chuyên cho thuế) được theo dõi trong [04-build/sprint-plan.md](04-build/sprint-plan.md#tax-us10--sprint-tracking-core-đã-implement). Thiết kế và solution: [04-build/tax-feature-solution.md](04-build/tax-feature-solution.md).
 
 **Context**: Shop bán hoa tại Việt Nam cần tuân thủ thuế VAT (Luật Thuế GTGT, VAT Law 48/2024/QH15 có hiệu lực 01/07/2025). Thuế suất phổ biến: 0%, 5%, 8% (tạm thời), 10%. Cần tính thuế trên đơn hàng, hiển thị rõ tại checkout và lưu vào order để hóa đơn, báo cáo.
 
@@ -307,12 +307,82 @@ Chi tiết contract Stripe và env: `docs/03-integrate/`.
 
 ---
 
-## 14. Gate G2 — Design Approved
+## 14. Decision 14: Bundle products / Bó hoa (Composite Products)
+
+**Trạng thái**: **Chưa implement (thiết kế đã chốt).** Giải pháp chi tiết: [04-build/bundle-feature-solution.md](04-build/bundle-feature-solution.md). Hướng dẫn end user/admin: [guides/bundle-setup-workflow.md](guides/bundle-setup-workflow.md).
+
+**Context**: Shop hoa cần bán các **bó hoa/bundle** được build từ nhiều sản phẩm con (hoa lan, hoa hồng, hoa cúc, phụ kiện...) vốn đã là product riêng có giá và tồn kho. Khi bán bó hoa:
+
+- Không được vượt quá tồn kho thực tế của từng sản phẩm con.
+- Giá, voucher, level discount và **thuế (tax)** phải phản ánh đúng mix sản phẩm con.
+- Admin cần quy trình rõ ràng để tạo bó hoa từ catalog hiện có, không nhân đôi dữ liệu sản phẩm.
+
+**Decision (mô hình & nguyên tắc)**:
+
+### 14.1 Mô hình dữ liệu
+
+- Phân loại `products` bằng field mới, ví dụ `productKind: 'simple' | 'bundle'`:
+  - `simple`: sản phẩm đơn (như hiện tại) — dùng `inventory`/`variants.inventory` trực tiếp.
+  - `bundle`: bó hoa/combo — inventory khả dụng **không dùng trực tiếp** `inventory` mà suy ra từ các sản phẩm con.
+- Khi `productKind === 'bundle'`, bổ sung field `bundleItems` (BOM):
+  - `product`: relationship → `products` (giới hạn chọn `productKind = 'simple'` ở phase 1).
+  - `quantity`: số lượng đơn vị sản phẩm con trong 1 bó (min 1).
+  - (Tuỳ chọn về sau) `overrideUnitPriceInVND`: nếu cần override cách tính giá bó.
+- Ràng buộc:
+  - Không cho chọn chính nó hoặc tạo vòng lặp trực tiếp (A chứa A, A chứa B chứa lại A).
+  - Mỗi `bundleItem` có `quantity > 0`.
+  - UI admin chỉ hiện `bundleItems` khi `productKind === 'bundle'`; có thể ẩn/readonly `inventory` cho bundle để tránh nhầm.
+
+### 14.2 Chiến lược tồn kho
+
+- Bó hoa **không có tồn kho riêng**; số bó tối đa build được từ tồn kho hiện có được tính bằng:
+  - `maxBundlesAvailable = min_i floor(inventory_i / quantity_i)` với `inventory_i` là tồn kho của từng sản phẩm con.
+- Ở trang product bundle:
+  - Hiển thị \"Có thể bán tối đa N bó (theo tồn kho hiện tại)\" dựa trên `maxBundlesAvailable`.
+  - Disable Add to Cart khi `maxBundlesAvailable = 0`.
+- Khi Add to Cart / tăng số lượng bó trong cart:
+  - Từ BOM tính `requiredQty[child] = quantityBundles * quantityChildInBOM`.
+  - Kiểm tra với `child.inventory` (và lượng child đã nằm trong cart nếu cần) — nếu bất kỳ child thiếu tồn → chặn thao tác, trả message cụ thể.
+- Khi tạo order (hoặc khi status chuyển sang `processing/completed`):
+  - Expand nhu cầu từ các bó hoa và sản phẩm lẻ thành tổng `needed[productId]` cho toàn order.
+  - Trong 1 transaction: kiểm tra `inventory >= needed` cho từng product; nếu thiếu → reject order; nếu đủ → trừ `inventory` từng product con tương ứng.
+  - Sau khi trừ tồn con, tồn khả dụng của bundle tự động giảm (do phụ thuộc công thức trên).
+- Mở rộng tương lai (không bắt buộc MVP):
+  - Hỗ trợ mô hình \"pre-allocated bundle stock\" (admin phát hành trước X bó, trừ tồn child ngay lúc phát hành) bằng field như `bundleAllocatedStock` + hooks/job riêng.
+
+### 14.3 Biểu diễn trong Cart/Order
+
+- **Nguyên tắc**: Tận dụng tối đa logic `applyCartDiscounts` hiện có (voucher, level, thuế) → tránh thêm nhánh logic phức tạp.
+- Phương án ưu tiên:
+  - Về dữ liệu, một bó hoa trong cart/order **được expand thành nhiều dòng** ứng với các sản phẩm con:
+    - VD bó \"Bouquet A\" (3 lan, 1 hồng, 5 cúc) → các `CartItem` tương ứng với `orchid`, `rose`, `chrysanthemum` với quantity đã nhân theo số bó.
+  - Thêm metadata trên `CartItem`/`OrderItem` (JSON), ví dụ:
+    - `bundleMeta = { bundleProductId, bundleName, quantityPerBundle }`.
+  - UI (CartModal, Checkout, Order detail) group các dòng cùng `bundleProductId` dưới một header \"Bouquet A\" để người dùng vẫn cảm nhận là 1 bó hoa.
+- Lợi ích:
+  - **Voucher & level discount**: giữ nguyên stacking và proration như hiện tại; discount áp trên subtotal thực tế của từng product.
+  - **Thuế**: logic thuế hiện có (theo `taxClasses` của product/category/global) tự động áp đúng cho từng thành phần của bó.
+  - Đơn giản hoá hooks: không cần sửa `applyCartDiscounts` để hiểu khái niệm \"bundle\" ở phase 1.
+
+### 14.4 Ảnh hưởng tới thuế (Tax)
+
+- Mặc định, bó hoa **kế thừa thuế từ các sản phẩm con**:
+  - Mỗi child product có `taxClasses` riêng (hoặc từ category/default); `applyCartDiscounts` đã tính `taxAmount`, `taxRates` theo từng dòng.
+  - Order tax là tổng thuế của tất cả dòng; phần nào miễn thuế → không có tax; phần nào 8%/10% → có tax tương ứng.
+- Không cần thêm config mới trong `TaxSettings` để hỗ trợ bundle ở phase 1.
+- Nếu cần bundle có thuế riêng (khác với mix children) trong tương lai:
+  - Có thể allow `taxClasses` trực tiếp trên product bundle và quy ước rõ: dùng thuế ở cấp bundle hay children.
+  - Khi đó cần mở rộng `applyCartDiscounts` để xử lý logic này một cách nhất quán.
+
+---
+
+## 15. Gate G2 — Design Approved
 
 - [x] Công nghệ chính (Payload, Next.js, DB) và cấu trúc thư mục đã ghi nhận.
 - [x] Mô hình dữ liệu (collections, fields chính) và luồng sale (job) đã mô tả.
 - [x] Frontend (routes, blocks, shop, search/filter) đã định rõ.
 - [x] Điểm tích hợp (payment, email, jobs) đã liệt kê.
+- [x] Thiết kế tính năng thuế (Tax US10) và bundle/bó hoa (composite products) đã được ghi nhận ở mức kiến trúc.
 
 ---
 

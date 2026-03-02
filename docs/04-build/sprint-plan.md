@@ -131,24 +131,39 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 - `levelLocked = true` → chỉ ngăn auto-downgrade, cho phép auto-upgrade (lock giữ nguyên khi upgrade — admin intent = floor).
 - Admin có thể set level + lock thủ công cho user VIP/compensation.
 
-##### Tax (US10) — Sprint Planning (chưa implement)
+##### Tax (US10) — Sprint Tracking (core đã implement)
 
 *Thiết kế và solution chi tiết: [tax-feature-solution.md](tax-feature-solution.md).*
 
 | Sprint | Task | File / vị trí | Trạng thái |
 |--------|------|----------------|------------|
-| 1 | Global TaxSettings (defaultTaxRate, taxMode, label) | `src/globals/TaxSettings.ts` | **Chưa làm** |
-| 1 | Carts override: taxAmount, taxRate | `src/plugins/index.ts` | **Chưa làm** |
-| 1 | Orders override: taxAmount, taxRate | `src/plugins/index.ts` | **Chưa làm** |
-| 2 | applyCartDiscounts: logic tính thuế cuối hook | `src/hooks/carts/applyCartDiscounts.ts` | **Chưa làm** |
-| 2 | copyVoucherToOrder: copy taxAmount, taxRate | `src/hooks/orders/copyVoucherToOrder.ts` | **Chưa làm** |
+| 1 | Global TaxSettings (taxMode, defaultTaxClasses) | `src/globals/TaxSettings.ts` | **Xong** |
+| 1 | Carts override: taxAmount, taxRates | `src/plugins/index.ts` | **Xong** |
+| 1 | Orders override: taxAmount, taxRates | `src/plugins/index.ts` | **Xong** |
+| 2 | applyCartDiscounts: logic tính thuế cuối hook | `src/hooks/carts/applyCartDiscounts.ts` | **Xong** |
+| 2 | copyVoucherToOrder: copy taxAmount, taxRates | `src/hooks/orders/copyVoucherToOrder.ts` | **Xong** |
 | 2 | Verify Stripe amount = subtotal + tax | Plugin / adapter | **Chưa làm** |
-| 3 | PriceBreakdown: dòng VAT + Total | `src/components/checkout/PriceBreakdown.tsx` | **Chưa làm** |
-| 3 | CheckoutPage: truyền tax xuống PriceBreakdown | `CheckoutPage.tsx` | **Chưa làm** |
+| 3 | PriceBreakdown: dòng VAT + Total | `src/components/checkout/PriceBreakdown.tsx` | **Xong** |
+| 3 | CheckoutPage: truyền tax xuống PriceBreakdown | `CheckoutPage.tsx` | **Xong** |
 | 3 | CartModal: Total = subtotal + taxAmount | `CartModal.tsx` | **Chưa làm** |
-| 4 | Test + docs | — | **Chưa làm** |
+| 4 | Test + docs (tests tự động cho thuế, review lại docs khi hoàn tất) | — | **Chưa làm** |
 
-**Lưu ý**: Trước khi code Sprint 2, cần verify plugin ecommerce dùng cart total như thế nào — xem [tax-feature-solution § 4](tax-feature-solution.md#4-phụ-thuộc-plugin-ecommerce).
+**Lưu ý**: Khi làm việc với Stripe/payment, cần verify plugin ecommerce dùng cart total như thế nào — xem [tax-feature-solution § 4](tax-feature-solution.md#4-phụ-thuộc-plugin-ecommerce).
+
+##### Bundle products / Bó hoa (Composite Products) — Sprint Planning (chưa implement)
+
+*Thiết kế & solution chi tiết: [bundle-feature-solution.md](bundle-feature-solution.md).*
+
+| Sprint | Task | File / vị trí | Trạng thái |
+|--------|------|----------------|------------|
+| 1 | Products: `productKind` (`simple` \| `bundle`) + `bundleItems` (BOM) | `src/collections/Products/index.ts` | **Chưa làm** |
+| 1 | Admin UI: tab/section cấu hình bó hoa, quản lý `inventory` bundle (pre-allocated) | `src/collections/Products/index.ts` (admin config) | **Chưa làm** |
+| 2 | Cart logic: expand bundle thành nhiều `CartItem` con, gắn metadata bundling | Hook/endpoint Add to Cart, `carts` hooks | **Chưa làm** |
+| 2 | Orders: hook trừ tồn kho bundle (không trừ child trong checkout) | `src/hooks/orders/*` (hook mới hoặc mở rộng) | **Chưa làm** |
+| 3 | Frontend product page: hiển thị thành phần bó hoa + tồn kho bundle | `src/app/(app)/products/[slug]/page.tsx` | **Chưa làm** |
+| 3 | Cart/Checkout UI: group các dòng con theo bó hoa, chỉnh quantity ở cấp bundle | `src/components/Cart/*`, `src/components/checkout/*` | **Chưa làm** |
+| 4 | Tests & docs cho bundle (inventory, thuế, UI) | `tests/*`, `docs/02-design`, `docs/04-build`, `docs/guides` | **Chưa làm** |
+| 4 (Optional) | Goods receipts & stock movement logs (nhập kho + lịch sử dịch chuyển) | `docs/04-build/bundle-feature-solution.md`, collection mới (sau này) | **Chưa làm** |
 
 ##### US10.1 — Thuế theo sản phẩm/danh mục (chưa implement)
 
