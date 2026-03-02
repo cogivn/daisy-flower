@@ -131,6 +131,47 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 - `levelLocked = true` → chỉ ngăn auto-downgrade, cho phép auto-upgrade (lock giữ nguyên khi upgrade — admin intent = floor).
 - Admin có thể set level + lock thủ công cho user VIP/compensation.
 
+##### Tax (US10) — Sprint Planning (chưa implement)
+
+*Thiết kế và solution chi tiết: [tax-feature-solution.md](tax-feature-solution.md).*
+
+| Sprint | Task | File / vị trí | Trạng thái |
+|--------|------|----------------|------------|
+| 1 | Global TaxSettings (defaultTaxRate, taxMode, label) | `src/globals/TaxSettings.ts` | **Chưa làm** |
+| 1 | Carts override: taxAmount, taxRate | `src/plugins/index.ts` | **Chưa làm** |
+| 1 | Orders override: taxAmount, taxRate | `src/plugins/index.ts` | **Chưa làm** |
+| 2 | applyCartDiscounts: logic tính thuế cuối hook | `src/hooks/carts/applyCartDiscounts.ts` | **Chưa làm** |
+| 2 | copyVoucherToOrder: copy taxAmount, taxRate | `src/hooks/orders/copyVoucherToOrder.ts` | **Chưa làm** |
+| 2 | Verify Stripe amount = subtotal + tax | Plugin / adapter | **Chưa làm** |
+| 3 | PriceBreakdown: dòng VAT + Total | `src/components/checkout/PriceBreakdown.tsx` | **Chưa làm** |
+| 3 | CheckoutPage: truyền tax xuống PriceBreakdown | `CheckoutPage.tsx` | **Chưa làm** |
+| 3 | CartModal: Total = subtotal + taxAmount | `CartModal.tsx` | **Chưa làm** |
+| 4 | Test + docs | — | **Chưa làm** |
+
+**Lưu ý**: Trước khi code Sprint 2, cần verify plugin ecommerce dùng cart total như thế nào — xem [tax-feature-solution § 4](tax-feature-solution.md#4-phụ-thuộc-plugin-ecommerce).
+
+##### US10.1 — Thuế theo sản phẩm/danh mục (chưa implement)
+
+*Phụ thuộc US10. Chi tiết: [tax-feature-solution § 8](tax-feature-solution.md#8-us101--thuế-theo-sản-phẩm--danh-mục).*
+
+| Task | File | Trạng thái |
+|------|------|------------|
+| Product: taxExempt, taxRateOverride | `src/collections/Products/index.ts` | **Chưa làm** |
+| Category: taxRateOverride | `src/collections/Categories.ts` | **Chưa làm** |
+| applyCartDiscounts: tính thuế theo item | `src/hooks/carts/applyCartDiscounts.ts` | **Chưa làm** |
+
+##### Shipping Fee — Sprint Planning (chưa implement)
+
+*Thiết kế và solution chi tiết: [shipping-feature-solution.md](shipping-feature-solution.md).*
+
+| Sprint | Task | File / vị trí | Trạng thái |
+|--------|------|----------------|------------|
+| 1 | Global ShippingSettings (defaultFee, threshold) | `src/globals/ShippingSettings.ts` | **Chưa làm** |
+| 1 | Carts & Orders override: shippingFee | `src/plugins/index.ts` | **Chưa làm** |
+| 2 | applyCartDiscounts: tính toán & phân bổ phí ship | `src/hooks/carts/applyCartDiscounts.ts` | **Chưa làm** |
+| 2 | copyVoucherToOrder: copy shippingFee | `src/hooks/orders/copyVoucherToOrder.ts` | **Chưa làm** |
+| 3 | Checkout UI: Cập nhật dòng Shipping vào PriceBreakdown, CartModal, Orders history | Components Checkout/Cart | **Chưa làm** |
+
 ##### Bug Fixes Applied (Sprint 2 QA)
 
 | # | Severity | Issue | Fix |
@@ -186,7 +227,8 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 
 ## 5. Sprint tiếp theo (định hướng)
 
-- **Sprint 3 (US8+US9 Frontend)**: Checkout voucher input + price breakdown, account level display, pass discount data to order creation.
+- **US10 Tax**: 4 sprint theo [tax-feature-solution.md](tax-feature-solution.md) — TaxSettings, cart/order fields, applyCartDiscounts, PriceBreakdown, CartModal.
+- **Shipping Fee**: Config, tính toán giỏ hàng, cập nhật UI checkout theo [shipping-feature-solution.md](shipping-feature-solution.md).
 - **Soft launch**: Deploy (Vercel hoặc host khác), cấu hình domain, SSL, env production.
 - **Nội dung**: Seed hoặc nhập sản phẩm/danh mục thật; tạo 1–2 sale events mẫu; tạo voucher mẫu.
 - **Monitoring**: Log lỗi, health check cơ bản (tùy chọn).

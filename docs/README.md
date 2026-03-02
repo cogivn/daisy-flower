@@ -34,7 +34,7 @@ Phương pháp SDLC đầy đủ nằm tại **[docs/sdlc/](sdlc/README.md)** (M
 2. **Yêu cầu & phạm vi**: [01-planning/requirements.md](01-planning/requirements.md) — user stories chi tiết, acceptance criteria, mapping routes/collections, glossary  
 3. **Stack & kiến trúc**: [02-design/architecture-decisions.md](02-design/architecture-decisions.md) — collections, blocks, routes, job, cấu trúc thư mục  
 4. **Tích hợp**: [03-integrate/README.md](03-integrate/README.md) — Stripe ([api-payments-stripe.md](03-integrate/api-payments-stripe.md)), [env-vars.md](03-integrate/env-vars.md)  
-5. **Tiến độ build**: [04-build/sprint-plan.md](04-build/sprint-plan.md) — task ↔ file mapping, **seed & layout homepage**, convention, troubleshooting, Gate G3  
+5. **Tiến độ build**: [04-build/sprint-plan.md](04-build/sprint-plan.md) — task ↔ file mapping, **seed & layout homepage**, convention, troubleshooting, Gate G3. **Tax (US10)**: thiết kế tại [04-build/tax-feature-solution.md](04-build/tax-feature-solution.md); **hướng dẫn end user** thiết lập thuế tại [guides/tax-setup-workflow.md](guides/tax-setup-workflow.md)  
 6. **Giám sát tiến độ**: [04-build/project-progress.md](04-build/project-progress.md) — feature nào xong/đang làm/chưa làm, ưu tiên tiếp theo (cập nhật khi thay đổi)  
 7. **Cho AI Agent — Skills**: [04-build/agent-skills.md](04-build/agent-skills.md) — dùng skill **Payload** khi sửa collections/hooks/API, skill **Daisy layout** khi sửa layout/responsive; tìm skill cần thiết trước khi code.
 

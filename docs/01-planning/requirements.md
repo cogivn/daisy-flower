@@ -125,6 +125,28 @@
   - Users: thêm field `level` trong `src/collections/Users/index.ts`; optional `saveToJWT: true` nếu cần dùng ở client.
   - (Tùy chọn) Collection `UserLevels` nếu sau này cấu hình level theo bảng (tên, discountPercent, freeShippingThreshold, ...); MVP có thể chỉ dùng select cố định.
 
+#### US10: Hệ thống thuế (Tax) — Thuế suất mặc định
+
+- **Là chủ shop**, tôi muốn **cấu hình thuế (VAT) mặc định áp dụng cho đơn hàng** để tuân thủ quy định pháp lý và hiển thị thuế rõ ràng trên hóa đơn.
+- **Là khách hàng**, tôi muốn **thấy tổng tiền (đã gồm thuế) và chi tiết thuế tại checkout** để biết chính xác số tiền thanh toán.
+- **Chấp nhận**:
+  - Admin: cấu hình thuế mặc định (ví dụ 8% hoặc 10% VAT theo quy định Việt Nam) qua global TaxSettings.
+  - Cart/Order: tính thuế trên base (subtotal sau sale, trừ voucher/level discount); lưu `taxAmount`, `taxableAmount`; `total = taxableAmount + taxAmount` (hoặc total inclusive tùy chế độ). Một thuế suất chung cho toàn đơn.
+  - Checkout: hiển thị dòng thuế trong PriceBreakdown; tổng cuối = subtotal − discounts + tax.
+  - Order: lưu `taxAmount`, `taxRate` (snapshot) để hóa đơn và báo cáo.
+- **Mapping (khi implement)**: xem [02-design § 13](02-design/architecture-decisions.md#13-decision-13-tax-vat) và [04-build/tax-feature-solution.md](04-build/tax-feature-solution.md).
+
+#### US10.1: Thuế theo sản phẩm / danh mục
+
+- **Là chủ shop**, tôi muốn **đặt thuế suất riêng cho từng sản phẩm hoặc danh mục** để áp dụng đúng theo quy định (ví dụ rượu thuế cao hơn, hoa tươi miễn thuế).
+- **Là khách hàng**, tôi muốn **thấy chi tiết thuế theo từng nhóm sản phẩm** (nếu có) tại checkout.
+- **Chấp nhận**:
+  - Admin: Product có `taxExempt` (boolean, miễn thuế) và/hoặc `taxRateOverride` (%, override thuế suất); Category có `taxRateOverride` (áp dụng cho sản phẩm trong danh mục khi product không override).
+  - Logic ưu tiên: `product.taxRateOverride` → `product.categories[0].taxRateOverride` (hoặc category nào đó) → `TaxSettings.defaultTaxRate`. Nếu `product.taxExempt = true` thì `taxRate = 0`.
+  - Tính thuế theo line item: `itemTaxAmount = itemPrice × quantity × taxRate / 100`; `taxAmount` (đơn) = tổng itemTaxAmount.
+  - Checkout/Order: có thể hiển thị breakdown theo nhóm thuế suất (tùy chọn); order lưu tổng taxAmount (có thể thêm `taxBreakdown` JSON nếu cần báo cáo).
+- **Mapping (khi implement)**: xem [04-build/tax-feature-solution.md § 8](04-build/tax-feature-solution.md#8-us101--thuế-theo-sản-phẩm--danh-mục). Phụ thuộc US10 đã xong.
+
 ---
 
 ## 3. User Stories — Nice-to-Have (Post-MVP)
@@ -157,7 +179,7 @@
 
 - Catalog: sản phẩm (hoa + liên quan), danh mục, tìm kiếm (`q`), lọc (`category`).
 - Trang: Trang chủ (blocks), shop, chi tiết sản phẩm, giỏ hàng, checkout, xác nhận đơn.
-- Admin: Pages, Categories, Products (qua plugin), Media, Users, Sale events; Orders (plugin); **Vouchers** (khi implement); **User level** (field trên Users).
+- Admin: Pages, Categories, Products (qua plugin), Media, Users, Sale events; Orders (plugin); **Vouchers**; **User level**; **TaxSettings** (global, khi implement US10).
 - Thanh toán: Stripe (webhook, env cấu hình).
 - Sale events: Job cron cập nhật status; frontend hiển thị giá sale khi active.
 - **Voucher**: Mã giảm giá tại checkout; áp dụng theo % hoặc fixed; lưu vào order (theo docs, chưa code).
@@ -183,6 +205,7 @@
 | **Gate** | Điểm kiểm tra chất lượng SDLC (G0.1, G1, G2, G3) — xem docs/sdlc. |
 | **Voucher** | Mã giảm giá do admin tạo; khách nhập tại checkout; áp dụng vào đơn hàng (collection `vouchers`, mở rộng orders). |
 | **User level** | Cấp độ thành viên (ví dụ bronze → platinum) lưu trên User; dùng để áp ưu đãi theo level. |
+| **Tax / VAT** | Thuế GTGT; US10: 1 rate/đơn (TaxSettings); US10.1: thuế theo product (taxExempt, taxRateOverride) hoặc category (taxRateOverride). |
 
 ---
 

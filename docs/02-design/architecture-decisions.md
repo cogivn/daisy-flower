@@ -250,7 +250,58 @@ Chi tiết contract Stripe và env: `docs/03-integrate/`.
 
 ---
 
-## 12. Gate G2 — Design Approved
+## 13. Decision 13: Tax (VAT)
+
+**Trạng thái**: **Chưa implement.** Thiết kế và solution: [04-build/tax-feature-solution.md](04-build/tax-feature-solution.md).
+
+**Context**: Shop bán hoa tại Việt Nam cần tuân thủ thuế VAT (Luật Thuế GTGT, VAT Law 48/2024/QH15 có hiệu lực 01/07/2025). Thuế suất phổ biến: 0%, 5%, 8% (tạm thời), 10%. Cần tính thuế trên đơn hàng, hiển thị rõ tại checkout và lưu vào order để hóa đơn, báo cáo.
+
+**Decision**:
+
+### Mô hình thuế
+
+- **Tax mode**: `exclusive` (mặc định) — giá sản phẩm chưa thuế; thuế cộng thêm vào tổng. Hoặc `inclusive` — giá đã gồm thuế; hệ thống tách phần thuế để hiển thị (ít dùng hơn cho B2C VN).
+- **Tax base**: Tính thuế trên **subtotal sau khi trừ voucher và level discount** (số tiền khách thực trả trước thuế). Điều này phù hợp với thực tế: discount giảm tổng đơn, thuế áp trên số tiền cuối trước thuế.
+- **Công thức**: `taxableAmount = subtotal (sau discount)`; `taxAmount = taxableAmount × taxRate / 100`; `total = taxableAmount + taxAmount` (exclusive). Stripe thanh toán `total`.
+
+### Cấu hình (Global TaxSettings)
+
+- **Default tax rate** (number, 0–100, VD: 8): thuế suất mặc định (%).
+- **Tax mode** (select: `exclusive` | `inclusive`): chế độ giá.
+- **Optional**: mapping category → tax rate (sau này); hoặc field `taxExempt` trên Product (0%).
+- **Thứ tự tính**: `originalSubtotal` → `voucherDiscount` + `levelDiscount` → `taxableAmount` (= subtotal) → `taxAmount` → `total`.
+
+### Mở rộng dữ liệu
+
+| Vị trí | Field mới | Mô tả |
+|--------|-----------|--------|
+| **Carts** (override) | `taxAmount` (number, default 0) | Thuế tính từ taxableAmount × rate. |
+| **Carts** | `taxRate` (number, readOnly) | Snapshot thuế suất đã dùng (%). |
+| **Orders** (override) | `taxAmount` (number, default 0) | Thuế đơn hàng. |
+| **Orders** | `taxRate` (number, readOnly) | Snapshot thuế suất (%). |
+| **Globals** | `TaxSettings` (mới) | defaultTaxRate, taxMode. |
+
+### Luồng
+
+1. **applyCartDiscounts**: Sau khi set `data.subtotal = baseSubtotal - totalDiscount`, gọi logic thuế: đọc TaxSettings, tính `taxAmount`, `taxRate`, gán vào cart. (Tổng gửi Stripe = subtotal + taxAmount — plugin dùng cart total; cần đảm bảo cart total = subtotal + tax.)
+2. **copyVoucherToOrder** (mở rộng): Copy thêm `taxAmount`, `taxRate` từ cart sang order.
+3. **Order total**: `amount` = subtotal + taxAmount (exclusive) hoặc theo logic plugin (cart total).
+4. **PriceBreakdown**: Thêm dòng "VAT (8%)" hoặc tương đương; Total = Subtotal − Discounts + Tax.
+
+### Tích hợp Stripe
+
+- Plugin ecommerce tạo PaymentIntent từ **cart total**. Cart total phải = `subtotal + taxAmount` (exclusive). Cần đảm bảo hook `applyCartDiscounts` set `data.subtotal` là số **chưa thuế** (taxable amount) và có field `taxAmount`; plugin có thể dùng `subtotal + taxAmount` làm amount, hoặc cần override adapter nếu plugin chỉ dùng `subtotal`. **Kiểm tra** plugin ecommerce: cart total = subtotal hay subtotal + shipping + tax. Nếu chỉ subtotal → cần mở rộng hoặc patch để total = subtotal + taxAmount.
+
+### Mở rộng — US10.1 (thuế theo sản phẩm/danh mục)
+
+- **Product**: `taxExempt` (boolean), `taxRateOverride` (%).
+- **Category**: `taxRateOverride` (%).
+- Logic: ưu tiên product.taxExempt → product.taxRateOverride → category.taxRateOverride → defaultTaxRate.
+- Chi tiết: [04-build/tax-feature-solution.md § US10.1](04-build/tax-feature-solution.md#8-us101--thuế-theo-sản-phẩm--danh-mục).
+
+---
+
+## 14. Gate G2 — Design Approved
 
 - [x] Công nghệ chính (Payload, Next.js, DB) và cấu trúc thư mục đã ghi nhận.
 - [x] Mô hình dữ liệu (collections, fields chính) và luồng sale (job) đã mô tả.
