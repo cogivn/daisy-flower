@@ -19,6 +19,7 @@ import { Categories } from '@/collections/Categories'
 import { Media } from '@/collections/Media'
 import { Pages } from '@/collections/Pages'
 import { SaleEvents } from '@/collections/SaleEvents'
+import { Taxes } from '@/collections/Taxes'
 import { Users } from '@/collections/Users'
 import { Vouchers } from '@/collections/Vouchers'
 import { Wishlist } from '@/collections/Wishlist'
@@ -28,6 +29,8 @@ import { validateVoucher } from '@/endpoints/validateVoucher'
 import { validateVoucherForPayment } from '@/endpoints/validateVoucherForPayment'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
+import { ShippingSettings } from '@/globals/ShippingSettings'
+import { TaxSettings } from '@/globals/TaxSettings'
 import { UserLevelSettings } from '@/globals/UserLevelSettings'
 import { cleanupAbandonedOrdersTask } from '@/jobs/abandonedOrders'
 import { cleanupExpiredVoucherReservationsTask } from '@/jobs/cleanupExpiredVoucherReservations'
@@ -49,7 +52,7 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Pages, Categories, Media, Brands, SaleEvents, Vouchers, Wishlist],
+  collections: [Users, Pages, Categories, Media, Brands, SaleEvents, Vouchers, Wishlist, Taxes],
   db: sqliteAdapter({
     client: {
       url: process.env.DATABASE_URL || '',
@@ -110,7 +113,7 @@ export default buildConfig({
     removeVoucherFromCart,
     validateVoucherForPayment,
   ],
-  globals: [Header, Footer, UserLevelSettings],
+  globals: [Header, Footer, UserLevelSettings, TaxSettings, ShippingSettings],
   plugins,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

@@ -19,6 +19,8 @@ interface CartDoc {
   levelDiscount?: number | null
   items?: CartItem[]
   reservedVoucherExpiresAt?: string | null
+  taxAmount?: number | null
+  taxRates?: Array<{ name: string; rate: number; amount: number }> | null
 }
 
 // Reservation duration in milliseconds (15 minutes)
@@ -211,6 +213,8 @@ export const applyVoucherToCart: Endpoint = {
         levelDiscount: result.levelDiscount,
         subtotal: result.subtotal,
         reservedVoucherExpiresAt: result.reservedVoucherExpiresAt,
+        taxAmount: result.taxAmount,
+        taxRates: result.taxRates,
       },
     })
   },

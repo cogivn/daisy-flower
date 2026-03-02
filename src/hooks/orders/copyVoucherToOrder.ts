@@ -6,11 +6,7 @@ import type { CollectionBeforeChangeHook } from 'payload'
  * On order creation, looks up the customer's active cart and copies
  * voucher/discount metadata to the order.
  */
-export const copyVoucherToOrder: CollectionBeforeChangeHook = async ({
-  data,
-  operation,
-  req,
-}) => {
+export const copyVoucherToOrder: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation !== 'create') return data
 
   // Only use data.customer — never fall back to req.user to avoid
@@ -27,10 +23,7 @@ export const copyVoucherToOrder: CollectionBeforeChangeHook = async ({
     const { docs: carts } = await req.payload.find({
       collection: 'carts',
       where: {
-        and: [
-          { customer: { equals: customerId } },
-          { purchasedAt: { exists: false } },
-        ],
+        and: [{ customer: { equals: customerId } }, { purchasedAt: { exists: false } }],
       },
       sort: '-updatedAt',
       limit: 1,
@@ -41,6 +34,8 @@ export const copyVoucherToOrder: CollectionBeforeChangeHook = async ({
         voucherDiscount: true,
         levelDiscount: true,
         originalSubtotal: true,
+        taxAmount: true,
+        taxRates: true,
       },
       overrideAccess: true,
       req,
@@ -51,14 +46,14 @@ export const copyVoucherToOrder: CollectionBeforeChangeHook = async ({
 
     if (cart.appliedVoucher) {
       data.voucher =
-        typeof cart.appliedVoucher === 'object'
-          ? (cart.appliedVoucher as any).id
-          : cart.appliedVoucher
+        typeof cart.appliedVoucher === 'object' ? cart.appliedVoucher.id : cart.appliedVoucher
       data.voucherCode = cart.voucherCode || null
       data.discountAmount = cart.voucherDiscount || 0
     }
 
     data.levelDiscount = (cart.levelDiscount as number) || 0
+    data.taxAmount = (cart.taxAmount as number) || 0
+    data.taxRates = cart.taxRates || []
   } catch {
     // If cart lookup fails, proceed without discount data
     req.payload.logger.warn('Could not copy voucher data from cart to order.')

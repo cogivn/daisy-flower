@@ -260,33 +260,39 @@ Chi tiết contract Stripe và env: `docs/03-integrate/`.
 
 ### Mô hình thuế
 
-- **Tax mode**: `exclusive` (mặc định) — giá sản phẩm chưa thuế; thuế cộng thêm vào tổng. Hoặc `inclusive` — giá đã gồm thuế; hệ thống tách phần thuế để hiển thị (ít dùng hơn cho B2C VN).
-- **Tax base**: Tính thuế trên **subtotal sau khi trừ voucher và level discount** (số tiền khách thực trả trước thuế). Điều này phù hợp với thực tế: discount giảm tổng đơn, thuế áp trên số tiền cuối trước thuế.
-- **Công thức**: `taxableAmount = subtotal (sau discount)`; `taxAmount = taxableAmount × taxRate / 100`; `total = taxableAmount + taxAmount` (exclusive). Stripe thanh toán `total`.
+- **Tax mode**:  
+  - `exclusive` (mặc định) — giá sản phẩm chưa thuế; thuế cộng thêm vào subtotal.  
+  - `inclusive` — giá đã gồm thuế; hệ thống bóc tách phần thuế nội bộ, **không cộng thêm** cho khách.
+- **Tax base**: Luôn tính trên **subtotal sau khi trừ voucher và level discount** (số tiền khách thực trả sau giảm giá).
+- **Tax classes**: Thuế không còn là 1 số `%` cứng mà được định nghĩa qua collection `taxes` (name, rate) và gán cho Products / Categories / TaxSettings.
 
 ### Cấu hình (Global TaxSettings)
 
-- **Default tax rate** (number, 0–100, VD: 8): thuế suất mặc định (%).
-- **Tax mode** (select: `exclusive` | `inclusive`): chế độ giá.
-- **Optional**: mapping category → tax rate (sau này); hoặc field `taxExempt` trên Product (0%).
-- **Thứ tự tính**: `originalSubtotal` → `voucherDiscount` + `levelDiscount` → `taxableAmount` (= subtotal) → `taxAmount` → `total`.
+- `taxMode` (select: `exclusive` \| `inclusive`): chế độ giá.
+- `defaultTaxClasses` (optional, hasMany → `taxes`):  
+  - Nếu rỗng: không có thuế mặc định, chỉ tax gắn trên product/category mới áp dụng.  
+  - Nếu có: dùng làm nhóm thuế fallback khi product/category không có taxClasses.
+- Thứ tự resolve tax classes cho 1 dòng: `Product.taxClasses` → `Category.taxClasses` → `TaxSettings.defaultTaxClasses` → 0%.
 
 ### Mở rộng dữ liệu
 
 | Vị trí | Field mới | Mô tả |
 |--------|-----------|--------|
-| **Carts** (override) | `taxAmount` (number, default 0) | Thuế tính từ taxableAmount × rate. |
-| **Carts** | `taxRate` (number, readOnly) | Snapshot thuế suất đã dùng (%). |
-| **Orders** (override) | `taxAmount` (number, default 0) | Thuế đơn hàng. |
-| **Orders** | `taxRate` (number, readOnly) | Snapshot thuế suất (%). |
-| **Globals** | `TaxSettings` (mới) | defaultTaxRate, taxMode. |
+| **Carts** (override) | `originalSubtotal`, `voucherDiscount`, `levelDiscount` | Base cho discount & thuế. |
+| **Carts** | `taxAmount` (number, default 0) | Tổng thuế dòng. |
+| **Carts** | `taxRates` (json, readOnly) | Snapshot `{ name, rate, amount }[]`. |
+| **Orders** (override) | `discountAmount`, `levelDiscount` | Snapshot giảm giá. |
+| **Orders** | `taxAmount`, `taxRates` | Snapshot thuế tại thời điểm thanh toán. |
+| **Globals** | `TaxSettings` | `taxMode`, `defaultTaxClasses`. |
 
 ### Luồng
 
-1. **applyCartDiscounts**: Sau khi set `data.subtotal = baseSubtotal - totalDiscount`, gọi logic thuế: đọc TaxSettings, tính `taxAmount`, `taxRate`, gán vào cart. (Tổng gửi Stripe = subtotal + taxAmount — plugin dùng cart total; cần đảm bảo cart total = subtotal + tax.)
-2. **copyVoucherToOrder** (mở rộng): Copy thêm `taxAmount`, `taxRate` từ cart sang order.
-3. **Order total**: `amount` = subtotal + taxAmount (exclusive) hoặc theo logic plugin (cart total).
-4. **PriceBreakdown**: Thêm dòng "VAT (8%)" hoặc tương đương; Total = Subtotal − Discounts + Tax.
+1. **applyCartDiscounts**: Recalculate subtotal, voucher, level discounts, rồi resolve taxClasses theo thứ tự ưu tiên và tính `taxAmount`, `taxRates` dựa trên `taxMode`.
+2. **copyVoucherToOrder**: Copy `voucher`, `discountAmount`, `levelDiscount`, `taxAmount`, `taxRates` từ cart sang order khi tạo đơn.
+3. **Order total**: Với `exclusive`, tổng = subtotal sau giảm + `taxAmount` (+ shipping). Với `inclusive`, tổng = subtotal sau giảm (không cộng thêm thuế).
+4. **PriceBreakdown**:  
+   - Exclusive: hiển thị dòng thuế và cộng vào Total.  
+   - Inclusive: chỉ hiển thị Subtotal/discounts; không show dòng thuế cho khách (thuế chỉ để report).
 
 ### Tích hợp Stripe
 
@@ -294,10 +300,10 @@ Chi tiết contract Stripe và env: `docs/03-integrate/`.
 
 ### Mở rộng — US10.1 (thuế theo sản phẩm/danh mục)
 
-- **Product**: `taxExempt` (boolean), `taxRateOverride` (%).
-- **Category**: `taxRateOverride` (%).
-- Logic: ưu tiên product.taxExempt → product.taxRateOverride → category.taxRateOverride → defaultTaxRate.
-- Chi tiết: [04-build/tax-feature-solution.md § US10.1](04-build/tax-feature-solution.md#8-us101--thuế-theo-sản-phẩm--danh-mục).
+- **Product**: gắn trực tiếp `taxClasses` để override category/global.
+- **Category**: gắn `taxClasses` cho nhóm sản phẩm.
+- Logic fallback: `Product.taxClasses` → `Category.taxClasses` → `TaxSettings.defaultTaxClasses` → 0%.
+- Chi tiết tính toán xem thêm [04-build/tax-feature-solution.md](tax-feature-solution.md).
 
 ---
 

@@ -223,6 +223,34 @@ export const plugins: Plugin[] = [
               description: 'User level discount amount (auto-calculated).',
             },
           },
+          {
+            name: 'taxAmount',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'Tax amount (VND).',
+            },
+          },
+          {
+            name: 'taxRates',
+            type: 'json',
+            admin: {
+              readOnly: true,
+              description: 'Snapshot of tax rates applied.',
+            },
+          },
+          {
+            name: 'shippingFee',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'Shipping fee (VND).',
+            },
+          },
         ],
       }),
     },
@@ -300,6 +328,34 @@ export const plugins: Plugin[] = [
             admin: {
               readOnly: true,
               description: 'User level discount amount (VND).',
+            },
+          },
+          {
+            name: 'taxAmount',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'Tax amount (VND).',
+            },
+          },
+          {
+            name: 'taxRates',
+            type: 'json',
+            admin: {
+              readOnly: true,
+              description: 'Snapshot of tax rates applied.',
+            },
+          },
+          {
+            name: 'shippingFee',
+            type: 'number',
+            min: 0,
+            defaultValue: 0,
+            admin: {
+              readOnly: true,
+              description: 'Shipping fee (VND).',
             },
           },
         ],

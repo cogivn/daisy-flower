@@ -125,27 +125,33 @@
   - Users: thêm field `level` trong `src/collections/Users/index.ts`; optional `saveToJWT: true` nếu cần dùng ở client.
   - (Tùy chọn) Collection `UserLevels` nếu sau này cấu hình level theo bảng (tên, discountPercent, freeShippingThreshold, ...); MVP có thể chỉ dùng select cố định.
 
-#### US10: Hệ thống thuế (Tax) — Thuế suất mặc định
+#### US10: Hệ thống thuế (Tax) — Cấu hình mặc định
 
-- **Là chủ shop**, tôi muốn **cấu hình thuế (VAT) mặc định áp dụng cho đơn hàng** để tuân thủ quy định pháp lý và hiển thị thuế rõ ràng trên hóa đơn.
-- **Là khách hàng**, tôi muốn **thấy tổng tiền (đã gồm thuế) và chi tiết thuế tại checkout** để biết chính xác số tiền thanh toán.
+- **Là chủ shop**, tôi muốn **cấu hình cách tính thuế (VAT) mặc định** để tuân thủ quy định pháp lý và hiển thị tổng tiền đúng cho khách.
+- **Là khách hàng**, tôi muốn **thấy tổng tiền phải trả rõ ràng** (đã gồm hoặc chưa gồm thuế tùy chính sách shop).
 - **Chấp nhận**:
-  - Admin: cấu hình thuế mặc định (ví dụ 8% hoặc 10% VAT theo quy định Việt Nam) qua global TaxSettings.
-  - Cart/Order: tính thuế trên base (subtotal sau sale, trừ voucher/level discount); lưu `taxAmount`, `taxableAmount`; `total = taxableAmount + taxAmount` (hoặc total inclusive tùy chế độ). Một thuế suất chung cho toàn đơn.
-  - Checkout: hiển thị dòng thuế trong PriceBreakdown; tổng cuối = subtotal − discounts + tax.
-  - Order: lưu `taxAmount`, `taxRate` (snapshot) để hóa đơn và báo cáo.
+  - Admin: cấu hình **TaxSettings**:
+    - `taxMode`: `exclusive` (giá chưa thuế, thuế cộng thêm) hoặc `inclusive` (giá đã gồm thuế, chỉ bóc tách nội bộ).
+    - `defaultTaxClasses` (optional) làm fallback cho sản phẩm/danh mục không có tax riêng.
+  - Cart/Order: tính thuế trên base (subtotal sau sale, trừ voucher/level discount); lưu `taxAmount`, `taxRates` để báo cáo.
+  - Checkout:
+    - Với `exclusive`: Total = subtotal − discounts + tax (hiển thị dòng thuế).
+    - Với `inclusive`: Total = subtotal − discounts (thuế **không cộng thêm**, có thể ẩn dòng thuế cho khách).
+  - Order: lưu `taxAmount`, `taxRates` snapshot phục vụ hóa đơn/báo cáo.
 - **Mapping (khi implement)**: xem [02-design § 13](02-design/architecture-decisions.md#13-decision-13-tax-vat) và [04-build/tax-feature-solution.md](04-build/tax-feature-solution.md).
 
 #### US10.1: Thuế theo sản phẩm / danh mục
 
 - **Là chủ shop**, tôi muốn **đặt thuế suất riêng cho từng sản phẩm hoặc danh mục** để áp dụng đúng theo quy định (ví dụ rượu thuế cao hơn, hoa tươi miễn thuế).
-- **Là khách hàng**, tôi muốn **thấy chi tiết thuế theo từng nhóm sản phẩm** (nếu có) tại checkout.
+- **Là khách hàng**, tôi muốn **tổng tiền vẫn chính xác kể cả khi mỗi sản phẩm có thuế suất khác nhau**.
 - **Chấp nhận**:
-  - Admin: Product có `taxExempt` (boolean, miễn thuế) và/hoặc `taxRateOverride` (%, override thuế suất); Category có `taxRateOverride` (áp dụng cho sản phẩm trong danh mục khi product không override).
-  - Logic ưu tiên: `product.taxRateOverride` → `product.categories[0].taxRateOverride` (hoặc category nào đó) → `TaxSettings.defaultTaxRate`. Nếu `product.taxExempt = true` thì `taxRate = 0`.
-  - Tính thuế theo line item: `itemTaxAmount = itemPrice × quantity × taxRate / 100`; `taxAmount` (đơn) = tổng itemTaxAmount.
-  - Checkout/Order: có thể hiển thị breakdown theo nhóm thuế suất (tùy chọn); order lưu tổng taxAmount (có thể thêm `taxBreakdown` JSON nếu cần báo cáo).
-- **Mapping (khi implement)**: xem [04-build/tax-feature-solution.md § 8](04-build/tax-feature-solution.md#8-us101--thuế-theo-sản-phẩm--danh-mục). Phụ thuộc US10 đã xong.
+  - Admin: Product và Category có thể gắn **Tax Classes** (quan hệ tới collection `taxes`).
+  - Logic ưu tiên: `Product.taxClasses` → `Category.taxClasses` → `TaxSettings.defaultTaxClasses` → 0%.
+  - Hệ thống phân bổ (prorate) các giảm giá (voucher, level) trước khi tính thuế từng dòng; `taxAmount` (đơn) = tổng thuế các dòng.
+  - Checkout:
+    - Với `exclusive`: có thể hiển thị tổng thuế, Total = subtotal − discounts + tax.
+    - Với `inclusive`: thuế đã nằm trong giá, checkout không cộng thêm.
+- **Mapping (khi implement)**: xem [04-build/tax-feature-solution.md](04-build/tax-feature-solution.md). Phụ thuộc US10 đã xong.
 
 ---
 

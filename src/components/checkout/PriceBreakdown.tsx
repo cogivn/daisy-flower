@@ -12,6 +12,8 @@ type PriceBreakdownProps = {
   voucherCode?: string | null
   levelName?: string | null
   levelDiscountPercent?: number | null
+  taxRates?: Array<{ name: string; rate: number; amount: number }>
+  taxMode?: string
 }
 
 export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
@@ -22,11 +24,14 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
   voucherCode,
   levelName,
   levelDiscountPercent,
+  taxRates = [],
+  taxMode = 'exclusive',
 }) => {
   const hasVoucherDiscount = voucherDiscount > 0
   const hasLevelDiscount = levelDiscount > 0
   const hasAnyDiscount = hasVoucherDiscount || hasLevelDiscount
   const totalSaved = voucherDiscount + levelDiscount
+  const showTaxRows = taxMode === 'exclusive' && taxRates && taxRates.length > 0
 
   return (
     <div className="space-y-3">
@@ -82,6 +87,21 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
           <span className="text-green-700 dark:text-green-400 font-semibold">
             <Price amount={totalSaved} as="span" />
           </span>
+        </div>
+      )}
+
+      {/* Taxes (only show when mode is exclusive) */}
+      {showTaxRows && (
+        <div className="space-y-1">
+          {taxRates.map((tax, i) => (
+            <div key={i} className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">{tax.name}</span>
+              <span className="text-muted-foreground">
+                +
+                <Price amount={tax.amount} as="span" />
+              </span>
+            </div>
+          ))}
         </div>
       )}
 

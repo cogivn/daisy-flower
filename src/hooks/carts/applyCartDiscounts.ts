@@ -1,12 +1,14 @@
 import type { UserLevel } from '@/config/userLevels'
 import type { CollectionBeforeChangeHook } from 'payload'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 interface VoucherDoc {
   id: number | string
   code: string
   type: 'percent' | 'fixed'
-  value: number // Raw VND from DB (e.g. 10000 for 10.000 VND or 20 for 20%)
-  maxDiscount?: number | null // Raw VND from DB
+  value: number
+  maxDiscount?: number | null
   scope: 'all' | 'specific'
   applicableProducts?: (number | string)[]
   assignMode: 'all' | 'level' | 'users'
@@ -15,7 +17,7 @@ interface VoucherDoc {
   maxUses?: number | null
   maxUsesPerUser?: number | null
   usedCount?: number | null
-  minOrderAmount?: number | null // Raw VND from DB
+  minOrderAmount?: number | null
   validFrom?: string | null
   validTo?: string | null
   _status?: string
@@ -27,259 +29,383 @@ type CartItem = {
   quantity: number
 }
 
-function extractId(ref: number | string | { id: number | string }): string {
-  return String(typeof ref === 'object' ? ref.id : ref)
+function extractId(ref: number | string | { id: number | string } | unknown): string {
+  if (!ref) return ''
+  return String(typeof ref === 'object' && ref !== null ? (ref as any).id : ref)
 }
 
 /**
- * Cart beforeChange hook — runs AFTER the plugin's subtotal calculation.
- *
- * IMPORTANT: With VND currency (decimals: 0), priceInVND is stored as-is.
- * No conversion needed — values are used directly.
- *
- * Sale prices, voucher values, minOrderAmount, etc. are stored as plain VND
- * in our custom fields — no conversion needed.
+ * Cart beforeChange hook — recalculates subtotal, applies dynamic discounts
+ * from Vouchers / User Levels, AND now mathematically computes Taxes (taxAmount, taxRates)
+ * following the fallback hierarchy: Product > Category > Global.
  */
 export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req }) => {
   const items = (data.items || []) as CartItem[]
 
-  // --- Build a PRICE CACHE ---
-  const salePriceMap = new Map<string, number>()
-  const productPriceMap = new Map<string, number>()
-  const variantPriceMap = new Map<string, number>()
-
-  if (items.length > 0) {
-    const productIdsToFetch = new Set<string>()
-    const variantIdsToFetch = new Set<string>()
-
-    // 1. Fetch active sales (salePrice is plain VND — no conversion)
-    const allProductIds = items.map((item) => extractId(item.product))
-    try {
-      const { docs: activeSales } = await req.payload.find({
-        collection: 'sale-events',
-        where: {
-          and: [{ product: { in: [...new Set(allProductIds)] } }, { status: { equals: 'active' } }],
-        },
-        limit: 100,
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-
-      for (const sale of activeSales) {
-        const pid = extractId(sale.product as number | string | { id: number | string })
-        if (!salePriceMap.has(pid) && sale.salePrice != null) {
-          // salePrice is a plain VND field — no conversion needed
-          salePriceMap.set(pid, sale.salePrice as number)
-        }
-      }
-    } catch {
-      /* fallback */
-    }
-
-    // 2. Determine missing prices
-    for (const item of items) {
-      const pid = extractId(item.product)
-      if (!salePriceMap.has(pid)) {
-        if (item.variant) variantIdsToFetch.add(extractId(item.variant))
-        else productIdsToFetch.add(pid)
-      }
-    }
-
-    // 3. Fetch product prices (priceInVND is stored as-is)
-    if (productIdsToFetch.size > 0) {
-      try {
-        const uniqueProductIds = Array.from(productIdsToFetch)
-        const { docs: productDocs } = await req.payload.find({
-          collection: 'products',
-          where: { id: { in: uniqueProductIds } },
-          limit: uniqueProductIds.length,
-          depth: 0,
-          select: { priceInVND: true },
-          overrideAccess: true,
-          req,
-        })
-        for (const doc of productDocs) {
-          productPriceMap.set(String(doc.id), doc.priceInVND ?? 0)
-        }
-      } catch {
-        /* fallback */
-      }
-    }
-
-    // 4. Fetch variant prices (priceInVND is stored as-is)
-    if (variantIdsToFetch.size > 0) {
-      try {
-        const uniqueVariantIds = Array.from(variantIdsToFetch)
-        const { docs: variantDocs } = await req.payload.find({
-          collection: 'variants' as 'users', // Cast for plugin-specific collections
-          where: { id: { in: uniqueVariantIds } },
-          limit: uniqueVariantIds.length,
-          depth: 0,
-          overrideAccess: true,
-          req,
-        })
-        for (const doc of variantDocs) {
-          const price = (doc as unknown as { priceInVND?: number }).priceInVND ?? 0
-          variantPriceMap.set(String(doc.id), price)
-        }
-      } catch {
-        /* fallback */
-      }
-    }
-
-    // Helper to resolve the correct price (returns VND)
-    const getItemPrice = (item: CartItem): number => {
-      const pid = extractId(item.product)
-      if (salePriceMap.has(pid)) return salePriceMap.get(pid)!
-
-      if (item.variant) {
-        const vid = extractId(item.variant)
-        return variantPriceMap.get(vid) ?? 0
-      }
-
-      return productPriceMap.get(pid) ?? 0
-    }
-
-    // Recalculate subtotal
-    let adjustedSubtotal = 0
-    for (const item of items) {
-      const price = getItemPrice(item)
-      adjustedSubtotal += price * (item.quantity ?? 1)
-    }
-
-    data.subtotal = adjustedSubtotal
-    data.originalSubtotal = adjustedSubtotal
-  } else {
+  // Early exit for empty carts
+  if (items.length === 0) {
     data.subtotal = 0
     data.originalSubtotal = 0
-  }
-
-  const baseSubtotal = data.originalSubtotal as number
-
-  let voucherDiscount = 0
-  let levelDiscount = 0
-
-  // --- Voucher calculation ---
-  if (data.appliedVoucher) {
-    const voucherId = extractId(data.appliedVoucher)
-
-    try {
-      const voucher = (await req.payload.findByID({
-        collection: 'vouchers',
-        id: voucherId,
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })) as unknown as VoucherDoc
-
-      const now = new Date()
-      const isPublished = voucher._status === 'published'
-      const isNotExpired = !voucher.validTo || new Date(voucher.validTo) > now
-      const isStarted = !voucher.validFrom || new Date(voucher.validFrom) <= now
-      const withinUsageLimit = voucher.maxUses == null || (voucher.usedCount ?? 0) < voucher.maxUses
-
-      // minOrderAmount is plain VND — no conversion
-      const minOrder = voucher.minOrderAmount ?? 0
-      const meetsMinOrder = voucher.minOrderAmount == null || baseSubtotal >= minOrder
-
-      if (!isPublished || !isNotExpired || !isStarted || !withinUsageLimit || !meetsMinOrder) {
-        data.appliedVoucher = null
-        data.voucherCode = null
-        data.voucherDiscount = 0
-      } else {
-        let discountBase = baseSubtotal
-        let isVoided = false
-
-        if (voucher.scope === 'specific' && voucher.applicableProducts?.length) {
-          const applicableIds = voucher.applicableProducts.map((p) => extractId(p))
-          let eligibleSubtotal = 0
-
-          for (const item of items) {
-            const pid = extractId(item.product)
-            if (!applicableIds.includes(pid)) continue
-
-            const pidSale = extractId(item.product)
-            const price = salePriceMap.has(pidSale)
-              ? salePriceMap.get(pidSale)!
-              : item.variant
-                ? (variantPriceMap.get(extractId(item.variant)) ?? 0)
-                : (productPriceMap.get(pid) ?? 0)
-
-            eligibleSubtotal += price * (item.quantity ?? 1)
-          }
-
-          if (eligibleSubtotal === 0) isVoided = true
-          else discountBase = eligibleSubtotal
-        }
-
-        if (isVoided) {
-          data.appliedVoucher = null
-          data.voucherCode = null
-          data.voucherDiscount = 0
-        } else {
-          if (voucher.type === 'percent') {
-            voucherDiscount = Math.floor((discountBase * (voucher.value ?? 0)) / 100)
-            // maxDiscount is plain VND — no conversion
-            const maxDiscount = voucher.maxDiscount ?? 0
-            if (voucher.maxDiscount != null && voucherDiscount > maxDiscount) {
-              voucherDiscount = maxDiscount
-            }
-          } else {
-            // fixed value is plain VND — no conversion
-            const fixedDiscount = voucher.value ?? 0
-            voucherDiscount = Math.min(fixedDiscount, discountBase)
-          }
-
-          data.voucherDiscount = voucherDiscount
-        }
-      }
-    } catch {
-      data.appliedVoucher = null
-      data.voucherCode = null
-      data.voucherDiscount = 0
-    }
-  } else {
     data.voucherDiscount = 0
+    data.levelDiscount = 0
+    data.taxAmount = 0
+    data.taxRates = []
+    data.appliedVoucher = null
+    data.voucherCode = null
+    return data
   }
 
-  // --- Level discount calculation ---
-  const customerId = extractId(data.customer)
-  if (customerId && customerId !== 'null' && customerId !== 'undefined') {
-    try {
-      const user = await req.payload.findByID({
-        collection: 'users',
-        id: customerId,
+  // --- PHASE 1: Build Unique ID Sets for Concurrent Fetching ---
+  const productIdsToFetch = new Set<string>()
+  const variantIdsToFetch = new Set<string>()
+
+  for (const item of items) {
+    const pid = extractId(item.product)
+    if (pid) productIdsToFetch.add(pid)
+
+    if (item.variant) {
+      const vid = extractId(item.variant)
+      if (vid) variantIdsToFetch.add(vid)
+    }
+  }
+
+  const allProductIds = Array.from(productIdsToFetch)
+  const allVariantIds = Array.from(variantIdsToFetch)
+  const voucherId = data.appliedVoucher ? extractId(data.appliedVoucher) : null
+  const customerId = data.customer ? extractId(data.customer) : null
+
+  // --- PHASE 2: Fetch Level 1 Resources Concurrently (depth: 0) ---
+  const [salesRes, productsRes, variantsRes, voucherRes, userRes, userSettingsRes, taxSettingsRes] =
+    await Promise.all([
+      // 1. Sales
+      allProductIds.length > 0
+        ? req.payload
+            .find({
+              collection: 'sale-events',
+              where: {
+                and: [{ product: { in: allProductIds } }, { status: { equals: 'active' } }],
+              },
+              limit: 100,
+              depth: 0,
+              overrideAccess: true,
+              req,
+            })
+            .catch(() => ({ docs: [] }))
+        : { docs: [] },
+
+      // 2. Products - Explicitly depth 0 to avoid massive nested data queries
+      allProductIds.length > 0
+        ? req.payload
+            .find({
+              collection: 'products',
+              where: { id: { in: allProductIds } },
+              limit: allProductIds.length,
+              depth: 0,
+              select: { priceInVND: true, taxClasses: true, categories: true },
+              overrideAccess: true,
+              req,
+            })
+            .catch(() => ({ docs: [] }))
+        : { docs: [] },
+
+      // 3. Variants
+      allVariantIds.length > 0
+        ? req.payload
+            .find({
+              collection: 'variants' as any,
+              where: { id: { in: allVariantIds } },
+              limit: allVariantIds.length,
+              depth: 0,
+              select: { priceInVND: true },
+              overrideAccess: true,
+              req,
+            })
+            .catch(() => ({ docs: [] }))
+        : { docs: [] },
+
+      // 4. Voucher
+      voucherId
+        ? (req.payload
+            .findByID({
+              collection: 'vouchers',
+              id: voucherId,
+              depth: 0,
+              overrideAccess: true,
+              req,
+            })
+            .catch(() => null) as unknown as Promise<VoucherDoc | null>)
+        : Promise.resolve(null),
+
+      // 5. User for Level Discount
+      customerId && customerId !== 'null' && customerId !== 'undefined'
+        ? req.payload
+            .findByID({
+              collection: 'users',
+              id: customerId,
+              depth: 0,
+              select: { level: true },
+              overrideAccess: true,
+              req,
+            })
+            .catch(() => null)
+        : Promise.resolve(null),
+
+      // 6. User Level Settings
+      req.payload.findGlobal({ slug: 'user-level-settings', req, depth: 0 }).catch(() => null),
+
+      // 7. Tax Settings
+      req.payload.findGlobal({ slug: 'tax-settings', req, depth: 0 }).catch(() => null),
+    ])
+
+  // --- Build Caches & Setup Level 2 Tax Fetching ---
+  const salePriceMap = new Map<string, number>()
+  salesRes.docs.forEach((s) => {
+    const pid = extractId(s.product)
+    if (!salePriceMap.has(pid) && s.salePrice != null) salePriceMap.set(pid, s.salePrice as number)
+  })
+
+  const productMap = new Map<string, any>()
+  const productPriceMap = new Map<string, number>()
+  const variantPriceMap = new Map<string, number>()
+  const categoryIdsToFetch = new Set<string>()
+  const taxIdsToFetch = new Set<string>()
+
+  productsRes.docs.forEach((p) => {
+    productMap.set(String(p.id), p)
+    productPriceMap.set(String(p.id), p.priceInVND ?? 0)
+
+    // Collect Category IDs
+    if (p.categories) {
+      p.categories.forEach((c: any) => categoryIdsToFetch.add(extractId(c)))
+    }
+    // Collect Product-specific Tax IDs
+    if (p.taxClasses) {
+      p.taxClasses.forEach((t: any) => taxIdsToFetch.add(extractId(t)))
+    }
+  })
+
+  variantsRes.docs.forEach((v) => {
+    variantPriceMap.set(String(v.id), (v as any).priceInVND ?? 0)
+  })
+
+  const defaultTaxIds: string[] = []
+  if (
+    taxSettingsRes?.defaultTaxClasses &&
+    Array.isArray(taxSettingsRes.defaultTaxClasses) &&
+    taxSettingsRes.defaultTaxClasses.length > 0
+  ) {
+    taxSettingsRes.defaultTaxClasses.forEach((t: any) => {
+      const tid = extractId(t)
+      if (tid) {
+        taxIdsToFetch.add(tid)
+        defaultTaxIds.push(tid)
+      }
+    })
+  }
+
+  // --- PHASE 3: Fetch Level 2 Resources Concurrently (Categories to get Category-Level Taxes) ---
+  const categoriesList = Array.from(categoryIdsToFetch)
+
+  const [categoriesRes] = await Promise.all([
+    categoriesList.length > 0
+      ? req.payload
+          .find({
+            collection: 'categories',
+            where: { id: { in: categoriesList } },
+            limit: categoriesList.length,
+            depth: 0,
+            select: { taxClasses: true },
+            overrideAccess: true,
+            req,
+          })
+          .catch(() => ({ docs: [] }))
+      : { docs: [] },
+  ])
+
+  const categoryMap = new Map<string, any>()
+  categoriesRes.docs.forEach((c) => {
+    categoryMap.set(String(c.id), c)
+    // Collect Category-specific Tax IDs
+    if (c.taxClasses) {
+      c.taxClasses.forEach((t: any) => taxIdsToFetch.add(extractId(t)))
+    }
+  })
+
+  // --- PHASE 4: Fetch ALL Required Taxes in one sweep ---
+  const allTaxIds = Array.from(taxIdsToFetch)
+  const taxesMap = new Map<string, any>()
+
+  if (allTaxIds.length > 0) {
+    const taxesRes = await req.payload
+      .find({
+        collection: 'taxes',
+        where: { id: { in: allTaxIds } },
+        limit: allTaxIds.length,
         depth: 0,
-        select: { level: true },
         overrideAccess: true,
         req,
       })
+      .catch(() => ({ docs: [] }))
 
-      const userLevel = (user.level as UserLevel) || 'bronze'
-      const settings = await req.payload.findGlobal({ slug: 'user-level-settings', req })
-      const levels = (settings?.levels as Array<{ level: string; discountPercent: number }>) || []
+    taxesRes.docs.forEach((t) => taxesMap.set(String(t.id), t))
+  }
 
-      const match = levels.find((l) => l.level === userLevel)
-      if (match && match.discountPercent > 0) {
-        levelDiscount = Math.floor((baseSubtotal * match.discountPercent) / 100)
+  // ------------------------------------------------------------------------------------------------
+  // CALCULATION LOGIC (Fully Synchronous in-memory lookup => O(N) complexity)
+  // ------------------------------------------------------------------------------------------------
+
+  const getItemPrice = (item: CartItem): number => {
+    const pid = extractId(item.product)
+    if (salePriceMap.has(pid)) return salePriceMap.get(pid)!
+    if (item.variant) return variantPriceMap.get(extractId(item.variant)) ?? 0
+    return productPriceMap.get(pid) ?? 0
+  }
+
+  // 1. Calculate Base Subtotal
+  let adjustedSubtotal = 0
+  for (const item of items) {
+    adjustedSubtotal += getItemPrice(item) * (item.quantity ?? 1)
+  }
+
+  data.subtotal = adjustedSubtotal
+  data.originalSubtotal = adjustedSubtotal
+  const baseSubtotal = adjustedSubtotal
+
+  // 2. Calculate Voucher Discount
+  let voucherDiscount = 0
+  if (voucherRes) {
+    const voucher = voucherRes
+    const now = new Date()
+    const isPublished = voucher._status === 'published'
+    const isNotExpired = !voucher.validTo || new Date(voucher.validTo) > now
+    const isStarted = !voucher.validFrom || new Date(voucher.validFrom) <= now
+    const withinUsageLimit = voucher.maxUses == null || (voucher.usedCount ?? 0) < voucher.maxUses
+    const minOrder = voucher.minOrderAmount ?? 0
+    const meetsMinOrder = voucher.minOrderAmount == null || baseSubtotal >= minOrder
+
+    if (!isPublished || !isNotExpired || !isStarted || !withinUsageLimit || !meetsMinOrder) {
+      data.appliedVoucher = null
+      data.voucherCode = null
+    } else {
+      let discountBase = baseSubtotal
+      let isVoided = false
+
+      if (voucher.scope === 'specific' && voucher.applicableProducts?.length) {
+        const applicableIds = voucher.applicableProducts.map((p) => extractId(p))
+        let eligibleSubtotal = 0
+        for (const item of items) {
+          const pid = extractId(item.product)
+          if (applicableIds.includes(pid)) {
+            eligibleSubtotal += getItemPrice(item) * (item.quantity ?? 1)
+          }
+        }
+        if (eligibleSubtotal === 0) isVoided = true
+        else discountBase = eligibleSubtotal
       }
-    } catch {
-      /* skip */
+
+      if (isVoided) {
+        data.appliedVoucher = null
+        data.voucherCode = null
+      } else {
+        if (voucher.type === 'percent') {
+          voucherDiscount = Math.floor((discountBase * (voucher.value ?? 0)) / 100)
+          const maxDiscount = voucher.maxDiscount ?? 0
+          if (voucher.maxDiscount != null && voucherDiscount > maxDiscount) {
+            voucherDiscount = maxDiscount
+          }
+        } else {
+          voucherDiscount = Math.min(voucher.value ?? 0, discountBase)
+        }
+      }
+    }
+  } else {
+    data.appliedVoucher = null
+    data.voucherCode = null
+  }
+  data.voucherDiscount = voucherDiscount
+
+  // 3. Calculate User Level Discount
+  let levelDiscount = 0
+  if (userRes) {
+    const userLevel = (userRes.level as UserLevel) || 'bronze'
+    const levels = (userSettingsRes?.levels as Array<any>) || []
+    const match = levels.find((l) => l.level === userLevel)
+
+    if (match && match.discountPercent > 0) {
+      levelDiscount = Math.floor((baseSubtotal * match.discountPercent) / 100)
+    }
+  }
+  data.levelDiscount = levelDiscount
+
+  // 4. Calculate Final Disount & Subtotal
+  const totalDiscount = Math.min(voucherDiscount + levelDiscount, baseSubtotal)
+  if (totalDiscount < voucherDiscount + levelDiscount) {
+    data.levelDiscount = Math.max(0, totalDiscount - voucherDiscount) // Pro-rate to not exceed 100%
+  }
+  data.subtotal = Math.max(0, baseSubtotal - totalDiscount)
+
+  // 5. Calculate Taxes (Hierarchical fallback)
+  const taxMode = (taxSettingsRes?.taxMode as string) || 'exclusive'
+  let totalTaxAmount = 0
+  const taxRatesOutput: Record<string, { rate: number; name: string; amount: number }> = {}
+
+  for (const item of items) {
+    const pid = extractId(item.product)
+    const lineTotal = getItemPrice(item) * (item.quantity ?? 1)
+
+    // Pro-rate the mixed global discounts so individual tax calculation is accurate
+    const ratio = baseSubtotal > 0 ? lineTotal / baseSubtotal : 0
+    const discountedLineTotal = lineTotal - totalDiscount * ratio
+
+    const productDoc = productMap.get(pid)
+    let itemTaxIds: string[] = []
+
+    if (productDoc?.taxClasses && productDoc.taxClasses.length > 0) {
+      itemTaxIds = productDoc.taxClasses.map((t: any) => extractId(t))
+    } else {
+      const catTaxIds: string[] = []
+      if (productDoc?.categories) {
+        for (const c of productDoc.categories) {
+          const cid = extractId(c)
+          const catDoc = categoryMap.get(cid)
+          if (catDoc?.taxClasses) {
+            catDoc.taxClasses.forEach((t: any) => catTaxIds.push(extractId(t)))
+          }
+        }
+      }
+      itemTaxIds = catTaxIds.length > 0 ? catTaxIds : defaultTaxIds
+    }
+
+    const uniqueItemTaxIds = Array.from(new Set(itemTaxIds))
+
+    for (const tid of uniqueItemTaxIds) {
+      const tax = taxesMap.get(tid)
+      if (!tax) continue
+
+      const rate = typeof tax.rate === 'number' ? tax.rate : 0
+      let itemTaxAmount = 0
+
+      if (taxMode === 'exclusive') {
+        itemTaxAmount = (discountedLineTotal * rate) / 100
+      } else if (taxMode === 'inclusive') {
+        itemTaxAmount = discountedLineTotal - discountedLineTotal / (1 + rate / 100)
+      }
+
+      totalTaxAmount += itemTaxAmount
+
+      if (!taxRatesOutput[tid]) {
+        taxRatesOutput[tid] = { rate, name: tax.name || `Tax (${rate}%)`, amount: 0 }
+      }
+      taxRatesOutput[tid].amount += itemTaxAmount
     }
   }
 
-  data.levelDiscount = levelDiscount
-
-  // --- Final application ---
-  const totalDiscount = Math.min(voucherDiscount + levelDiscount, baseSubtotal)
-
-  // Pro-rate level discount if combined exceeds subtotal
-  if (totalDiscount < voucherDiscount + levelDiscount) {
-    data.levelDiscount = Math.max(0, totalDiscount - voucherDiscount)
-  }
-
-  data.subtotal = Math.max(0, baseSubtotal - totalDiscount)
+  data.taxAmount = Math.round(totalTaxAmount)
+  data.taxRates = Object.values(taxRatesOutput).map((t) => ({
+    name: t.name,
+    rate: t.rate,
+    amount: Math.round(t.amount),
+  }))
 
   return data
 }

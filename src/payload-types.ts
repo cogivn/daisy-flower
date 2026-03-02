@@ -80,6 +80,7 @@ export interface Config {
     'sale-events': SaleEvent;
     vouchers: Voucher;
     wishlist: Wishlist;
+    taxes: Tax;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -120,6 +121,7 @@ export interface Config {
     'sale-events': SaleEventsSelect<false> | SaleEventsSelect<true>;
     vouchers: VouchersSelect<false> | VouchersSelect<true>;
     wishlist: WishlistSelect<false> | WishlistSelect<true>;
+    taxes: TaxesSelect<false> | TaxesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -144,12 +146,16 @@ export interface Config {
     header: Header;
     footer: Footer;
     'user-level-settings': UserLevelSetting;
+    'tax-settings': TaxSetting;
+    'shipping-settings': ShippingSetting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     'user-level-settings': UserLevelSettingsSelect<false> | UserLevelSettingsSelect<true>;
+    'tax-settings': TaxSettingsSelect<false> | TaxSettingsSelect<true>;
+    'shipping-settings': ShippingSettingsSelect<false> | ShippingSettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
@@ -310,6 +316,26 @@ export interface Order {
    * User level discount amount (VND).
    */
   levelDiscount?: number | null;
+  /**
+   * Tax amount (VND).
+   */
+  taxAmount?: number | null;
+  /**
+   * Snapshot of tax rates applied.
+   */
+  taxRates?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Shipping fee (VND).
+   */
+  shippingFee?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -371,6 +397,10 @@ export interface Product {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Specific tax classes for this product. Overrides category and default taxes.
+   */
+  taxClasses?: (number | Tax)[] | null;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -724,10 +754,28 @@ export interface Category {
   description?: string | null;
   image?: (number | null) | Media;
   /**
+   * Tax classes for all products in this category (unless overridden at product level).
+   */
+  taxClasses?: (number | Tax)[] | null;
+  /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
   generateSlug?: boolean | null;
   slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "taxes".
+ */
+export interface Tax {
+  id: number;
+  name: string;
+  /**
+   * Tax rate percentage (0 - 100).
+   */
+  rate: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -1374,6 +1422,26 @@ export interface Cart {
    * User level discount amount (auto-calculated).
    */
   levelDiscount?: number | null;
+  /**
+   * Tax amount (VND).
+   */
+  taxAmount?: number | null;
+  /**
+   * Snapshot of tax rates applied.
+   */
+  taxRates?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Shipping fee (VND).
+   */
+  shippingFee?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1706,6 +1774,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'wishlist';
         value: number | Wishlist;
+      } | null)
+    | ({
+        relationTo: 'taxes';
+        value: number | Tax;
       } | null)
     | ({
         relationTo: 'forms';
@@ -2217,6 +2289,7 @@ export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
   description?: T;
   image?: T;
+  taxClasses?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
@@ -2301,6 +2374,16 @@ export interface VouchersSelect<T extends boolean = true> {
 export interface WishlistSelect<T extends boolean = true> {
   customer?: T;
   product?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "taxes_select".
+ */
+export interface TaxesSelect<T extends boolean = true> {
+  name?: T;
+  rate?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2551,6 +2634,7 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   categories?: T;
   saleEvents?: T;
+  taxClasses?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
@@ -2583,6 +2667,9 @@ export interface CartsSelect<T extends boolean = true> {
   originalSubtotal?: T;
   voucherDiscount?: T;
   levelDiscount?: T;
+  taxAmount?: T;
+  taxRates?: T;
+  shippingFee?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2625,6 +2712,9 @@ export interface OrdersSelect<T extends boolean = true> {
   voucherCode?: T;
   discountAmount?: T;
   levelDiscount?: T;
+  taxAmount?: T;
+  taxRates?: T;
+  shippingFee?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2862,6 +2952,44 @@ export interface UserLevelSetting {
   createdAt?: string | null;
 }
 /**
+ * Configure how taxes are applied globally (or disable default tax).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tax-settings".
+ */
+export interface TaxSetting {
+  id: number;
+  /**
+   * Exclusive: tax is added on top of the subtotal. Inclusive: prices are tax-inclusive and tax is backed out for reporting.
+   */
+  taxMode: 'exclusive' | 'inclusive';
+  /**
+   * Optional. Used as global fallback tax classes for products/categories without specific tax. Ignored when tax mode is Inclusive.
+   */
+  defaultTaxClasses?: (number | Tax)[] | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Configure standard shipping fees and thresholds for free shipping.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shipping-settings".
+ */
+export interface ShippingSetting {
+  id: number;
+  /**
+   * Standard flat-rate shipping fee (VND).
+   */
+  defaultFee: number;
+  /**
+   * Minimum order amount (after discounts) to qualify for free shipping. If 0, free shipping is disabled (unless user level gives free shipping).
+   */
+  freeShippingThreshold: number;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
@@ -2971,6 +3099,28 @@ export interface UserLevelSettingsSelect<T extends boolean = true> {
         description?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tax-settings_select".
+ */
+export interface TaxSettingsSelect<T extends boolean = true> {
+  taxMode?: T;
+  defaultTaxClasses?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shipping-settings_select".
+ */
+export interface ShippingSettingsSelect<T extends boolean = true> {
+  defaultFee?: T;
+  freeShippingThreshold?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

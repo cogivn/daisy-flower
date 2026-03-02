@@ -19,83 +19,68 @@
 
 ## 1. Tổng quan
 
-Hệ thống hỗ trợ hai cấp độ cấu hình thuế:
+Hệ thống hỗ trợ 2 lớp cấu hình thuế:
 
 | Cấp độ | Mô tả | Khi nào dùng |
 |--------|--------|---------------|
-| **Thuế mặc định** | Một thuế suất chung cho toàn bộ đơn hàng | Shop đa số sản phẩm cùng nhóm thuế (VD: hoa 8%) |
-| **Thuế theo sản phẩm/danh mục** | Thuế suất riêng cho từng sản phẩm hoặc danh mục | Có sản phẩm khác biệt (rượu 20%, hoa tươi miễn thuế, quà tặng 10%) |
+| **Tax mode (global)** | Chọn kiểu giá: `exclusive` (giá chưa thuế, thuế cộng thêm) hoặc `inclusive` (giá đã gồm thuế) | Quy ước pricing chung của shop |
+| **Tax Classes (default / product / category)** | Gắn nhóm thuế cho toàn shop, cho từng danh mục, hoặc từng sản phẩm | Khi có sản phẩm/danh mục cần thuế suất khác nhau (rượu 20%, hoa 8%, v.v.) |
 
-Bạn có thể chỉ dùng thuế mặc định, hoặc bật thêm thuế theo sản phẩm/danh mục khi cần.
+- Với **exclusive**: thuế sẽ được **cộng thêm** vào Subtotal ở checkout (và hiện rõ dòng thuế).  
+- Với **inclusive**: giá bạn nhập đã chứa thuế; hệ thống **không cộng thêm thuế** cho khách, chỉ bóc tách nội bộ (checkout không show dòng thuế).
 
 ---
 
-## 2. Workflow 1 — Thuế mặc định (US10)
+## 2. Workflow 1 — Tạo nhóm thuế (Tax Classes)
 
-### Bước 1: Vào cấu hình thuế
-
+### Bước 1: Vào quản lý Thuế
 1. Đăng nhập **Payload Admin**.
-2. Sidebar → **Globals** → **Tax Settings** (Cài đặt thuế).
-3. Mở form cấu hình thuế.
+2. Sidebar → **Ecommerce** → **Taxes** (Quản lý Thuế).
+3. Nhấn **Create New** (Tạo mới).
 
-### Bước 2: Điền thông tin
-
+### Bước 2: Điền thông tin nhóm thuế
 | Trường | Ý nghĩa | Ví dụ |
 |--------|---------|-------|
-| **Thuế suất mặc định** | % thuế áp dụng cho đơn hàng | `8` (= 8% VAT) |
-| **Chế độ** | Exclusive: giá chưa thuế, thuế cộng thêm. Inclusive: giá đã gồm thuế | Chọn **Exclusive** (phổ biến) |
-| **Nhãn hiển thị** | Text hiển thị tại checkout | `VAT` hoặc `Thuế GTGT` |
+| **Name (Tên)** | Tên hiển thị nội bộ | `VAT Tiêu chuẩn 8%`, `Hoa tươi 0%` |
+| **Rate (%)** | % thuế suất | `8` |
 
-### Bước 3: Lưu
+### Bước 3: Chọn Tax Mode & Default Tax (tuỳ chọn)
 
-Nhấn **Save**. Sau khi lưu, mọi đơn hàng mới sẽ tự động áp dụng thuế theo cấu hình.
+1. Sidebar → **Settings** → **Tax Settings**.
+2. Chọn **Tax mode**:
+   - `Exclusive` → Giá chưa thuế, thuế sẽ cộng thêm ở checkout.
+   - `Inclusive` → Giá đã gồm thuế, checkout không cộng thêm thuế (vẫn có thể dùng Tax Classes để bóc tách nội bộ).
+3. Nếu `Tax mode = Exclusive` và bạn muốn có **thuế mặc định toàn shop**:
+   - Ở trường **Default Tax Classes**, chọn 1 hoặc nhiều nhóm thuế (VD: `VAT Tiêu chuẩn 8%`).
+   - Nhấn **Save**.
 
-### Bước 4: Xác nhận
-
-- Vào trang **Checkout** (frontend), thêm sản phẩm vào giỏ, xem phần **Tổng tiền**.
-- Sẽ thấy dòng thuế (VD: `VAT (8%)`) và **Tổng thanh toán** = Subtotal − Giảm giá + Thuế.
+- Nếu **không chọn** Default Tax Classes → hệ thống **không áp thuế mặc định**; chỉ những product/category được gắn Tax Classes mới bị tính thuế.
 
 ---
 
-## 3. Workflow 2 — Thuế theo sản phẩm/danh mục (US10.1)
+## 3. Workflow 2 — Gắn thuế riêng (Sản phẩm/Danh mục ngoại lệ)
 
-*Chỉ thực hiện sau khi đã cấu hình thuế mặc định.*
+*Áp dụng khi bạn có mặt hàng chịu mức thuế khác với nhóm mặc định (VD: Rượu 10%, Phụ kiện 5%).*
 
-### 3.1 Miễn thuế cho sản phẩm (VD: hoa tươi)
+### Bước 1: Tạo nhóm thuế ngoại lệ
+Giống Workflow 1, hãy vào **Taxes** tạo một nhóm mới (VD: `VAT Rượu 10%` với Rate: 10, **không bật Is Default**).
 
+### Bước 2: Gắn thuế riêng cho Sản phẩm (Ưu tiên cao nhất)
 1. Admin → **Products** → chọn sản phẩm.
-2. Tìm trường **Miễn thuế** (hoặc `Tax exempt`).
-3. Bật **Yes**.
-4. Save.
+2. Tại mục **Thuế (Tax Class)**, chọn nhóm thuế vừa tạo (VD: `VAT Rượu 10%`).
+3. Save.
 
-→ Sản phẩm này sẽ không chịu thuế (0%).
-
-### 3.2 Thuế suất riêng cho sản phẩm (VD: rượu 20%)
-
-1. Admin → **Products** → chọn sản phẩm.
-2. Tìm trường **Thuế suất riêng** (hoặc `Tax rate override`).
-3. Nhập % (VD: `20`).
-4. Save.
-
-→ Sản phẩm này dùng 20% thay vì thuế mặc định.
-
-### 3.3 Thuế suất theo danh mục
-
-1. Admin → **Categories** → chọn danh mục (VD: "Đồ uống có cồn").
-2. Tìm trường **Thuế suất danh mục** (hoặc `Tax rate override`).
-3. Nhập % (VD: `20`).
-4. Save.
-
-→ Mọi sản phẩm thuộc danh mục này (chưa có thuế riêng) sẽ dùng 20%.
+### Bước 3: Gắn thuế cho một Danh mục
+1. Admin → **Categories** → chọn danh mục (VD: "Phụ kiện").
+2. Tại trường **Thuế (Tax Class)**, chọn nhóm thuế tương ứng.
+3. Save. *(Mọi sản phẩm thuộc danh mục này sẽ tự nhận thuế Phụ kiện, trừ khi Sản phẩm đó đã được gắn thuế riêng ở Bước 2).*
 
 ### 3.4 Thứ tự ưu tiên
-
-Hệ thống chọn thuế suất theo thứ tự:
-
-1. **Sản phẩm miễn thuế** → 0%
-2. **Thuế suất riêng của sản phẩm** → dùng giá trị đã nhập
-3. **Thuế suất danh mục** → dùng giá trị danh mục (nếu sản phẩm không override)
-4. **Thuế mặc định** → từ Tax Settings
+Khi tính tiền, hệ thống chọn thuế suất theo thứ tự:
+1. **Sản phẩm có gắn Tax Class** → Dùng % của các Tax Class đó.
+2. **Danh mục có gắn Tax Class** → Dùng Tax Classes của các Category mà sản phẩm thuộc về.
+3. **Nhóm thuế Default** → Chọn tại **Settings > Tax Settings > Default Tax Classes** (nếu có).
+4. **0%** (Nếu không tìm thấy bất kỳ Tax Class nào).
 
 ---
 
@@ -117,22 +102,21 @@ Hệ thống chọn thuế suất theo thứ tự:
 6. Tổng thanh toán = Subtotal + Thuế
 ```
 
-### 4.2 Công thức chi tiết
+### 4.2 Công thức chi tiết (đơn giản hoá cho end user)
 
-**Thuế mặc định (US10 — 1 rate/đơn):**
+**Exclusive (giá chưa thuế):**
 
 - `Subtotal` = tổng giá sản phẩm (sau sale) − Voucher − Level discount  
-- `Thuế` = Subtotal × Thuế suất mặc định / 100 (làm tròn gần nhất)  
-- `Tổng thanh toán` = Subtotal + Thuế  
+- Hệ thống sẽ nội bộ phân bổ giảm giá theo từng dòng, rồi tính thuế theo Tax Classes, nhưng về phía bạn có thể hiểu:  
+  - `Thuế` ≈ Subtotal × Thuế suất hiệu dụng / 100  
+  - `Tổng thanh toán` ≈ Subtotal + Thuế  
 
-**Thuế theo sản phẩm (US10.1):**
+**Inclusive (giá đã gồm thuế):**
 
-- Mỗi dòng sản phẩm có thuế suất riêng (0%, 10%, 20%, ... tùy cấu hình).
-- Do giỏ hàng có thể áp dụng Voucher hoặc Chiết khấu Level, hệ thống sẽ **phân bổ đều phần tiền giảm giá** này cho tất cả các dòng sản phẩm (dựa trên tỉ trọng giá trị).
-- `Giá trị chịu thuế của dòng (Taxable Amount)` = Giá gốc - Giảm giá phân bổ
-- `Thuế dòng` = Taxable Amount × Thuế suất dòng / 100 (làm tròn gần nhất)
-- `Thuế đơn` = tổng Thuế các dòng  
-- `Tổng thanh toán` = Subtotal + Thuế đơn
+- `Subtotal` = tổng giá sản phẩm (đã bao gồm thuế) − Voucher − Level discount  
+- Hệ thống vẫn có thể bóc tách để biết `Thuế` nội bộ, nhưng:
+  - **Không cộng thêm thuế** cho khách,  
+  - Checkout chỉ hiển thị **tổng cuối = Subtotal sau giảm**.
 
 ### 4.3 Cơ sở tính thuế
 
@@ -176,24 +160,17 @@ Không voucher, không level:
 
 ## 6. Lưu ý & FAQ
 
-### Thuế mặc định = 0%
-
-- Nếu đặt **Thuế suất mặc định** = 0, đơn hàng sẽ không có thuế.
-- Phù hợp khi shop chưa cần xuất hóa đơn VAT hoặc toàn bộ hàng miễn thuế.
+### Nhóm thuế mặc định vô tình bị xoá
+- Nếu bạn xoá nhóm thuế đang được liên kết trong **Tax Settings**, hệ thống sẽ báo lỗi không lưu được đơn hàng (thiếu Default Tax). Hãy luôn đảm bảo đã chọn một khoản thuế mặc định.
 
 ### Thay đổi thuế suất
 
 - Thay đổi **Tax Settings** chỉ ảnh hưởng đơn hàng **mới**.
 - Đơn đã đặt giữ nguyên số thuế lúc thanh toán (snapshot).
 
-### Sản phẩm vừa miễn thuế vừa có override
-
-- Nếu bật **Miễn thuế**, hệ thống dùng 0% và bỏ qua **Thuế suất riêng**.
-
-### Nhiều danh mục
-
-- Sản phẩm thuộc nhiều danh mục: hệ thống dùng **danh mục đầu tiên** (hoặc primary) có `taxRateOverride`.
-- Khuyến nghị: đặt thuế ở **sản phẩm** khi có ngoại lệ rõ ràng (VD: rượu).
+### Sản phẩm nằm trong nhiều danh mục
+- Nếu sản phẩm nằm trong nhiều Categories có mức thuế khác nhau, hệ thống luôn ưu tiên **Category đầu tiên** được lưu.
+- Khuyến nghị: Nên gắn thẳng cục Thuế ở cấp **Products** nếu Sản phẩm đó có ngoại lệ đặc thù để khỏi lo nghĩ về Category trùng lặp.
 
 ### Hiển thị tại Checkout
 

@@ -2,12 +2,12 @@
 
 import { Price } from '@/components/Price'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 } from '@/components/ui/sheet'
 import { useCart } from '@payloadcms/plugin-ecommerce/client/react'
 import { ShoppingCart } from 'lucide-react'
@@ -180,12 +180,17 @@ export function CartModal({ renderTrigger }: CartModalProps) {
               <div className="px-4">
                 <div className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
                   {typeof cart?.subtotal === 'number' && (
-                    <div className="mb-3 flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
-                      <p>Total</p>
-                      <Price
-                        amount={cart?.subtotal}
-                        className="text-right text-base text-black dark:text-white"
-                      />
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between border-b border-neutral-200 pb-1 pt-1 dark:border-neutral-700">
+                        <p>Subtotal</p>
+                        <Price
+                          amount={cart?.subtotal}
+                          className="text-right text-base text-black dark:text-white"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-neutral-400 text-center">
+                        Taxes and shipping calculated at checkout
+                      </p>
                     </div>
                   )}
 

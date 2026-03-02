@@ -39,9 +39,14 @@ type LevelInfo = {
 type CheckoutPageProps = {
   salePrices?: Record<string, number>
   levels?: Array<{ level: string; discountPercent: number }>
+  taxMode?: string
 }
 
-export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, levels = [] }) => {
+export const CheckoutPage: React.FC<CheckoutPageProps> = ({
+  salePrices = {},
+  levels = [],
+  taxMode = 'exclusive',
+}) => {
   const { user } = useAuth()
   const router = useRouter()
   const { cart } = useCart()
@@ -75,6 +80,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
   const [voucherDiscount, setVoucherDiscount] = useState(0)
   const [levelDiscount, setLevelDiscount] = useState(0)
   const [originalSubtotal, setOriginalSubtotal] = useState(0)
+  const [taxAmount, setTaxAmount] = useState(0)
+  const [taxRates, setTaxRates] = useState<Array<{ name: string; rate: number; amount: number }>>(
+    [],
+  )
 
   const cartIsEmpty = !cart || !cart.items || !cart.items.length
 
@@ -135,6 +144,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
             setVoucherDiscount(activeCart.voucherDiscount || 0)
             setLevelDiscount(activeCart.levelDiscount || 0)
             setOriginalSubtotal(activeCart.originalSubtotal || activeCart.subtotal || 0)
+            setTaxAmount((activeCart.taxAmount as number) || 0)
+            setTaxRates(
+              (activeCart.taxRates as Array<{ name: string; rate: number; amount: number }>) || [],
+            )
           }
         }
       } catch {
@@ -146,29 +159,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, JSON.stringify(cart?.items || [])])
 
-  // Sync local state when cart object changes (e.g. item removed via drawer)
-  useEffect(() => {
-    if (cart && typeof cart === 'object') {
-      const activeCart = cart as Cart
-      if (activeCart.voucherCode !== undefined) setVoucherCode(activeCart.voucherCode ?? null)
-      if (activeCart.voucherDiscount !== undefined) {
-        setVoucherDiscount(activeCart.voucherDiscount ?? 0)
-      }
-      if (activeCart.levelDiscount !== undefined) setLevelDiscount(activeCart.levelDiscount ?? 0)
-      if (activeCart.originalSubtotal !== undefined) {
-        setOriginalSubtotal(activeCart.originalSubtotal ?? 0)
-      } else if (activeCart.subtotal !== undefined && !activeCart.voucherCode) {
-        setOriginalSubtotal(activeCart.subtotal ?? 0)
-      }
-    }
-  }, [cart])
-
-  // Keep originalSubtotal in sync with cart.subtotal when no discounts are applied
-  useEffect(() => {
-    if (cart?.subtotal != null && !voucherCode && levelDiscount === 0) {
-      setOriginalSubtotal(cart.subtotal)
-    }
-  }, [cart?.subtotal, voucherCode, levelDiscount])
+  // Local state is synced with cart via touchCart() and handleVoucher APIs.
+  // The default `useCart()` from Payload does not return custom fields like originalSubtotal,
+  // so we must avoid blindly overriding local state with cart mutations lacking full context.
 
   // On initial load wait for addresses to be loaded and check to see if we can prefill a default one
   useEffect(() => {
@@ -197,13 +190,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
     setVoucherDiscount((data.voucherDiscount as number) || 0)
     setLevelDiscount((data.levelDiscount as number) || 0)
     setOriginalSubtotal((data.originalSubtotal as number) || 0)
+    setTaxAmount((data.taxAmount as number) || 0)
+    setTaxRates((data.taxRates as Array<{ name: string; rate: number; amount: number }>) || [])
   }, [])
 
   const handleVoucherRemoved = useCallback((data: Record<string, unknown>) => {
     setVoucherCode(null)
     setVoucherDiscount(0)
     setLevelDiscount((data.levelDiscount as number) || 0)
-    setOriginalSubtotal((data.originalSubtotal as number) || 0)
+    setOriginalSubtotal((data.originalSubtotal as number) || (data.subtotal as number) || 0)
+    setTaxAmount((data.taxAmount as number) || 0)
+    setTaxRates((data.taxRates as Array<{ name: string; rate: number; amount: number }>) || [])
   }, [])
 
   const initiatePaymentIntent = useCallback(
@@ -336,11 +333,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
     )
   }
 
-  const hasDiscounts = voucherDiscount > 0 || levelDiscount > 0
-  const displaySubtotal = hasDiscounts ? originalSubtotal : cart.subtotal || 0
-  const displayTotal = hasDiscounts
-    ? Math.max(0, originalSubtotal - voucherDiscount - levelDiscount)
-    : cart.subtotal || 0
+  const displaySubtotal = originalSubtotal > 0 ? originalSubtotal : cart?.subtotal || 0
+
+  let displayTotal = Math.max(0, displaySubtotal - voucherDiscount - levelDiscount)
+
+  if (taxMode === 'exclusive') {
+    displayTotal += taxAmount
+  }
 
   return (
     <div className="flex flex-col items-stretch justify-stretch my-8 md:flex-row grow gap-10 md:gap-6 lg:gap-8">
@@ -698,6 +697,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ salePrices = {}, lev
             voucherCode={voucherCode}
             levelName={levelInfo?.name}
             levelDiscountPercent={levelInfo?.discountPercent}
+            taxRates={taxRates}
+            taxMode={taxMode}
           />
         </div>
       )}

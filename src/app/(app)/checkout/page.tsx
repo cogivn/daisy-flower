@@ -11,7 +11,7 @@ import { getPayload } from 'payload'
 export default async function Checkout() {
   const payload = await getPayload({ config: configPromise })
 
-  const [saleEventsRes, levelSettingsRes] = await Promise.all([
+  const [saleEventsRes, levelSettingsRes, taxSettingsRes] = await Promise.all([
     payload.find({
       collection: 'sale-events',
       where: { status: { equals: 'active' } },
@@ -19,6 +19,7 @@ export default async function Checkout() {
       limit: 100,
     }),
     payload.findGlobal({ slug: 'user-level-settings' }),
+    payload.findGlobal({ slug: 'tax-settings' }),
   ])
 
   // salePrice is a plain VND field — no conversion needed
@@ -32,6 +33,7 @@ export default async function Checkout() {
 
   const levels =
     (levelSettingsRes?.levels as Array<{ level: string; discountPercent: number }>) || []
+  const taxMode = (taxSettingsRes?.taxMode as string) || 'exclusive'
 
   return (
     <div className="container min-h-[90vh] flex">
@@ -61,7 +63,7 @@ export default async function Checkout() {
 
       <h1 className="sr-only">Checkout</h1>
 
-      <CheckoutPage salePrices={salePrices} levels={levels} />
+      <CheckoutPage salePrices={salePrices} levels={levels} taxMode={taxMode} />
     </div>
   )
 }

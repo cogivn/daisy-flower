@@ -40,6 +40,8 @@ export const removeVoucherFromCart: Endpoint = {
       voucherCode?: string | null
       voucherDiscount?: number | null
       levelDiscount?: number | null
+      taxAmount?: number | null
+      taxRates?: Array<{ name: string; rate: number; amount: number }> | null
     }
 
     const updatedCart = await req.payload.update({
@@ -67,6 +69,8 @@ export const removeVoucherFromCart: Endpoint = {
         voucherDiscount: 0,
         levelDiscount: result.levelDiscount,
         subtotal: result.subtotal,
+        taxAmount: result.taxAmount,
+        taxRates: result.taxRates,
       },
     })
   },

@@ -266,6 +266,16 @@ export const ProductsCollection: CollectionOverride = ({ defaultCollection }) =>
         defaultColumns: ['title', 'status', 'salePrice', 'startsAt', 'endsAt'],
       },
     },
+    {
+      name: 'taxClasses',
+      type: 'relationship',
+      relationTo: 'taxes',
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Specific tax classes for this product. Overrides category and default taxes.',
+      },
+    },
     slugField(),
   ],
 })

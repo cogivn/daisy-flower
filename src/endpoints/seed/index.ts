@@ -33,6 +33,7 @@ export const seed = async ({
   await stepSaleEvents(ctx)
   await stepForms(ctx)
   await stepPages(ctx)
+  await stepTaxes(ctx)
   await stepGlobals(ctx)
 
   payload.logger.info('Seeded database successfully!')
@@ -408,4 +409,44 @@ async function stepGlobals(ctx: SeedContext) {
     ctx.payload.updateGlobal({ slug: 'header', data: headerData }),
     ctx.payload.updateGlobal({ slug: 'footer', data: footerData }),
   ])
+}
+
+// ──────────────────────────────────────────────
+// Step 10: Taxes
+// ──────────────────────────────────────────────
+
+async function stepTaxes(ctx: SeedContext) {
+  ctx.payload.logger.info('— Seeding taxes...')
+
+  const vat8 = await ctx.payload.create({
+    collection: 'taxes',
+    data: {
+      name: 'Standard VAT (8%)',
+      rate: 8,
+    },
+  })
+
+  await ctx.payload.create({
+    collection: 'taxes',
+    data: {
+      name: 'Fresh Flowers (Zero Rated 0%)',
+      rate: 0,
+    },
+  })
+
+  await ctx.payload.create({
+    collection: 'taxes',
+    data: {
+      name: 'Gifts / Accessories (10%)',
+      rate: 10,
+    },
+  })
+
+  await ctx.payload.updateGlobal({
+    slug: 'tax-settings',
+    data: {
+      taxMode: 'exclusive',
+      defaultTaxClasses: [vat8.id as number],
+    },
+  })
 }

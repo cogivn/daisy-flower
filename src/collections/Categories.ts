@@ -33,6 +33,17 @@ export const Categories: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
     },
+    {
+      name: 'taxClasses',
+      type: 'relationship',
+      relationTo: 'taxes',
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Tax classes for all products in this category (unless overridden at product level).',
+      },
+    },
     slugField({
       position: undefined,
     }),
