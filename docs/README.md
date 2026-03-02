@@ -10,7 +10,7 @@
 
 Dự án **Daisy Flower** là nền tảng thương mại điện tử (ecommerce) dùng để bán hoa tươi và các sản phẩm liên quan (quà tặng, phụ kiện, dịch vụ giao hoa). Tài liệu dự án tuân theo cấu trúc **SDLC 6.1.0 LITE** (5 giai đoạn chính).
 
-**Lưu ý**: Tech stack (Payload CMS, Next.js, SQLite), bộ blocks và kiến trúc đã được chọn và setup sẵn. Tài liệu **bám sát kiến trúc hiện có** — mô tả đúng collections, blocks, seed (homepage layout) và cách trang build động từ Payload. **Đã bổ sung** yêu cầu và thiết kế cho **Voucher** (mã giảm giá) và **User levels** (cấp độ thành viên); chưa implement — xem [01-planning](01-planning/requirements.md) (US8, US9), [02-design § 11](02-design/architecture-decisions.md#11-voucher--user-levels-theo-docs--chưa-implement), [04-build](04-build/sprint-plan.md) (nhóm Voucher & User levels).
+**Lưu ý**: Tech stack (Payload CMS, Next.js, SQLite), bộ blocks và kiến trúc đã được chọn và setup sẵn. Tài liệu **bám sát kiến trúc hiện có** — mô tả đúng collections, blocks, seed (homepage layout) và cách trang build động từ Payload. **Voucher** (US8) và **User levels** (US9) đã implement — xem [02-design § 11](02-design/architecture-decisions.md#11-voucher--user-levels), [04-build sprint-plan](04-build/sprint-plan.md) (nhóm Voucher & User Levels).
 
 Phương pháp SDLC đầy đủ nằm tại **[docs/sdlc/](sdlc/README.md)** (MTS-SDLC-Lite).
 

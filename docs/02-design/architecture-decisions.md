@@ -62,7 +62,7 @@ Daisy Flower là **monolith tích hợp**: CMS + Admin + Frontend trong một co
 | **sale-events** | `src/collections/SaleEvents.ts` | title, product, salePrice, status, startsAt, endsAt, notes |
 | **products** | Plugin + `src/collections/Products/index.ts` | title, slug, description, gallery, priceInUSD, variants, inventory, categories, saleEvents (join), meta |
 | **orders** | Plugin (override trong plugins) | ordersCollectionOverride: thêm accessToken; payment qua Stripe; *(khi có voucher)* voucher, discountAmount, voucherCode |
-| **vouchers** | *(chưa implement)* `src/collections/Vouchers.ts` | code, type (percent\|fixed), value, minOrderAmount?, maxUses?, usedCount?, validFrom?, validTo?, active |
+| **vouchers** | `src/collections/Vouchers.ts` | code, type (percent\|fixed), value, scope, assignMode, minOrderAmount?, maxUses?, usedCount?, validFrom?, validTo?, active; hooks auto-gen code, validate. |
 
 **Lý do**: Tách sale theo sự kiện giúp nhiều đợt khuyến mãi; job refresh tránh phụ thuộc realtime.
 
@@ -78,7 +78,14 @@ Daisy Flower là **monolith tích hợp**: CMS + Admin + Frontend trong một co
 - **App Router**: `(app)/` = frontend công khai; `(payload)/` = admin (`/admin`).
 - **Pages**: Nội dung từ collection `pages`; layout = hero + **blocks** (array). Render block theo `blockType` (xem bảng dưới).
 - **Shop**: Route cố định `/shop`; layout có sidebar (categories, filters); query params `q`, `category`, `sort`.
-- **Layout/UI**: Header (server + client), Footer (global), Tailwind; components dùng Radix (Button, v.v.) khi cần.
+- **Layout/UI**: Header (server + client), Footer (global), Tailwind; components dùng Radix (Button, Sheet, v.v.) khi cần.
+
+**Cấu trúc Header (client)** — `src/components/Header/index.client.tsx`:
+- **Top bar** (ẩn mobile): topBarContent (global), dropdown Ngôn ngữ, dropdown Theme (Light/Dark).
+- **Middle**: Trên mobile: nút MobileMenu (trái), logo LUKANI (giữa), khu vực icon (phải). Trên desktop: logo (trái), Search (giữa), User / Wishlist / Cart (phải). Cart dùng `OpenCartButton` (icon + badge số lượng) và component `Cart` với `renderTrigger`; có thể hiển thị thêm subtotal trên màn rộng (xl).
+- **Categories bar**: Nút dropdown "Categories" (All Categories + danh sách categories từ CMS), nav links (từ global Header), block "Call us 24/7" + số điện thoại (global contactNumber). Bar có sticky khi scroll (fixed top).
+- **MobileMenu** — `src/components/Header/MobileMenu.tsx`: Sheet mở từ trái; nav items (CMSLink), block "My account" (Orders, Addresses, Manage account, Log out khi đã đăng nhập; Login / Create account khi chưa), Theme switcher (Light/Dark) ở cuối. Đóng khi resize > md hoặc khi pathname/searchParams thay đổi.
+- **Cart**: `OpenCartButton` (`src/components/Cart/OpenCart.tsx`) — icon giỏ hàng + badge số lượng (khi > 0); không có nút bọc, dùng làm trigger cho drawer Cart.
 
 **Danh sách blocks (Pages layout)** — `src/collections/Pages/index.ts`:
 
@@ -218,11 +225,13 @@ Chi tiết contract Stripe và env: `docs/03-integrate/`.
 
 ---
 
-## 11. Voucher & User levels (theo docs — chưa implement)
+## 11. Voucher & User levels
+
+**Trạng thái**: **Đã implement.** Chi tiết sprint và file mapping: [04-build/sprint-plan.md § Voucher & User Levels](04-build/sprint-plan.md#voucher--user-levels--sprint-tracking).
 
 **Context**: Cần mã giảm giá (voucher) áp tại checkout và cấp độ thành viên (user level) để phân ưu đãi theo khách hàng.
 
-**Decision (đã ghi trong requirements; triển khai sau)**:
+**Decision (đã triển khai; mô tả thiết kế dưới đây)**:
 
 ### Voucher
 
@@ -237,7 +246,7 @@ Chi tiết contract Stripe và env: `docs/03-integrate/`.
 - **Logic nghiệp vụ (tùy chọn khi implement)**: Ví dụ level silver = 5% giảm thêm, gold = 10%, platinum = 15% + free shipping; áp tại checkout khi tính total. Có thể đặt bảng cấu hình (collection UserLevels) sau; MVP đủ field level + logic if/else hoặc map level → discount%.
 - **Hiển thị**: Trang tài khoản hiển thị level hiện tại; checkout có thể hiển thị “Ưu đãi theo level” (nếu có).
 
-**Lưu ý**: Chưa viết code; chỉ bổ sung docs. Khi implement: tạo collection Vouchers, đăng ký trong `payload.config.ts`; sửa Users (level); sửa plugins (orders override); thêm endpoint/component checkout cho voucher.
+**Lưu ý**: Đã implement đầy đủ (collections, hooks, endpoints, frontend VoucherInput + PriceBreakdown + UserLevelCard). Tham chiếu code và test: [04-build/sprint-plan.md](04-build/sprint-plan.md).
 
 ---
 

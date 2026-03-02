@@ -22,6 +22,14 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 
 ### 2.1 Nhóm công việc & mapping file
 
+#### Layout & navigation (Header, Cart)
+
+| Task | File / vị trí chính | Ghi chú |
+|------|----------------------|--------|
+| Header (top bar, middle logo/search/cart, categories bar) | `src/components/Header/index.client.tsx` | Top bar: topBarContent, language/theme dropdowns (md+). Middle: MobileMenu (mobile), logo, Search (desktop), User/Wishlist/Cart. Categories bar: sticky, dropdown + nav links + phone. |
+| MobileMenu (Sheet trái) | `src/components/Header/MobileMenu.tsx` | Nav từ global, My account (Orders, Addresses, Manage account, Log out / Login, Create account), Theme switcher; đóng khi resize > md hoặc pathname/searchParams đổi. |
+| Cart trigger + drawer | `src/components/Cart/`, `OpenCart.tsx` | OpenCartButton: icon + badge số lượng; Cart dùng renderTrigger, hiển thị subtotal trên xl. |
+
 #### Shop & catalog
 
 | Task | File / vị trí chính | Ghi chú |
@@ -31,6 +39,7 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 | ProductCard (ảnh, tên, giá, link) | `src/components/product/ProductCard.tsx` | Ảnh: `product.meta?.image` hoặc `product.gallery?.[0]?.image`. |
 | Search (header, debounce, chỉ trên /shop) | `src/components/layout/search/Search.tsx` | Debounce 500ms; `pathname.startsWith('/shop')` mới auto redirect/search. |
 | Chi tiết sản phẩm | `src/app/(app)/products/[slug]/page.tsx` | Fetch by slug; hiển thị gallery, mô tả, giá, sale, thêm giỏ. |
+| Wishlist | `src/collections/Wishlist.ts`, `useWishlist`, `/wishlist`, Header icon + badge, ProductCard | Collection (user + product); provider Wishlist; trang /wishlist; thêm/xóa từ ProductCard. |
 
 #### Sale & khuyến mãi
 
@@ -71,7 +80,7 @@ Dự án đang ở giai đoạn **BUILD**: codebase Payload + Next.js đã có P
 
 #### Voucher & User Levels — Sprint Tracking
 
-*Chi tiết yêu cầu và thiết kế: [01-planning § US8, US9](01-planning/requirements.md), [02-design § 11](02-design/architecture-decisions.md#11-voucher--user-levels-theo-docs--chưa-implement).*
+*Chi tiết yêu cầu và thiết kế: [01-planning § US8, US9](01-planning/requirements.md), [02-design § 11](02-design/architecture-decisions.md#11-voucher--user-levels).*
 
 ##### Sprint 1 — Data Model & Admin (Xong)
 

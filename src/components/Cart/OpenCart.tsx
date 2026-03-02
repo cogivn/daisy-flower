@@ -1,6 +1,5 @@
 import clsx from 'clsx'
 import { ShoppingCart } from 'lucide-react'
-import React from 'react'
 
 export function OpenCartButton({
   className,
@@ -14,7 +13,7 @@ export function OpenCartButton({
     <span
       className={clsx(
         // Icon-only, no button chrome, no extra hover color
-        'hidden lg:block relative',
+        'relative',
         className,
       )}
       {...rest}

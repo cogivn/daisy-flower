@@ -157,10 +157,7 @@ export function HeaderClient({ header, categories }: Props) {
             <Link href="/account" className="hidden lg:block hover:text-primary transition-colors">
               <User size={26} strokeWidth={1.5} />
             </Link>
-            <Link
-              href="/wishlist"
-              className="hidden lg:block hover:text-primary transition-colors relative"
-            >
+            <Link href="/wishlist" className="hover:text-primary transition-colors relative">
               <Heart size={26} strokeWidth={1.5} />
               {wishlistIds.length > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-primary text-white text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">

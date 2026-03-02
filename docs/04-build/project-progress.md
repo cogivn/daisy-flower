@@ -32,6 +32,7 @@ Tài liệu này là **nơi theo dõi tiến độ** theo feature: feature nào 
 | 12 | Auth: Login, Logout, Tạo tài khoản, Quên MK | — | **Xong** | Routes + Payload auth. |
 | 13 | Trang tài khoản: đơn hàng, địa chỉ | — | **Xong** | (account)/orders, account, addresses. |
 | 14 | Find order (tra cứu đơn) | — | **Xong** | find-order page. |
+| 15 | Wishlist (danh sách yêu thích) | — | **Xong** | Collection Wishlist, useWishlist, /wishlist page, icon + badge trong Header, ProductCard thêm/xóa wishlist. |
 
 *Ref = tham chiếu requirements hoặc design.*
 
@@ -39,8 +40,8 @@ Tài liệu này là **nơi theo dõi tiến độ** theo feature: feature nào 
 
 ## 3. Tiến độ tổng thể
 
-- **Đã xong**: MVP luồng mua hàng (trang chủ, shop, tìm kiếm/lọc, chi tiết sản phẩm, giỏ hàng, checkout Stripe), admin (Pages, Categories, Products, Sale events, Media, Users, Orders), auth và tài khoản, job sale events, sale countdown badge. **Voucher (US8)** và **User levels (US9)** hoàn thành toàn bộ (backend + frontend UI).
-- **Chưa làm**: Nice-to-have: wishlist, đánh giá, báo cáo, đa ngôn ngữ (xem [01-planning](01-planning/requirements.md)).
+- **Đã xong**: MVP luồng mua hàng (trang chủ, shop, tìm kiếm/lọc, chi tiết sản phẩm, giỏ hàng, checkout Stripe), admin (Pages, Categories, Products, Sale events, Media, Users, Orders), auth và tài khoản, job sale events, sale countdown badge. **Voucher (US8)** và **User levels (US9)** hoàn thành toàn bộ (backend + frontend UI). **Wishlist** đã có (collection, trang /wishlist, icon + badge trên Header, ProductCard).
+- **Chưa làm**: Nice-to-have: đánh giá sản phẩm, báo cáo đơn/tồn kho, đa ngôn ngữ (xem [01-planning](01-planning/requirements.md)).
 
 ---
 
@@ -50,7 +51,7 @@ Cập nhật thứ tự khi hoàn thành hoặc đổi kế hoạch.
 
 1. **Kiểm tra Gate G3 (Ship Ready)** — Checklist trong [sprint-plan §7](sprint-plan.md#7-gate-g3-ship-ready--checklist-trước-khi-deploy); test Stripe, job, access control, voucher E2E.
 2. **Soft launch** — Deploy staging/production; cấu hình env, domain; seed hoặc nhập nội dung thật.
-3. **Nice-to-have** — Wishlist, coupon nâng cao, báo cáo đơn/tồn kho, SEO (meta, sitemap).
+3. **Nice-to-have** — Coupon nâng cao, báo cáo đơn/tồn kho, SEO (meta, sitemap).
 
 ---
 
