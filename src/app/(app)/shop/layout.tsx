@@ -1,4 +1,5 @@
 import { Categories } from '@/components/layout/search/Categories'
+import { ClearFilters } from '@/components/layout/search/ClearFilters.client'
 import { FilterList } from '@/components/layout/search/filter'
 import { PriceFilter } from '@/components/layout/search/PriceFilter.client'
 import { sorting } from '@/lib/constants'
@@ -13,6 +14,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
             <Categories />
             <FilterList list={sorting} title="Sort by" />
             <PriceFilter />
+            <ClearFilters />
           </div>
           <div className="min-h-screen w-full">{children}</div>
         </div>

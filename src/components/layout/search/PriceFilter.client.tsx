@@ -41,6 +41,9 @@ export function PriceFilter() {
   const applyFilter = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
 
+    // Changing filters should reset pagination
+    params.delete('page')
+
     if (min <= MIN_PRICE) {
       params.delete('minPrice')
     } else {
@@ -63,6 +66,7 @@ export function PriceFilter() {
       <h3 className="text-xs mb-1 font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         Filter by price
       </h3>
+      <div className="h-px w-full bg-border/60" />
       <div className="flex flex-col gap-4">
         <div className="pt-2">
           <Slider

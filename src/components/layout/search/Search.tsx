@@ -65,6 +65,9 @@ export const Search: React.FC<Props> = ({ className, categories }) => {
   function applySearch(nextQuery: string, nextCategory: string) {
     const newParams = new URLSearchParams(searchParams.toString())
 
+    // Changing filters should reset pagination
+    newParams.delete('page')
+
     if (nextQuery) {
       newParams.set('q', nextQuery)
     } else {

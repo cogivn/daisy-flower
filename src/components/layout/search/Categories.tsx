@@ -19,6 +19,7 @@ async function CategoryList() {
       <h3 className="text-xs mb-2 font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         Category
       </h3>
+      <div className="h-px w-full bg-border/60 mb-3" />
 
       <ul className="space-y-2">
         {categories.docs.map((category) => {

@@ -26,6 +26,7 @@ export function FilterList({ list, title }: { list: ListItem[]; title?: string }
             {title}
           </h3>
         ) : null}
+        {title ? <div className="h-px w-full bg-border/60 mb-3" /> : null}
         <ul className="hidden md:block space-y-2">
           <Suspense fallback={null}>
             <FilterItemList list={list} />
