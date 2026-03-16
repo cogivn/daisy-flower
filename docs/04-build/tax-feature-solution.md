@@ -2,7 +2,7 @@
 
 **SDLC Version**: 6.1.0  
 **Stage**: 04 - BUILD  
-**Status**: Design / Planning (đã có foundation + backend logic)
+**Status**: Core backend + checkout UI đã implement; còn lại: verify Stripe amount, CartModal total, test & docs
 
 ---
 

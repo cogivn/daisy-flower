@@ -25,7 +25,7 @@ interface Props {
 
 export function MobileMenu({ menu }: Props) {
   const { user } = useAuth()
-  const { theme = 'light', setTheme } = useTheme()
+  const { theme = 'light' } = useTheme()
 
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -115,30 +115,7 @@ export function MobileMenu({ menu }: Props) {
           </div>
         )}
 
-        {/* Theme switcher at bottom - for responsive (mobile) */}
-        <div className="mt-auto pt-4 border-t border-border">
-          <p className="text-base font-semibold text-muted-foreground mb-2">Theme</p>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={theme === 'light' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1 text-base font-normal"
-              onClick={() => setTheme('light')}
-            >
-              Light
-            </Button>
-            <Button
-              type="button"
-              variant={theme === 'dark' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1 text-base font-normal"
-              onClick={() => setTheme('dark')}
-            >
-              Dark
-            </Button>
-          </div>
-        </div>
+        {/* Theme switcher temporarily disabled: storefront is locked to light theme */}
       </SheetContent>
     </Sheet>
   )

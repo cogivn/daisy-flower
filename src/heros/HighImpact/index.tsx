@@ -74,9 +74,7 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, media, richText 
   }
 
   return (
-    <section
-      className="relative -mt-[10.4rem] text-foreground overflow-hidden"
-    >
+    <section className="relative -mt-[10.4rem] text-foreground overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0 -z-20">
         {slides.map((slide: any, index) => {
@@ -94,12 +92,14 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, media, richText 
                 fill
                 priority={index === currentIndex}
                 resource={image}
-                imgClassName="w-full h-full object-cover"
+                imgClassName="w-full h-full object-cover brightness-100 dark:brightness-75"
               />
             </div>
           )
         })}
       </div>
+      {/* Radial overlay: bright at center (behind content), darker toward edges */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_50%,--theme(--color-background/95),transparent_60%),radial-gradient(circle_at_80%_50%,--theme(--color-background/85),transparent_65%)] dark:bg-[radial-gradient(circle_at_20%_50%,--theme(--color-background/90),transparent_55%),radial-gradient(circle_at_80%_50%,--theme(--color-background/80),transparent_60%)]" />
       {/* Content overlay */}
       <div className="container min-h-[70vh] flex items-center">
         <AnimatePresence mode="wait">

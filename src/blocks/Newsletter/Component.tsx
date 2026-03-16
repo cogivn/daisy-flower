@@ -93,17 +93,11 @@ export const NewsletterBlock: React.FC<NewsletterBlockProps> = (props) => {
   )
 
   return (
-    <div className="bg-neutral-100 py-16 border-t">
+    <div className="bg-muted py-16 border-t">
       <div className="container flex flex-col lg:flex-row items-center justify-between gap-10">
         <div className="max-w-xl">
-          <h3 className="text-3xl font-bold mb-3 uppercase tracking-tight">
-            {title}
-          </h3>
-          {description && (
-            <p className="text-muted-foreground text-lg">
-              {description}
-            </p>
-          )}
+          <h3 className="typo-section-title">{title}</h3>
+          {description && <p className="typo-section-subtitle">{description}</p>}
         </div>
         <div className="w-full max-w-lg">
           {hasSubmitted ? (
@@ -134,7 +128,7 @@ export const NewsletterBlock: React.FC<NewsletterBlockProps> = (props) => {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="Your email address..."
-                  className="grow px-6 py-5 rounded-none border-none outline-none focus:outline-none focus:ring-0 focus:border-none text-black bg-white"
+                  className="grow px-6 py-5 rounded-none border-none outline-none focus:outline-none focus:ring-0 focus:border-none bg-background text-foreground"
                   required
                 />
                 <button

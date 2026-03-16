@@ -22,7 +22,7 @@ export async function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="debug-outline debug-grid bg-white text-sm border-t">
+    <footer className="debug-outline debug-grid bg-card text-sm border-t">
       {/* Main Footer Content */}
       <div className="container debug-container py-6 md:py-8 lg:py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -139,13 +139,13 @@ export async function Footer() {
             </div>
             {/* Payment Icons Placeholder */}
             <div className="flex gap-3 opacity-60">
-              <div className="w-12 h-8 bg-white border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
+              <div className="w-12 h-8 bg-card border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
                 VISA
               </div>
-              <div className="w-12 h-8 bg-white border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
+              <div className="w-12 h-8 bg-card border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
                 PAYPAL
               </div>
-              <div className="w-12 h-8 bg-white border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
+              <div className="w-12 h-8 bg-card border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
                 MC
               </div>
             </div>

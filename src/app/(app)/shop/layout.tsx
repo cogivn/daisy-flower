@@ -1,5 +1,6 @@
 import { Categories } from '@/components/layout/search/Categories'
 import { FilterList } from '@/components/layout/search/filter'
+import { PriceFilter } from '@/components/layout/search/PriceFilter.client'
 import { sorting } from '@/lib/constants'
 import React, { Suspense } from 'react'
 
@@ -11,6 +12,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
           <div className="w-full flex-none flex flex-col gap-4 md:gap-8 basis-1/5">
             <Categories />
             <FilterList list={sorting} title="Sort by" />
+            <PriceFilter />
           </div>
           <div className="min-h-screen w-full">{children}</div>
         </div>

@@ -17,7 +17,7 @@ export const BrandSliderBlock: React.FC<BrandSliderProps> = ({ brands }) => {
   if (!brands || brands.length === 0) return null
 
   return (
-    <div className="py-12 border-y bg-neutral-50/50">
+    <div className="py-12 border-y bg-muted/50">
       <div className="container">
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex items-center">
@@ -30,7 +30,10 @@ export const BrandSliderBlock: React.FC<BrandSliderProps> = ({ brands }) => {
                 >
                   {brandData?.logo && (
                     <div className="relative h-12 w-full">
-                      <Media resource={brandData.logo} imgClassName="object-contain" />
+                      <Media
+                        resource={brandData.logo}
+                        imgClassName="object-contain brightness-100 dark:brightness-95"
+                      />
                     </div>
                   )}
                 </div>

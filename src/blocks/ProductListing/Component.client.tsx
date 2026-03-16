@@ -49,18 +49,12 @@ export const ProductListingClient: React.FC<ProductListingClientProps> = ({
   const visible = filteredProducts.length
 
   return (
-    <section className="bg-white section-spacing">
+    <section className="bg-card section-spacing">
       <div className="container space-y-4 md:space-y-6">
         {/* Section heading + description */}
         <div className="mb-2 md:mb-4 lg:mb-6 max-w-xl space-y-2">
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight uppercase text-foreground">
-            {heading}
-          </h2>
-          {sectionDescription && (
-            <p className="text-muted-foreground text-sm md:text-base">
-              {sectionDescription}
-            </p>
-          )}
+          <h2 className="typo-section-title text-foreground">{heading}</h2>
+          {sectionDescription && <p className="typo-section-subtitle">{sectionDescription}</p>}
         </div>
         {/* Tabs + search in one row */}
         <div className="border-b border-border/60 pb-2 text-sm font-medium text-muted-foreground">

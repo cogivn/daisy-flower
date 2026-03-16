@@ -26,16 +26,8 @@ export const ShopByCategoriesBlockComponent: React.FC<Props> = (props) => {
         {/* Header: title + description left, Explore More right */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8 md:mb-10 lg:mb-12">
           <div className="space-y-2 max-w-xl">
-            {title && (
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight uppercase text-foreground">
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className="text-muted-foreground text-sm md:text-base">
-                {description}
-              </p>
-            )}
+            {title && <h2 className="typo-section-title text-foreground">{title}</h2>}
+            {description && <p className="typo-section-subtitle">{description}</p>}
           </div>
           {exploreMoreLink && (exploreMoreLink.url || exploreMoreLink.reference) && (
             <div className="shrink-0">
@@ -69,7 +61,7 @@ export const ShopByCategoriesBlockComponent: React.FC<Props> = (props) => {
                     <Media
                       resource={media}
                       fill
-                      imgClassName="object-cover transition-transform duration-500 group-hover/card:scale-105"
+                      imgClassName="object-cover transition-transform duration-500 group-hover/card:scale-105 brightness-100 dark:brightness-80"
                     />
                   ) : null}
                 </div>

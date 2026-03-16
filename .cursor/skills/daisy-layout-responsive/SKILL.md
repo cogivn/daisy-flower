@@ -159,6 +159,33 @@ Use these rules whenever:
   - Base: `text-sm`
   - Tablet/desktop: upgrade to `md:text-base` where readability benefits.
 
+### Shared typography tokens (toàn bộ frontend)
+
+- **Dùng các utility class này thay cho việc chọn text size ad-hoc** cho MỌI page, section, block, component ở frontend (không chỉ homepage):
+  - `typo-page-title`
+    - `font-heading font-bold leading-tight text-3xl md:text-4xl`
+    - Dùng cho tiêu đề trang chính (hero/page title).
+  - `typo-section-title`
+    - `font-heading font-extrabold leading-tight uppercase tracking-tight text-2xl md:text-3xl`
+    - Dùng cho tiêu đề section/block (ShopByCategories, ProductListing, SaleOffer, BlogBento, Newsletter…).
+  - `typo-section-subtitle`
+    - `text-sm md:text-base text-muted-foreground`
+    - Dùng cho mô tả ngắn bên dưới section title.
+  - `typo-eyebrow`
+    - `text-xs md:text-sm font-semibold uppercase tracking-[0.18em] text-primary`
+    - Dùng cho nhãn nhỏ/eyebrow (kicker) phía trên heading.
+  - `typo-body`
+    - `text-base leading-relaxed`
+    - Dùng cho đoạn nội dung thân.
+  - `typo-body-sm`
+    - `text-sm md:text-base leading-relaxed`
+    - Dùng cho nội dung thân kích thước nhỏ hơn, thường trong card/secondary text.
+
+- **Rules**:
+  - Không tự ý chọn `text-xl/2xl/3xl` cho section title mới – hãy dùng `typo-section-title`.
+  - Mô tả section nên dùng `typo-section-subtitle` để đảm bảo đồng bộ cỡ chữ và màu.
+  - Khi thêm eyebrow/kicker cho block mới, dùng `typo-eyebrow` thay vì tự khai báo lại `text-xs ... tracking-[0.18em]`.
+
 ---
 
 ## Example: new marketing section

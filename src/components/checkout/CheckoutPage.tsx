@@ -534,7 +534,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         theme === 'dark' ? cssVariables.colors.base0 : cssVariables.colors.base1000,
                       colorText: theme === 'dark' ? '#858585' : cssVariables.colors.base1000,
                       colorTextPlaceholder: '#858585',
-                      fontFamily: 'Geist, sans-serif',
+                      fontFamily:
+                        'Rubik, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                       fontSizeBase: '16px',
                       fontWeightBold: '600',
                       fontWeightNormal: '500',

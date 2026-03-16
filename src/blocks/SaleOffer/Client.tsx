@@ -124,13 +124,9 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
       <div className="container section-spacing">
         {(sectionTitle || sectionDescription) && (
           <div className="mb-8 md:mb-10 lg:mb-12 max-w-xl space-y-2">
-            {sectionTitle && (
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight uppercase text-foreground">
-                {sectionTitle}
-              </h2>
-            )}
+            {sectionTitle && <h2 className="typo-section-title text-foreground">{sectionTitle}</h2>}
             {sectionDescription && (
-              <p className="text-muted-foreground text-sm md:text-base">{sectionDescription}</p>
+              <p className="typo-section-subtitle">{sectionDescription}</p>
             )}
           </div>
         )}
@@ -148,14 +144,10 @@ export const SaleOfferClient: React.FC<ClientProps> = ({ block, product, activeS
 
           {/* Right: content, inspired by product detail layout */}
           <div className="flex flex-col space-y-4">
-            {displayTitle && (
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight uppercase">
-                {displayTitle}
-              </h2>
-            )}
+            {displayTitle && <h2 className="typo-section-title">{displayTitle}</h2>}
 
             {linkedProduct.description && (
-              <div className="text-sm md:text-base text-muted-foreground">
+              <div className="typo-body-sm text-muted-foreground">
                 <RichText
                   data={linkedProduct.description}
                   enableGutter={false}

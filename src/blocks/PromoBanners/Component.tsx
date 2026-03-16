@@ -23,10 +23,10 @@ export const PromoBannersBlock: React.FC<any> = ({ banners }) => {
                 <Media
                   resource={banner.media}
                   fill
-                  imgClassName="object-cover group-hover:scale-110 transition-transform duration-700"
+                  imgClassName="object-cover group-hover:scale-110 transition-transform duration-700 brightness-100 dark:brightness-80"
                 />
               )}
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(0,0,0,0.1),transparent_60%),radial-gradient(circle_at_80%_50%,rgba(0,0,0,0.15),transparent_65%)] dark:bg-[radial-gradient(circle_at_20%_50%,rgba(0,0,0,0.5),transparent_55%),radial-gradient(circle_at_80%_50%,rgba(0,0,0,0.6),transparent_60%)] group-hover:bg-black/30 transition-colors" />
               <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-10 md:inset-x-8">
                 {banner.subtitle && (
                   <p className="text-white font-medium uppercase tracking-[0.2em] mb-2 text-sm">

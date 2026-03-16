@@ -1,12 +1,9 @@
-# Payload Ecommerce Template
+# Daisy Flower — Payload Ecommerce Shop
 
-This template is in **BETA**.
+This repo is a customized ecommerce storefront for a flower shop, built on top of the official [Payload Ecommerce Template](https://github.com/payloadcms/payload/blob/main/templates/ecommerce).  
+It includes a fully-working backend, admin panel, and a production-ready Next.js storefront tailored for Daisy Flower (vouchers, user levels, tax foundation, wishlist, etc.).
 
-This is the official [Payload Ecommerce Template](https://github.com/payloadcms/payload/blob/main/templates/ecommerce). This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready ecommerce website.
-
-This template is right for you if you are working on building an ecommerce project or shop with Payload.
-
-Core features:
+Core features (Daisy Flower):
 
 - [Pre-configured Payload Config](#how-it-works)
 - [Authentication](#users-authentication)
@@ -319,12 +316,11 @@ Core features:
 - User Accounts and Authentication
 - Fully featured blog
 - Publication workflow
-- Dark mode
-- Pre-made layout building blocks
+- Pre-made layout building blocks (homepage blocks tailored for Daisy Flower)
 - SEO
 - Search
 - Live preview
-- Stripe payments
+- Stripe payments (Checkout / confirm-order flow)
 
 ### Cache
 

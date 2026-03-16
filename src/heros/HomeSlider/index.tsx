@@ -30,10 +30,12 @@ export const HomeSlider: React.FC<{ slides?: Slide[] | null }> = ({ slides }) =>
               <Media
                 resource={slide.media}
                 fill
-                imgClassName="object-cover -z-10"
+                imgClassName="object-cover -z-10 brightness-100 dark:brightness-75"
                 priority={i === 0}
               />
             )}
+            {/* Radial overlay: bright at center, darker at edges for better contrast */}
+            <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_50%,--theme(--color-background/95),transparent_60%),radial-gradient(circle_at_80%_50%,--theme(--color-background/85),transparent_65%)] dark:bg-[radial-gradient(circle_at_20%_50%,--theme(--color-background/90),transparent_55%),radial-gradient(circle_at_80%_50%,--theme(--color-background/80),transparent_60%)]" />
             {/* Content Overlay */}
             <div className="container h-full flex flex-col justify-center items-start relative z-10">
               <div className="max-w-xl">
@@ -46,7 +48,7 @@ export const HomeSlider: React.FC<{ slides?: Slide[] | null }> = ({ slides }) =>
                   {slide.title}
                 </h2>
                 {slide.description && (
-                  <p className="text-lg mb-10 text-neutral-600 leading-relaxed max-w-md animate-in fade-in slide-in-from-bottom duration-700 delay-700 fill-mode-both">
+                  <p className="text-lg mb-10 text-muted-foreground leading-relaxed max-w-md animate-in fade-in slide-in-from-bottom duration-700 delay-700 fill-mode-both">
                     {slide.description}
                   </p>
                 )}

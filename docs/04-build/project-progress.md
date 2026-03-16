@@ -33,7 +33,7 @@ Tài liệu này là **nơi theo dõi tiến độ** theo feature: feature nào 
 | 13 | Trang tài khoản: đơn hàng, địa chỉ | — | **Xong** | (account)/orders, account, addresses. |
 | 14 | Find order (tra cứu đơn) | — | **Xong** | find-order page. |
 | 15 | Wishlist (danh sách yêu thích) | — | **Xong** | Collection Wishlist, useWishlist, /wishlist page, icon + badge trong Header, ProductCard thêm/xóa wishlist. |
-| 16 | **US10** — Thuế mặc định (1 rate/đơn) | [01-planning](01-planning/requirements.md), [02-design §13](02-design/architecture-decisions.md#13-decision-13-tax-vat) | **Chưa làm** | Thiết kế xong; solution tại [tax-feature-solution.md](tax-feature-solution.md). |
+| 16 | **US10** — Thuế mặc định (1 rate/đơn) | [01-planning](01-planning/requirements.md), [02-design §13](02-design/architecture-decisions.md#13-decision-13-tax-vat) | **Đang làm** | Core backend + checkout UI đã xong; còn verify Stripe amount, CartModal total, test & docs — xem [tax-feature-solution.md](tax-feature-solution.md). |
 | 17 | **US10.1** — Thuế theo sản phẩm/danh mục | [01-planning](01-planning/requirements.md) | **Chưa làm** | Phụ thuộc US10; Product taxExempt/taxRateOverride, Category taxRateOverride. |
 | 18 | Tính năng Phí vận chuyển (Shipping Fee) | [04-build/shipping-feature-solution.md](shipping-feature-solution.md) | **Chưa làm** | Thiết kế xong solution; Chuẩn bị implement Global settings và tính phí vào giỏ hàng. |
 
@@ -54,8 +54,8 @@ Cập nhật thứ tự khi hoàn thành hoặc đổi kế hoạch.
 
 1. **Kiểm tra Gate G3 (Ship Ready)** — Checklist trong [sprint-plan §7](sprint-plan.md#7-gate-g3-ship-ready--checklist-trước-khi-deploy); test Stripe, job, access control, voucher E2E.
 2. **Soft launch** — Deploy staging/production; cấu hình env, domain; seed hoặc nhập nội dung thật.
-3. **US10 Tax** — Implement thuế mặc định (TaxSettings, cart/order fields, PriceBreakdown) theo [tax-feature-solution.md](tax-feature-solution.md).
-4. **US10.1** — Thuế theo sản phẩm/danh mục (taxExempt, taxRateOverride) — sau US10.
+3. **US10 Tax** — Hoàn thiện thuế mặc định (Stripe amount, CartModal total, test & docs) theo [tax-feature-solution.md](tax-feature-solution.md).
+4. **US10.1** — Thuế theo sản phẩm/danh mục (taxExempt, taxRateOverride) — sau khi US10 đã ổn định.
 5. **Shipping Fee** — Implement hệ thống Phí vận chuyển cố định & Tiêu chí miễn phí vận chuyển theo [shipping-feature-solution.md](shipping-feature-solution.md).
 6. **Nice-to-have** — Coupon nâng cao, báo cáo đơn/tồn kho, SEO (meta, sitemap).
 

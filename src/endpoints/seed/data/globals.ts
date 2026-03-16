@@ -13,7 +13,6 @@ export const footerData = {
       title: 'Information',
       navItems: [
         { link: { type: 'custom' as const, label: 'About Us', url: '/about' } },
-        { link: { type: 'custom' as const, label: 'Checkout', url: '/checkout' } },
         { link: { type: 'custom' as const, label: 'Contact', url: '/contact' } },
         { link: { type: 'custom' as const, label: 'Frequently Questions', url: '/faq' } },
       ],

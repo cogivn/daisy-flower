@@ -48,7 +48,7 @@ export const BlogBentoBlock: React.FC<Props> = ({
       <div className={baseClasses}>
         <MediaComponent
           resource={item.image as Media}
-          className="h-full w-full object-cover object-center"
+          className="h-full w-full object-cover object-center brightness-100 dark:brightness-85"
         />
       </div>
     )
@@ -68,21 +68,13 @@ export const BlogBentoBlock: React.FC<Props> = ({
   ]
 
   return (
-    <section className="bg-white section-spacing debug-outline debug-grid">
+    <section className="bg-card section-spacing debug-outline debug-grid">
       <div className="container space-y-4 md:space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-xl space-y-2">
-            {eyebrow && (
-              <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                {eyebrow}
-              </p>
-            )}
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight uppercase text-foreground">
-              {heading}
-            </h2>
-            {description && (
-              <p className="text-sm md:text-base text-muted-foreground">{description}</p>
-            )}
+            {eyebrow && <p className="typo-eyebrow">{eyebrow}</p>}
+            <h2 className="typo-section-title text-foreground">{heading}</h2>
+            {description && <p className="typo-section-subtitle">{description}</p>}
           </div>
 
           {seeMoreLink && (seeMoreLink.url || seeMoreLink.reference) && (

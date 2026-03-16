@@ -17,7 +17,7 @@ export const CategoryCarouselBlock: React.FC<CategoryCarouselProps> = ({ categor
   if (!categories || categories.length === 0) return null
 
   return (
-    <div className="py-20 bg-white">
+    <div className="py-20 bg-card">
       <div className="container relative group">
         <div className="flex items-center justify-between mb-12">
           <h2 className="text-3xl font-bold tracking-tight">Shop by Category</h2>
@@ -47,12 +47,12 @@ export const CategoryCarouselBlock: React.FC<CategoryCarouselProps> = ({ categor
                   className="flex-[0_0_100%] sm:flex-[0_0_50%] lg:flex-[0_0_25%] min-w-0 px-4"
                 >
                   <Link href={`/shop?category=${categoryData?.id}`} className="block group/item">
-                    <div className="relative aspect-4/5 overflow-hidden bg-neutral-100 mb-6">
+                    <div className="relative aspect-4/5 overflow-hidden bg-muted mb-6">
                       {categoryData?.image && (
                         <Media
                           resource={categoryData.image}
                           fill
-                          imgClassName="object-cover transition-transform duration-700 group-hover/item:scale-110"
+                          imgClassName="object-cover transition-transform duration-700 group-hover/item:scale-110 brightness-100 dark:brightness-80"
                         />
                       )}
                       <div className="absolute inset-0 bg-black/0 group-hover/item:bg-black/10 transition-colors" />

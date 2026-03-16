@@ -4,6 +4,8 @@
 **Phiên bản**: 1.0  
 **Cập nhật**: Theo thiết kế Bundle (Composite Products)
 
+> **Lưu ý trạng thái**: Tính năng Bundle / Bó hoa hiện **mới ở mức thiết kế, chưa được implement trong codebase**. Tài liệu này đóng vai trò blueprint cho phase phát triển sau, tham chiếu cùng với `bundle-feature-solution.md`.
+
 ---
 
 ## Mục lục

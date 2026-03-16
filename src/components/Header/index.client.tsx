@@ -30,7 +30,7 @@ export function HeaderClient({ header, categories }: Props) {
 
   const [isSticky, setIsSticky] = useState(false)
   const [showCategories, setShowCategories] = useState(false)
-  const { theme = 'light', setTheme } = useTheme()
+  const { theme = 'light' } = useTheme()
   const { wishlistIds } = useWishlist()
 
   const selectedCategoryTitle = useMemo(() => {
@@ -40,10 +40,9 @@ export function HeaderClient({ header, categories }: Props) {
   }, [currentCategoryId, categories])
 
   const themeLabel = useMemo(() => {
-    if (theme === 'light') return 'Light'
-    if (theme === 'dark') return 'Dark'
+    // Theme is currently locked to light; this label remains for future extensibility.
     return 'Light'
-  }, [theme])
+  }, [])
 
   const formattedContactNumber = useMemo(() => {
     const raw = (contactNumber || '+0123456789').trim()
@@ -84,9 +83,9 @@ export function HeaderClient({ header, categories }: Props) {
   }, [])
 
   return (
-    <header className="relative z-50 w-full bg-white text-black" data-theme="light">
+    <header className="relative z-50 w-full bg-background text-foreground">
       {/* Top Bar */}
-      <div className="bg-white border-b py-2 hidden md:block debug-outline debug-grid">
+      <div className="bg-card border-b py-2 hidden md:block debug-outline debug-grid">
         <div className="container debug-container flex justify-between items-center text-sm font-light text-muted-foreground">
           <div>{topBarContent || 'Free Delivery: Take advantage of our limited time offer!'}</div>
           <div className="flex gap-6">
@@ -99,36 +98,13 @@ export function HeaderClient({ header, categories }: Props) {
                 <div className="px-4 py-1.5 hover:bg-muted transition-colors">Vietnam</div>
               </div>
             </div>
-            <div className="relative group cursor-pointer py-1">
-              <button
-                type="button"
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-              >
-                Theme: {themeLabel} <ChevronDown size={12} />
-              </button>
-              <div className="absolute top-full right-0 bg-background border shadow-lg hidden group-hover:block z-70 min-w-30 py-2">
-                <button
-                  type="button"
-                  className="block w-full text-left px-4 py-1.5 hover:bg-muted transition-colors"
-                  onClick={() => setTheme('light')}
-                >
-                  Light
-                </button>
-                <button
-                  type="button"
-                  className="block w-full text-left px-4 py-1.5 hover:bg-muted transition-colors"
-                  onClick={() => setTheme('dark')}
-                >
-                  Dark
-                </button>
-              </div>
-            </div>
+            {/* Theme switcher temporarily disabled: storefront is locked to light theme */}
           </div>
         </div>
       </div>
 
       {/* Middle Header - higher z so search dropdown can overlap nav bar */}
-      <div className="relative z-60 bg-white py-6 md:py-10 border-b md:border-none debug-outline debug-grid">
+      <div className="relative z-60 bg-card py-6 md:py-10 border-b md:border-none debug-outline debug-grid">
         <div className="container debug-container flex items-stretch justify-between gap-4 md:gap-8">
           {/* Mobile Menu Button - Left on mobile; z-10 + min size so tap always hits */}
           <div className="md:hidden flex-1 min-w-0 flex items-center shrink-0 relative z-10">
@@ -191,8 +167,8 @@ export function HeaderClient({ header, categories }: Props) {
         className={cn(
           'relative z-50 transition-all duration-300 overflow-visible py-1 md:py-2',
           isSticky
-            ? 'fixed top-0 left-0 right-0 shadow-md translate-y-0 bg-white border-y'
-            : 'bg-white border-y',
+            ? 'fixed top-0 left-0 right-0 shadow-md translate-y-0 bg-card border-y'
+            : 'bg-card border-y',
         )}
       >
         <div className="container debug-container flex flex-row items-center justify-between gap-2 md:gap-0">
