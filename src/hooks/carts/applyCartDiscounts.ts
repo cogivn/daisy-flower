@@ -39,11 +39,81 @@ function extractId(ref: number | string | { id: number | string } | unknown): st
  * from Vouchers / User Levels, AND now mathematically computes Taxes (taxAmount, taxRates)
  * following the fallback hierarchy: Product > Category > Global.
  */
-export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req }) => {
-  const items = (data.items || []) as CartItem[]
+export const applyCartDiscounts: CollectionBeforeChangeHook = async ({
+  data,
+  req,
+  originalDoc,
+  ...rest
+}) => {
+  const original = (originalDoc ?? {}) as any
+  // Payload hook types may not expose `id`, but runtime can include it.
+  // Try multiple sources because this hook can be called for PATCH `{}`.
+  const cartId =
+    (rest as any)?.id ??
+    original?.id ??
+    (req as any)?.routeParams?.id ??
+    (req as any)?.params?.id ??
+    (req as any)?.req?.params?.id ??
+    undefined
 
-  // Early exit for empty carts
-  if (items.length === 0) {
+  // Payload may call this hook for PATCH requests that do not include `items`.
+  // In that case, fallback to the existing cart doc so we don't reset
+  // subtotal/tax to 0.
+  const items = (Array.isArray(data.items) ? data.items : original.items || []) as CartItem[]
+  const debugPayment = process.env.PAYMENT_DEBUG === '1' || process.env.TAX_DEBUG === '1'
+
+  // In some cases Payload's `PATCH {}` passes an `originalDoc` without `items`.
+  // If that happens, attempt a lightweight re-fetch for tax calculation.
+  let effectiveItems = items
+  if (effectiveItems.length === 0 && cartId != null) {
+    try {
+      const freshCart = await req.payload.findByID({
+        collection: 'carts',
+        id: cartId as any,
+        depth: 0,
+        overrideAccess: true,
+        req,
+        select: {
+          items: true,
+          appliedVoucher: true,
+          voucherCode: true,
+          voucherDiscount: true,
+          levelDiscount: true,
+          originalSubtotal: true,
+          taxAmount: true,
+          taxRates: true,
+          customer: true,
+        } as any,
+      })
+
+      effectiveItems = (freshCart as any)?.items || []
+      if (debugPayment) {
+        // eslint-disable-next-line no-console
+        console.log('[PAYMENT_DEBUG][cartHook][refetchItems]', {
+          cartId,
+          originalItemsCount: Array.isArray(items) ? items.length : 0,
+          freshItemsCount: effectiveItems.length,
+        })
+      }
+
+      // Merge voucher/customer fields into `original` so downstream fallback hierarchy works.
+      if (freshCart) {
+        original.appliedVoucher = original.appliedVoucher ?? (freshCart as any).appliedVoucher
+        original.voucherCode = original.voucherCode ?? (freshCart as any).voucherCode
+        original.voucherDiscount = original.voucherDiscount ?? (freshCart as any).voucherDiscount
+        original.levelDiscount = original.levelDiscount ?? (freshCart as any).levelDiscount
+        original.originalSubtotal = original.originalSubtotal ?? (freshCart as any).originalSubtotal
+        original.taxAmount = original.taxAmount ?? (freshCart as any).taxAmount
+        original.taxRates = original.taxRates ?? (freshCart as any).taxRates
+        original.customer = original.customer ?? (freshCart as any).customer
+      }
+    } catch {
+      // ignore refetch failure and fallback to early exit
+    }
+  }
+
+  // Early exit for empty carts (after refetch attempt)
+  if (effectiveItems.length === 0) {
     data.subtotal = 0
     data.originalSubtotal = 0
     data.voucherDiscount = 0
@@ -59,7 +129,7 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
   const productIdsToFetch = new Set<string>()
   const variantIdsToFetch = new Set<string>()
 
-  for (const item of items) {
+  for (const item of effectiveItems) {
     const pid = extractId(item.product)
     if (pid) productIdsToFetch.add(pid)
 
@@ -71,8 +141,11 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
 
   const allProductIds = Array.from(productIdsToFetch)
   const allVariantIds = Array.from(variantIdsToFetch)
-  const voucherId = data.appliedVoucher ? extractId(data.appliedVoucher) : null
-  const customerId = data.customer ? extractId(data.customer) : null
+  const effectiveAppliedVoucher = data.appliedVoucher ?? original.appliedVoucher
+  const effectiveCustomer = data.customer ?? original.customer
+
+  const voucherId = effectiveAppliedVoucher ? extractId(effectiveAppliedVoucher) : null
+  const customerId = effectiveCustomer ? extractId(effectiveCustomer) : null
 
   // --- PHASE 2: Fetch Level 1 Resources Concurrently (depth: 0) ---
   const [salesRes, productsRes, variantsRes, voucherRes, userRes, userSettingsRes, taxSettingsRes] =
@@ -157,6 +230,18 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
       req.payload.findGlobal({ slug: 'tax-settings', req, depth: 0 }).catch(() => null),
     ])
 
+  if (debugPayment) {
+    // eslint-disable-next-line no-console
+    console.log('[PAYMENT_DEBUG][cartHook][taxSettings]', {
+      itemsCount: items.length,
+      voucherId: data.appliedVoucher ? extractId(data.appliedVoucher) : null,
+      cartTaxMode: (taxSettingsRes?.taxMode as string) || undefined,
+      defaultTaxClassesCount: Array.isArray(taxSettingsRes?.defaultTaxClasses)
+        ? taxSettingsRes?.defaultTaxClasses.length
+        : 0,
+    })
+  }
+
   // --- Build Caches & Setup Level 2 Tax Fetching ---
   const salePriceMap = new Map<string, number>()
   salesRes.docs.forEach((s) => {
@@ -231,6 +316,15 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
     }
   })
 
+  if (debugPayment) {
+    // eslint-disable-next-line no-console
+    console.log('[PAYMENT_DEBUG][cartHook][taxIdsBuild]', {
+      defaultTaxIdsCount: defaultTaxIds.length,
+      taxIdsToFetchCount: taxIdsToFetch.size,
+      categoryIdsToFetchCount: categoriesList.length,
+    })
+  }
+
   // --- PHASE 4: Fetch ALL Required Taxes in one sweep ---
   const allTaxIds = Array.from(taxIdsToFetch)
   const taxesMap = new Map<string, any>()
@@ -263,7 +357,7 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
 
   // 1. Calculate Base Subtotal
   let adjustedSubtotal = 0
-  for (const item of items) {
+  for (const item of effectiveItems) {
     adjustedSubtotal += getItemPrice(item) * (item.quantity ?? 1)
   }
 
@@ -293,7 +387,7 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
       if (voucher.scope === 'specific' && voucher.applicableProducts?.length) {
         const applicableIds = voucher.applicableProducts.map((p) => extractId(p))
         let eligibleSubtotal = 0
-        for (const item of items) {
+        for (const item of effectiveItems) {
           const pid = extractId(item.product)
           if (applicableIds.includes(pid)) {
             eligibleSubtotal += getItemPrice(item) * (item.quantity ?? 1)
@@ -349,7 +443,7 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
   let totalTaxAmount = 0
   const taxRatesOutput: Record<string, { rate: number; name: string; amount: number }> = {}
 
-  for (const item of items) {
+  for (const item of effectiveItems) {
     const pid = extractId(item.product)
     const lineTotal = getItemPrice(item) * (item.quantity ?? 1)
 
@@ -406,6 +500,22 @@ export const applyCartDiscounts: CollectionBeforeChangeHook = async ({ data, req
     rate: t.rate,
     amount: Math.round(t.amount),
   }))
+
+  if (debugPayment) {
+    // eslint-disable-next-line no-console
+    console.log('[PAYMENT_DEBUG][cartHook][taxResult]', {
+      taxMode: taxSettingsRes?.taxMode,
+      taxAmount: data.taxAmount,
+      taxRatesCount: Array.isArray(data.taxRates) ? data.taxRates.length : 0,
+      totalTaxIdsFetched: allTaxIds.length,
+      taxesMapSize: taxesMap.size,
+      baseSubtotal: baseSubtotal,
+      voucherDiscount,
+      levelDiscount,
+      totalDiscount,
+      finalSubtotal: data.subtotal,
+    })
+  }
 
   return data
 }

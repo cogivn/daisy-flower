@@ -7,7 +7,8 @@ export const ShippingSettings: GlobalConfig = {
   label: 'Shipping Settings',
   admin: {
     group: 'Settings',
-    description: 'Configure standard shipping fees and thresholds for free shipping.',
+    description:
+      'Configure standard shipping fees, thresholds for free shipping, and pickup settings.',
   },
   access: {
     read: () => true,
@@ -34,6 +35,28 @@ export const ShippingSettings: GlobalConfig = {
         description:
           'Minimum order amount (after discounts) to qualify for free shipping. If 0, free shipping is disabled (unless user level gives free shipping).',
       },
+    },
+    {
+      name: 'pickup',
+      type: 'group',
+      label: 'Pickup',
+      admin: {
+        description: 'Store pickup location shown during checkout pickup flow.',
+      },
+      fields: [
+        {
+          name: 'locationName',
+          type: 'text',
+          required: true,
+          defaultValue: 'Daisy Flower Main Store',
+        },
+        {
+          name: 'locationAddress',
+          type: 'text',
+          required: true,
+          defaultValue: '123 Le Loi Street, District 1, Ho Chi Minh City',
+        },
+      ],
     },
   ],
 }

@@ -52,8 +52,21 @@ export const copyVoucherToOrder: CollectionBeforeChangeHook = async ({ data, ope
     }
 
     data.levelDiscount = (cart.levelDiscount as number) || 0
-    data.taxAmount = (cart.taxAmount as number) || 0
-    data.taxRates = cart.taxRates || []
+
+    // IMPORTANT:
+    // CheckoutPage/adapters already compute taxAmount/taxRates and pass them
+    // in `data`. But the cart snapshot can be stale/0, so avoid overwriting
+    // non-empty tax data coming from the checkout flow.
+    const existingTaxAmount = data.taxAmount
+    const existingTaxRates = data.taxRates
+
+    const hasExistingTaxAmount = typeof existingTaxAmount === 'number' && existingTaxAmount > 0
+    const hasExistingTaxRates =
+      (Array.isArray(existingTaxRates) && existingTaxRates.length > 0) ||
+      (existingTaxRates && typeof existingTaxRates === 'object' && !Array.isArray(existingTaxRates))
+
+    data.taxAmount = hasExistingTaxAmount ? (existingTaxAmount as number) : (cart.taxAmount as number) || 0
+    data.taxRates = hasExistingTaxRates ? existingTaxRates : cart.taxRates || []
   } catch {
     // If cart lookup fails, proceed without discount data
     req.payload.logger.warn('Could not copy voucher data from cart to order.')

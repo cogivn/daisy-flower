@@ -8,6 +8,7 @@ type PriceBreakdownProps = {
   originalSubtotal: number
   voucherDiscount: number
   levelDiscount: number
+  shippingFee: number
   finalTotal: number
   voucherCode?: string | null
   levelName?: string | null
@@ -20,6 +21,7 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
   originalSubtotal,
   voucherDiscount,
   levelDiscount,
+  shippingFee,
   finalTotal,
   voucherCode,
   levelName,
@@ -29,7 +31,10 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
 }) => {
   const hasVoucherDiscount = voucherDiscount > 0
   const hasLevelDiscount = levelDiscount > 0
-  const showTaxRows = taxMode === 'exclusive' && taxRates && taxRates.length > 0
+  // In inclusive mode, tax is already contained in prices, but we still render
+  // the tax breakdown for transparency.
+  const showTaxRows = Boolean(taxRates && taxRates.length > 0)
+  const shippingIsFree = shippingFee <= 0
 
   return (
     <div className="space-y-4 pt-4 border-t border-border">
@@ -39,20 +44,26 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
         <Price amount={originalSubtotal} as="span" className="text-sm font-bold text-foreground" />
       </div>
 
-      {/* Shipping (Placeholder) */}
+      {/* Shipping */}
       <div className="flex justify-between items-center">
         <span className="text-sm font-medium text-muted-foreground">Shipping</span>
-        <span className="text-sm font-bold text-primary">Free</span>
+        {shippingIsFree ? (
+          <span className="text-sm font-bold text-primary">Free</span>
+        ) : (
+          <span className="text-sm font-bold text-foreground">
+            +<Price amount={shippingFee} as="span" />
+          </span>
+        )}
       </div>
 
       {/* Voucher discount */}
       {hasVoucherDiscount && (
         <div className="flex justify-between items-center">
-          <span className="flex items-center gap-1.5 text-sm font-medium text-[#8B5CF6]">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-[#6E9E6E]">
             <TicketPercent size={14} />
             Voucher {voucherCode ? `(${voucherCode})` : ''}
           </span>
-          <span className="text-sm font-bold text-[#8B5CF6]">
+          <span className="text-sm font-bold text-[#6E9E6E]">
             −<Price amount={voucherDiscount} as="span" />
           </span>
         </div>
@@ -78,7 +89,8 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
             <div key={i} className="flex justify-between items-center text-sm font-medium text-muted-foreground">
               <span>{tax.name}</span>
               <span className="font-bold text-foreground">
-                +<Price amount={tax.amount} as="span" />
+                {taxMode === 'exclusive' ? '+' : taxMode === 'inclusive' ? 'Incl. ' : '+'}
+                <Price amount={tax.amount} as="span" />
               </span>
             </div>
           ))}

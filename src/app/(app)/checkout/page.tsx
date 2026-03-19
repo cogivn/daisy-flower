@@ -11,7 +11,7 @@ import { getPayload } from 'payload'
 export default async function Checkout() {
   const payload = await getPayload({ config: configPromise })
 
-  const [saleEventsRes, levelSettingsRes, taxSettingsRes] = await Promise.all([
+  const [saleEventsRes, levelSettingsRes, taxSettingsRes, shippingSettingsRes] = await Promise.all([
     payload.find({
       collection: 'sale-events',
       where: { status: { equals: 'active' } },
@@ -20,6 +20,7 @@ export default async function Checkout() {
     }),
     payload.findGlobal({ slug: 'user-level-settings' }),
     payload.findGlobal({ slug: 'tax-settings' }),
+    payload.findGlobal({ slug: 'shipping-settings' }),
   ])
 
   // salePrice is a plain VND field — no conversion needed
@@ -34,6 +35,16 @@ export default async function Checkout() {
   const levels =
     (levelSettingsRes?.levels as Array<{ level: string; discountPercent: number }>) || []
   const taxMode = (taxSettingsRes?.taxMode as string) || 'exclusive'
+  const pickupLocation =
+    shippingSettingsRes?.pickup?.locationName && shippingSettingsRes?.pickup?.locationAddress
+      ? `${shippingSettingsRes.pickup.locationName} - ${shippingSettingsRes.pickup.locationAddress}`
+      : ''
+  const shippingDefaultFee =
+    typeof shippingSettingsRes?.defaultFee === 'number' ? shippingSettingsRes.defaultFee : 30000
+  const freeShippingThreshold =
+    typeof shippingSettingsRes?.freeShippingThreshold === 'number'
+      ? shippingSettingsRes.freeShippingThreshold
+      : 500000
 
   return (
     <div className="min-h-[90vh] flex flex-col">
@@ -63,7 +74,14 @@ export default async function Checkout() {
 
       <h1 className="sr-only">Checkout</h1>
 
-      <CheckoutPage salePrices={salePrices} levels={levels} taxMode={taxMode} />
+      <CheckoutPage
+        salePrices={salePrices}
+        levels={levels}
+        taxMode={taxMode}
+        pickupLocation={pickupLocation}
+        shippingDefaultFee={shippingDefaultFee}
+        freeShippingThreshold={freeShippingThreshold}
+      />
     </div>
   )
 }

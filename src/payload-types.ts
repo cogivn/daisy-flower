@@ -214,6 +214,10 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name?: string | null;
+  /**
+   * Optional phone number for contacting the customer.
+   */
+  phone?: string | null;
   roles?: ('admin' | 'customer')[] | null;
   /**
    * Auto-calculated from total spending. Admin can override.
@@ -280,6 +284,7 @@ export interface Order {
         id?: string | null;
       }[]
     | null;
+  shippingType?: ('delivery' | 'pickup') | null;
   shippingAddress?: {
     title?: string | null;
     firstName?: string | null;
@@ -292,6 +297,8 @@ export interface Order {
     postalCode?: string | null;
     country?: string | null;
     phone?: string | null;
+    pickupDate?: string | null;
+    pickupTime?: string | null;
   };
   customer?: (number | null) | User;
   customerEmail?: string | null;
@@ -336,6 +343,14 @@ export interface Order {
    * Shipping fee (VND).
    */
   shippingFee?: number | null;
+  /**
+   * Message from customer for shop note.
+   */
+  giftMessage?: string | null;
+  /**
+   * Order notes for the shop.
+   */
+  orderNotes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1350,11 +1365,17 @@ export interface Transaction {
         id?: string | null;
       }[]
     | null;
-  paymentMethod?: 'stripe' | null;
+  paymentMethod?: ('payos' | 'stripe' | 'cod') | null;
+  payos?: {
+    orderCode?: number | null;
+    paymentLinkId?: string | null;
+    status?: string | null;
+  };
   stripe?: {
     customerID?: string | null;
     paymentIntentID?: string | null;
   };
+  cod?: {};
   billingAddress?: {
     title?: string | null;
     firstName?: string | null;
@@ -1367,6 +1388,8 @@ export interface Transaction {
     postalCode?: string | null;
     country?: string | null;
     phone?: string | null;
+    pickupDate?: string | null;
+    pickupTime?: string | null;
   };
   status: 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'expired' | 'refunded';
   customer?: (number | null) | User;
@@ -1375,6 +1398,34 @@ export interface Transaction {
   cart?: (number | null) | Cart;
   amount?: number | null;
   currency?: 'VND' | null;
+  /**
+   * Message from customer for shop note.
+   */
+  giftMessage?: string | null;
+  /**
+   * Order notes for the shop.
+   */
+  orderNotes?: string | null;
+  /**
+   * Tax amount (VND) snapshot.
+   */
+  taxAmount?: number | null;
+  /**
+   * Snapshot of tax rates applied.
+   */
+  taxRates?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Shipping fee (VND) snapshot.
+   */
+  shippingFee?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1539,48 +1590,10 @@ export interface Address {
   city?: string | null;
   state?: string | null;
   postalCode?: string | null;
-  country:
-    | 'US'
-    | 'GB'
-    | 'CA'
-    | 'AU'
-    | 'AT'
-    | 'BE'
-    | 'BR'
-    | 'BG'
-    | 'CY'
-    | 'CZ'
-    | 'DK'
-    | 'EE'
-    | 'FI'
-    | 'FR'
-    | 'DE'
-    | 'GR'
-    | 'HK'
-    | 'HU'
-    | 'IN'
-    | 'IE'
-    | 'IT'
-    | 'JP'
-    | 'LV'
-    | 'LT'
-    | 'LU'
-    | 'MY'
-    | 'MT'
-    | 'MX'
-    | 'NL'
-    | 'NZ'
-    | 'NO'
-    | 'PL'
-    | 'PT'
-    | 'RO'
-    | 'SG'
-    | 'SK'
-    | 'SI'
-    | 'ES'
-    | 'SE'
-    | 'CH';
+  country: 'VN';
   phone?: string | null;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1867,6 +1880,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  phone?: T;
   roles?: T;
   level?: T;
   levelLocked?: T;
@@ -2553,6 +2567,8 @@ export interface AddressesSelect<T extends boolean = true> {
   postalCode?: T;
   country?: T;
   phone?: T;
+  pickupDate?: T;
+  pickupTime?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2686,6 +2702,7 @@ export interface OrdersSelect<T extends boolean = true> {
         quantity?: T;
         id?: T;
       };
+  shippingType?: T;
   shippingAddress?:
     | T
     | {
@@ -2700,6 +2717,8 @@ export interface OrdersSelect<T extends boolean = true> {
         postalCode?: T;
         country?: T;
         phone?: T;
+        pickupDate?: T;
+        pickupTime?: T;
       };
   customer?: T;
   customerEmail?: T;
@@ -2715,6 +2734,8 @@ export interface OrdersSelect<T extends boolean = true> {
   taxAmount?: T;
   taxRates?: T;
   shippingFee?: T;
+  giftMessage?: T;
+  orderNotes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2732,12 +2753,20 @@ export interface TransactionsSelect<T extends boolean = true> {
         id?: T;
       };
   paymentMethod?: T;
+  payos?:
+    | T
+    | {
+        orderCode?: T;
+        paymentLinkId?: T;
+        status?: T;
+      };
   stripe?:
     | T
     | {
         customerID?: T;
         paymentIntentID?: T;
       };
+  cod?: T | {};
   billingAddress?:
     | T
     | {
@@ -2752,6 +2781,8 @@ export interface TransactionsSelect<T extends boolean = true> {
         postalCode?: T;
         country?: T;
         phone?: T;
+        pickupDate?: T;
+        pickupTime?: T;
       };
   status?: T;
   customer?: T;
@@ -2760,6 +2791,11 @@ export interface TransactionsSelect<T extends boolean = true> {
   cart?: T;
   amount?: T;
   currency?: T;
+  giftMessage?: T;
+  orderNotes?: T;
+  taxAmount?: T;
+  taxRates?: T;
+  shippingFee?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2971,7 +3007,7 @@ export interface TaxSetting {
   createdAt?: string | null;
 }
 /**
- * Configure standard shipping fees and thresholds for free shipping.
+ * Configure standard shipping fees, thresholds for free shipping, and pickup settings.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "shipping-settings".
@@ -2986,6 +3022,13 @@ export interface ShippingSetting {
    * Minimum order amount (after discounts) to qualify for free shipping. If 0, free shipping is disabled (unless user level gives free shipping).
    */
   freeShippingThreshold: number;
+  /**
+   * Store pickup location shown during checkout pickup flow.
+   */
+  pickup: {
+    locationName: string;
+    locationAddress: string;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -3121,6 +3164,12 @@ export interface TaxSettingsSelect<T extends boolean = true> {
 export interface ShippingSettingsSelect<T extends boolean = true> {
   defaultFee?: T;
   freeShippingThreshold?: T;
+  pickup?:
+    | T
+    | {
+        locationName?: T;
+        locationAddress?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

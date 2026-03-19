@@ -1,6 +1,5 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, Ticket, X } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
@@ -117,16 +116,16 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
 
   if (hasAppliedVoucher) {
     return (
-      <div className="flex items-center justify-between bg-primary/5 border border-primary/20 px-4 py-3">
+      <div className="flex items-center justify-between h-[52px] px-4 bg-[#F0FDF4] border border-[#BBF7D0]">
         <div className="flex items-center gap-3">
-          <Ticket size={18} className="text-primary" />
-          <span className="text-sm font-semibold text-foreground">{currentVoucherCode}</span>
-          <span className="text-xs text-primary">applied</span>
+          <Ticket size={18} className="text-[#22C55E]" />
+          <span className="text-[14px] font-semibold text-[#1A1A1C]">{currentVoucherCode}</span>
+          <span className="text-[12px] font-normal text-[#22C55E]">applied</span>
         </div>
         <button
           onClick={handleRemove}
           disabled={isRemoving || disabled}
-          className="text-muted-foreground hover:text-destructive transition-colors"
+          className="p-1 text-[#6E6E70] hover:text-[#1A1A1C] transition-colors"
         >
           {isRemoving ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
         </button>
@@ -136,27 +135,30 @@ export const VoucherInput: React.FC<VoucherInputProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
+      {/* Pencil ylQYb: single-row voucher bar (height 52, px-16, border) */}
+      <div className="h-[52px] w-full flex items-center justify-between px-4 bg-white border border-[#F0F0F2]">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Ticket size={18} className="text-[#6E6E70] shrink-0" aria-hidden="true" />
           <Input
             value={code}
             onChange={(e) => {
-              setCode(e.target.value.toUpperCase())
+              setCode(e.target.value)
               if (error) setError(null)
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Enter voucher code"
-            className="font-medium uppercase placeholder:text-placeholder"
+            placeholder="Discount code"
+            className="h-full border-0 bg-transparent px-0 text-[14px] font-normal text-[#1A1A1C] placeholder:text-[#A0A0A5] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
             disabled={isApplying || disabled}
           />
         </div>
-        <Button
-          onClick={handleApply}
+        <button
+          type="button"
+          onClick={() => void handleApply()}
           disabled={isApplying || !code.trim() || disabled}
-          className="h-12 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-none shrink-0"
+          className="text-[14px] font-bold text-[#6E9E6E] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-        </Button>
+        </button>
       </div>
       {error && <p className="text-xs text-destructive font-medium">{error}</p>}
     </div>

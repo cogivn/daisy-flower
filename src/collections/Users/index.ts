@@ -8,6 +8,7 @@ import { checkRole } from '@/access/utilities'
 import { USER_LEVELS } from '@/config/userLevels'
 
 import { ensureFirstUserIsAdmin } from './hooks/ensureFirstUserIsAdmin'
+import { linkOrdersCustomerByEmail } from './hooks/linkOrdersCustomerByEmail'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -27,10 +28,21 @@ export const Users: CollectionConfig = {
   auth: {
     tokenExpiration: 1209600,
   },
+  hooks: {
+    afterChange: [linkOrdersCustomerByEmail],
+  },
   fields: [
     {
       name: 'name',
       type: 'text',
+    },
+    {
+      name: 'phone',
+      type: 'text',
+      admin: {
+        description: 'Optional phone number for contacting the customer.',
+        position: 'sidebar',
+      },
     },
     {
       name: 'roles',

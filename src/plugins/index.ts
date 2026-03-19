@@ -5,7 +5,9 @@ import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import { APIError, Plugin } from 'payload'
 
-import { stripeAdapter } from '@payloadcms/plugin-ecommerce/payments/stripe'
+import { payosAdapter } from '@/payments/payos'
+import { stripeAdapter as customStripeAdapter } from '@/payments/stripe'
+import { codAdapter } from '@/payments/cod'
 
 import { adminOnlyFieldAccess } from '@/access/adminOnlyFieldAccess'
 import { adminOrPublishedStatus } from '@/access/adminOrPublishedStatus'
@@ -146,6 +148,85 @@ export const plugins: Plugin[] = [
       ],
     },
     addresses: {
+      addressFields: ({ defaultFields }: any) => {
+        const mapped = (defaultFields as any[]).map((field) => {
+          if (!field || typeof field !== 'object') return field
+
+          const name = 'name' in field ? (field.name as string | undefined) : undefined
+
+          // Hide these fields in the admin UI (orders -> Shipping tab),
+          // while keeping the underlying data stored.
+          if (name && ['addressLine2', 'company', 'city', 'state', 'postalCode'].includes(name)) {
+            return {
+              ...field,
+              admin: {
+                ...(field.admin || {}),
+                hidden: true,
+              },
+            }
+          }
+
+          // Ensure Vietnam is the default country in admin shipping group.
+          if (name === 'country') {
+            return {
+              ...field,
+              defaultValue: 'VN',
+              admin: {
+                ...(field.admin || {}),
+                hidden: true,
+              },
+            }
+          }
+
+          // When shippingType is pickup, hide address (keep only pickupDate/pickupTime).
+          if (
+            name &&
+            ['addressLine1', 'country', 'firstName', 'lastName', 'phone'].includes(name)
+          ) {
+            return {
+              ...field,
+              admin: {
+                ...(field.admin || {}),
+                condition: (data: any) => {
+                  const shippingType =
+                    data?.shippingType ??
+                    (data?.pickupDate || data?.pickupTime ? 'pickup' : 'delivery')
+                  return shippingType === 'delivery'
+                },
+              },
+              label: name === 'addressLine1' ? 'Address' : field.label,
+            }
+          }
+
+          return field
+        })
+
+        return [
+          ...mapped,
+          // Used for pickup schedule (checkout -> admin -> order record).
+          {
+            name: 'pickupDate',
+            type: 'date',
+            label: 'Pickup Date',
+            admin: {
+              width: '50%',
+              // Show only when orders shippingType is pickup.
+              // Using `data.shippingType` (not siblingData) so it works from `shippingAddress` group.
+              condition: (data: any) => data?.shippingType === 'pickup',
+            },
+          },
+          {
+            name: 'pickupTime',
+            type: 'text',
+            label: 'Pickup Time',
+            admin: {
+              width: '50%',
+              // Show only when orders shippingType is pickup.
+              condition: (data: any) => data?.shippingType === 'pickup',
+            },
+          },
+        ]
+      },
       addressesCollectionOverride: ({ defaultCollection }) => ({
         ...defaultCollection,
         access: {
@@ -155,6 +236,12 @@ export const plugins: Plugin[] = [
           delete: isDocumentOwner,
         },
       }),
+      supportedCountries: [
+        {
+          label: 'Vietnam',
+          value: 'VN',
+        },
+      ],
     },
     carts: {
       cartsCollectionOverride: ({ defaultCollection }) => ({
@@ -258,76 +345,180 @@ export const plugins: Plugin[] = [
       slug: 'users',
     },
     orders: {
-      ordersCollectionOverride: ({ defaultCollection }) => ({
-        ...defaultCollection,
-        hooks: {
-          ...(defaultCollection.hooks || {}),
-          beforeChange: [...(defaultCollection.hooks?.beforeChange || []), copyVoucherToOrder],
-          afterChange: [
-            ...(defaultCollection.hooks?.afterChange || []),
-            syncUserOnOrderChange,
-            incrementVoucherUsage,
+      ordersCollectionOverride: ({ defaultCollection }) => {
+        const baseFields = (defaultCollection.fields || []).map((field: any) => {
+          if (field?.type !== 'tabs' || !Array.isArray(field.tabs)) return field
+
+          return {
+            ...field,
+            tabs: field.tabs.map((tab: any) => {
+              if (!Array.isArray(tab?.fields)) return tab
+
+              const hasShippingAddress = tab.fields.some((f: any) => f?.name === 'shippingAddress')
+              if (!hasShippingAddress) return tab
+
+              const hasShippingType = tab.fields.some((f: any) => f?.name === 'shippingType')
+              if (hasShippingType) return tab
+
+              const shippingTypeField = {
+                name: 'shippingType',
+                type: 'select',
+                label: 'Shipping Type',
+                defaultValue: 'delivery',
+                options: [
+                  { label: 'Delivery', value: 'delivery' },
+                  { label: 'Pickup', value: 'pickup' },
+                ],
+              }
+
+              return { ...tab, fields: [shippingTypeField, ...tab.fields] }
+            }),
+          }
+        })
+
+        return {
+          ...defaultCollection,
+          hooks: {
+            ...(defaultCollection.hooks || {}),
+            beforeChange: [...(defaultCollection.hooks?.beforeChange || []), copyVoucherToOrder],
+            afterChange: [
+              ...(defaultCollection.hooks?.afterChange || []),
+              syncUserOnOrderChange,
+              incrementVoucherUsage,
+            ],
+          },
+          fields: [
+            ...baseFields,
+            {
+              name: 'accessToken',
+              type: 'text',
+              unique: true,
+              index: true,
+              admin: {
+                position: 'sidebar',
+                readOnly: true,
+              },
+              hooks: {
+                beforeValidate: [
+                  ({ value, operation }) => {
+                    if (operation === 'create' || !value) {
+                      return crypto.randomUUID()
+                    }
+                    return value
+                  },
+                ],
+              },
+            },
+            {
+              name: 'voucher',
+              type: 'relationship',
+              relationTo: 'vouchers',
+              admin: {
+                readOnly: true,
+                position: 'sidebar',
+                description: 'Voucher applied to this order.',
+              },
+            },
+            {
+              name: 'voucherCode',
+              type: 'text',
+              admin: {
+                readOnly: true,
+                position: 'sidebar',
+                description: 'Snapshot of voucher code at time of order.',
+              },
+            },
+            {
+              name: 'discountAmount',
+              type: 'number',
+              min: 0,
+              defaultValue: 0,
+              admin: {
+                readOnly: true,
+                description: 'Voucher discount amount (VND).',
+              },
+            },
+            {
+              name: 'levelDiscount',
+              type: 'number',
+              min: 0,
+              defaultValue: 0,
+              admin: {
+                readOnly: true,
+                description: 'User level discount amount (VND).',
+              },
+            },
+            {
+              name: 'taxAmount',
+              type: 'number',
+              min: 0,
+              defaultValue: 0,
+              admin: {
+                readOnly: true,
+                description: 'Tax amount (VND).',
+              },
+            },
+            {
+              name: 'taxRates',
+              type: 'json',
+              admin: {
+                readOnly: true,
+                description: 'Snapshot of tax rates applied.',
+              },
+            },
+            {
+              name: 'shippingFee',
+              type: 'number',
+              min: 0,
+              defaultValue: 0,
+              admin: {
+                readOnly: true,
+                description: 'Shipping fee (VND).',
+              },
+            },
+            {
+              name: 'giftMessage',
+              type: 'textarea',
+              label: 'Gift Message',
+              admin: {
+                position: 'sidebar',
+                description: 'Message from customer for shop note.',
+              },
+            },
+            {
+              name: 'orderNotes',
+              type: 'textarea',
+              label: 'Order Notes',
+              admin: {
+                position: 'sidebar',
+                description: 'Order notes for the shop.',
+              },
+            },
           ],
-        },
+        }
+      },
+    },
+    transactions: {
+      transactionsCollectionOverride: ({ defaultCollection }) => ({
+        ...defaultCollection,
         fields: [
           ...defaultCollection.fields,
           {
-            name: 'accessToken',
-            type: 'text',
-            unique: true,
-            index: true,
+            name: 'giftMessage',
+            type: 'textarea',
+            label: 'Gift Message',
             admin: {
               position: 'sidebar',
-              readOnly: true,
-            },
-            hooks: {
-              beforeValidate: [
-                ({ value, operation }) => {
-                  if (operation === 'create' || !value) {
-                    return crypto.randomUUID()
-                  }
-                  return value
-                },
-              ],
+              description: 'Message from customer for shop note.',
             },
           },
           {
-            name: 'voucher',
-            type: 'relationship',
-            relationTo: 'vouchers',
+            name: 'orderNotes',
+            type: 'textarea',
+            label: 'Order Notes',
             admin: {
-              readOnly: true,
               position: 'sidebar',
-              description: 'Voucher applied to this order.',
-            },
-          },
-          {
-            name: 'voucherCode',
-            type: 'text',
-            admin: {
-              readOnly: true,
-              position: 'sidebar',
-              description: 'Snapshot of voucher code at time of order.',
-            },
-          },
-          {
-            name: 'discountAmount',
-            type: 'number',
-            min: 0,
-            defaultValue: 0,
-            admin: {
-              readOnly: true,
-              description: 'Voucher discount amount (VND).',
-            },
-          },
-          {
-            name: 'levelDiscount',
-            type: 'number',
-            min: 0,
-            defaultValue: 0,
-            admin: {
-              readOnly: true,
-              description: 'User level discount amount (VND).',
+              description: 'Order notes for the shop.',
             },
           },
           {
@@ -336,14 +527,16 @@ export const plugins: Plugin[] = [
             min: 0,
             defaultValue: 0,
             admin: {
+              position: 'sidebar',
               readOnly: true,
-              description: 'Tax amount (VND).',
+              description: 'Tax amount (VND) snapshot.',
             },
           },
           {
             name: 'taxRates',
             type: 'json',
             admin: {
+              position: 'sidebar',
               readOnly: true,
               description: 'Snapshot of tax rates applied.',
             },
@@ -354,8 +547,9 @@ export const plugins: Plugin[] = [
             min: 0,
             defaultValue: 0,
             admin: {
+              position: 'sidebar',
               readOnly: true,
-              description: 'Shipping fee (VND).',
+              description: 'Shipping fee (VND) snapshot.',
             },
           },
         ],
@@ -363,11 +557,22 @@ export const plugins: Plugin[] = [
     },
     payments: {
       paymentMethods: [
-        stripeAdapter({
+        payosAdapter({
+          clientId: process.env.PAYOS_CLIENT_ID!,
+          apiKey: process.env.PAYOS_API_KEY!,
+          checksumKey: process.env.PAYOS_CHECKSUM_KEY!,
+          returnUrlBase: `${process.env.NEXT_PUBLIC_SERVER_URL}/checkout/confirm-order`,
+          cancelUrlBase: `${process.env.NEXT_PUBLIC_SERVER_URL}/checkout`,
+          label: 'PayOS',
+        }),
+        customStripeAdapter({
           secretKey: process.env.STRIPE_SECRET_KEY!,
           publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
           webhookSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET!,
         }),
+        codAdapter({
+          label: 'Cash on Delivery (COD)',
+        } as any),
       ],
     },
     products: {

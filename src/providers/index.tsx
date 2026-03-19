@@ -7,6 +7,8 @@ import { HeaderThemeProvider } from '@/providers/HeaderTheme'
 import { SonnerProvider } from '@/providers/Sonner'
 import { ThemeProvider } from '@/providers/Theme'
 import { WishlistProvider } from '@/providers/Wishlist'
+import { payosAdapterClient } from '@/payments/payos'
+import { codAdapterClient } from '@/payments/cod'
 
 export const Providers: React.FC<{
   children: React.ReactNode
@@ -33,6 +35,18 @@ export const Providers: React.FC<{
               api={{
                 cartsFetchQuery: {
                   depth: 2,
+                  // Ensure guest checkout can still show tax/exclusive-inclusive totals
+                  // by fetching tax fields into `cart` client state.
+                  select: {
+                    items: true,
+                    subtotal: true,
+                    originalSubtotal: true,
+                    voucherCode: true,
+                    voucherDiscount: true,
+                    levelDiscount: true,
+                    taxAmount: true,
+                    taxRates: true,
+                  },
                   populate: {
                     products: {
                       slug: true,
@@ -48,9 +62,11 @@ export const Providers: React.FC<{
                 },
               }}
               paymentMethods={[
+                payosAdapterClient({ label: 'PayOS' }),
                 stripeAdapterClient({
                   publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
                 }),
+                codAdapterClient({ label: 'Cash on Delivery (COD)' }),
               ]}
             >
               {children}

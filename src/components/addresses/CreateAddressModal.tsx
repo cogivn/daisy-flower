@@ -65,7 +65,7 @@ export const CreateAddressModal: React.FC<Props> = ({
         <AddressForm
           addressID={addressID}
           initialData={initialData}
-          callback={handleCallback}
+          callbackAction={handleCallback}
           skipSubmission={skipSubmission}
         />
       </DialogContent>
