@@ -15,7 +15,7 @@ export const Footer: GlobalConfig = {
       type: 'text',
       label: 'Brand Description',
       defaultValue:
-        'We are a team of designers and developers that create high quality plants and flower shop themes for your business.',
+        'Our florist is a creative studio where we design and curate unique botanical arrangements for your home and special events.',
     },
     {
       name: 'sections',
@@ -65,7 +65,7 @@ export const Footer: GlobalConfig = {
       name: 'copyrightText',
       type: 'text',
       label: 'Copyright Text (after year)',
-      defaultValue: 'LUKANI. Made with ❤️ for plants.',
+      defaultValue: 'HUYNH YEN. All Rights Reserved.',
     },
   ],
 }

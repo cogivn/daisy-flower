@@ -1,7 +1,7 @@
 'use client'
 
 import { Price } from '@/components/Price'
-import { Crown, Minus, TicketPercent } from 'lucide-react'
+import { Crown, TicketPercent } from 'lucide-react'
 import React from 'react'
 
 type PriceBreakdownProps = {
@@ -29,31 +29,30 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
 }) => {
   const hasVoucherDiscount = voucherDiscount > 0
   const hasLevelDiscount = levelDiscount > 0
-  const hasAnyDiscount = hasVoucherDiscount || hasLevelDiscount
-  const totalSaved = voucherDiscount + levelDiscount
   const showTaxRows = taxMode === 'exclusive' && taxRates && taxRates.length > 0
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 pt-4 border-t border-border">
       {/* Subtotal */}
-      <div className="flex justify-between items-center text-sm">
-        <span className="text-muted-foreground">Subtotal</span>
-        <Price amount={originalSubtotal} as="span" />
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-muted-foreground">Subtotal</span>
+        <Price amount={originalSubtotal} as="span" className="text-sm font-bold text-foreground" />
+      </div>
+
+      {/* Shipping (Placeholder) */}
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-muted-foreground">Shipping</span>
+        <span className="text-sm font-bold text-primary">Free</span>
       </div>
 
       {/* Voucher discount */}
       {hasVoucherDiscount && (
-        <div className="flex justify-between items-center text-sm">
-          <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-            <TicketPercent className="h-3.5 w-3.5" />
-            <span>
-              Voucher
-              {voucherCode && (
-                <span className="font-mono text-xs ml-1 opacity-75">({voucherCode})</span>
-              )}
-            </span>
+        <div className="flex justify-between items-center">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-[#8B5CF6]">
+            <TicketPercent size={14} />
+            Voucher {voucherCode ? `(${voucherCode})` : ''}
           </span>
-          <span className="text-green-600 dark:text-green-400 font-medium">
+          <span className="text-sm font-bold text-[#8B5CF6]">
             −<Price amount={voucherDiscount} as="span" />
           </span>
         </div>
@@ -61,57 +60,35 @@ export const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
 
       {/* Level discount */}
       {hasLevelDiscount && (
-        <div className="flex justify-between items-center text-sm">
-          <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-            <Crown className="h-3.5 w-3.5" />
-            <span>
-              {levelName || 'Member'} discount
-              {levelDiscountPercent != null && levelDiscountPercent > 0 && (
-                <span className="text-xs ml-1 opacity-75">({levelDiscountPercent}%)</span>
-              )}
-            </span>
+        <div className="flex justify-between items-center">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-[#F59E0B]">
+            <Crown size={14} />
+            {levelName || 'Member'} ({levelDiscountPercent || 0}%)
           </span>
-          <span className="text-amber-600 dark:text-amber-400 font-medium">
+          <span className="text-sm font-bold text-[#F59E0B]">
             −<Price amount={levelDiscount} as="span" />
           </span>
         </div>
       )}
 
-      {/* Savings summary */}
-      {hasAnyDiscount && (
-        <div className="flex justify-between items-center text-sm py-1.5 px-3 rounded-md bg-green-500/5 border border-green-500/10">
-          <span className="text-green-700 dark:text-green-400 font-medium flex items-center gap-1.5">
-            <Minus className="h-3 w-3" />
-            You save
-          </span>
-          <span className="text-green-700 dark:text-green-400 font-semibold">
-            <Price amount={totalSaved} as="span" />
-          </span>
-        </div>
-      )}
-
-      {/* Taxes (only show when mode is exclusive) */}
+      {/* Taxes */}
       {showTaxRows && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {taxRates.map((tax, i) => (
-            <div key={i} className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">{tax.name}</span>
-              <span className="text-muted-foreground">
-                +
-                <Price amount={tax.amount} as="span" />
+            <div key={i} className="flex justify-between items-center text-sm font-medium text-muted-foreground">
+              <span>{tax.name}</span>
+              <span className="font-bold text-foreground">
+                +<Price amount={tax.amount} as="span" />
               </span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Divider */}
-      <hr className="border-border" />
-
       {/* Total */}
-      <div className="flex justify-between items-center">
-        <span className="uppercase font-medium">Total</span>
-        <Price className="text-3xl font-medium" amount={finalTotal} as="span" />
+      <div className="flex justify-between items-center pt-4 border-t border-border">
+        <span className="text-base font-bold text-foreground">Total</span>
+        <Price className="text-2xl font-bold text-primary" amount={finalTotal} as="span" />
       </div>
     </div>
   )

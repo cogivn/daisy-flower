@@ -43,3 +43,10 @@ public/media
 
 # Test databases
 test-*.db
+.gitnexus
+
+
+ref/
+
+
+.openai

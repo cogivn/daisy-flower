@@ -36,7 +36,7 @@ export default async function Checkout() {
   const taxMode = (taxSettingsRes?.taxMode as string) || 'exclusive'
 
   return (
-    <div className="container min-h-[90vh] flex">
+    <div className="min-h-[90vh] flex flex-col">
       {!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && (
         <div>
           <Fragment>

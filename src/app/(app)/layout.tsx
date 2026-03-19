@@ -7,17 +7,18 @@ import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { Providers } from '@/providers'
 import { InitTheme } from '@/providers/Theme/InitTheme'
 import { GeistMono } from 'geist/font/mono'
-import { Lora, Rubik } from 'next/font/google'
+import { Inter, Cormorant_Garamond } from 'next/font/google'
 import './globals.css'
 
-const rubik = Rubik({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-rubik',
+  variable: '--font-inter',
 })
 
-const lora = Lora({
+const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
-  variable: '--font-lora',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-cormorant',
 })
 
 /* const { SITE_NAME, TWITTER_CREATOR, TWITTER_SITE } = process.env
@@ -52,7 +53,7 @@ const debugLayout = process.env.NEXT_PUBLIC_DEBUG_LAYOUT === 'true'
 export default async function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
-      className={[rubik.variable, lora.variable, GeistMono.variable].filter(Boolean).join(' ')}
+      className={[inter.variable, cormorantGaramond.variable, GeistMono.variable].filter(Boolean).join(' ')}
       lang="en"
       suppressHydrationWarning
     >

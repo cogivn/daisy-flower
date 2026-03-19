@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingBag } from 'lucide-react'
 
 export function OpenCartButton({
   className,
@@ -18,7 +18,7 @@ export function OpenCartButton({
       )}
       {...rest}
     >
-      <ShoppingCart size={26} strokeWidth={1.5} />
+      <ShoppingBag size={26} strokeWidth={1.5} />
       {typeof quantity === 'number' && quantity > 0 && (
         <span className="absolute -top-1.5 -right-1.5 bg-primary text-white text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
           {quantity}

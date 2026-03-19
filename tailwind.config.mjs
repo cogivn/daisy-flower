@@ -85,6 +85,7 @@ const config = {
         success: 'var(--success)',
         error: 'var(--error)',
         warning: 'var(--warning)',
+        placeholder: 'var(--placeholder)',
       },
       typography: ({ theme }) => ({
         DEFAULT: {
@@ -104,9 +105,9 @@ const config = {
       }),
       fontFamily: {
         mono: ['var(--font-geist-mono)'],
-        sans: ['var(--font-rubik)', 'sans-serif'],
-        heading: ['var(--font-lora)', 'serif'],
-        body: ['var(--font-rubik)', 'sans-serif'],
+        sans: ['var(--font-inter)', 'sans-serif'],
+        heading: ['var(--font-cormorant)', 'serif'],
+        body: ['var(--font-inter)', 'sans-serif'],
       },
       keyframes: {
         fadeIn: {

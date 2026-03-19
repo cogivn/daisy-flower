@@ -44,7 +44,8 @@
   --breakpoint-xl: 80rem;
   --breakpoint-2xl: 86rem;
   --font-mono: var(--font-geist-mono);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-cormorant);
 }
 
 @layer utilities {
@@ -118,29 +119,31 @@
 }
 
 :root {
-  --background: oklch(100% 0 0deg);
-  --foreground: oklch(14.5% 0 0deg);
-  --card: oklch(100% 0 0deg);
-  --card-foreground: oklch(14.5% 0 0deg);
-  --popover: oklch(100% 0 0deg);
-  --popover-foreground: oklch(14.5% 0 0deg);
-  --primary: oklch(64.5% 0.17 140deg); /* #79a206 equivalent approx */
-  --primary-foreground: oklch(98.5% 0 0deg);
-  --secondary: oklch(95% 0 0deg);
-  --secondary-foreground: oklch(20.5% 0 0deg);
-  --muted: oklch(96% 0 0deg);
-  --muted-foreground: oklch(45% 0 0deg);
-  --accent: oklch(64.5% 0.17 140deg);
-  --accent-foreground: oklch(100% 0 0deg);
+  --background: #FFFFFF;
+  --foreground: #1A1A1C;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1C;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A1C;
+  --primary: #6E9E6E;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F9F9FB;
+  --secondary-foreground: #1A1A1C;
+  --muted: #F9F9FB;
+  --muted-foreground: #6E6E70;
+  --accent: #6E9E6E;
+  --accent-foreground: #FFFFFF;
   --destructive: oklch(57.7% 0.245 27.325deg);
-  --destructive-foreground: oklch(100% 0 0deg);
-  --border: oklch(90% 0 0deg);
-  --input: oklch(90% 0 0deg);
-  --ring: oklch(64.5% 0.17 140deg);
+  --destructive-foreground: #FFFFFF;
+  --border: #F0F0F2;
+  --input: #F0F0F2;
+  --ring: #6E9E6E;
   --radius: 0rem;
-  --success: oklch(78% 0.08 140deg);
-  --warning: oklch(89% 0.1 75deg);
-  --error: oklch(75% 0.15 25deg);
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --sidebar: #F9F9FB;
+  --placeholder: #A0A0A5;
 }
 
 [data-theme='dark'] {
@@ -266,6 +269,7 @@ html[data-theme='light'] {
 
 a,
 input,
-button {
-  @apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-neutral-600 dark:focus-visible:ring-offset-neutral-900;
+button,
+textarea {
+  @apply focus-visible:outline-hidden;
 }

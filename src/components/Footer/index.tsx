@@ -2,69 +2,50 @@ import { getCachedGlobal } from '@/utilities/getGlobals'
 import Link from 'next/link'
 
 import { CMSLink } from '@/components/Link'
-import { Facebook, Instagram, MapPin, Phone, Twitter, Youtube } from 'lucide-react'
+import { Logo } from '@/components/Logo/Logo'
+import { Facebook, Instagram, Twitter } from 'lucide-react'
 
 import { Footer as FooterType } from '@/payload-types'
 
 export async function Footer() {
   const footer = (await getCachedGlobal('footer', 1)()) as FooterType
-  const { sections = [], openingHours = [] } = footer
+  const { sections = [], openingHours = [], brandDescription, copyrightText } = footer
 
-  // Extract contactNumber if it exists in your schema,
-  // or use a default if it's not in the generated type yet
-  const contactNumber = (footer as any).contactNumber
-  const brandDescription =
-    (footer as any).brandDescription ||
-    'We are a team of designers and developers that create high quality plants and flower shop themes for your business.'
-  const copyrightText =
-    (footer as any).copyrightText || 'LUKANI. Made with ❤️ for plants.'
+  const displayBrandDescription =
+    brandDescription ||
+    'Our florist is a creative studio where we design and curate unique botanical arrangements for your home and special events.'
+  const displayCopyrightText = copyrightText || 'HUYNH YEN. All Rights Reserved.'
 
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="debug-outline debug-grid bg-card text-sm border-t">
+    <footer className="bg-background border-t border-[#F0F0F2]">
       {/* Main Footer Content */}
-      <div className="container debug-container py-6 md:py-8 lg:py-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+      <div className="container px-4 md:px-8 py-10 md:py-16 lg:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Brand Info */}
-          <div className="flex flex-col items-start">
-            <Link href="/" className="inline-block mb-3">
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">
-                LUKANI<span className="text-primary">.</span>
-              </h2>
-            </Link>
-            <p className="text-muted-foreground leading-relaxed mb-3 text-base">
-              {brandDescription}
-            </p>
-            <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <MapPin size={22} className="text-primary shrink-0 mt-1" />
-                <span className="text-base text-muted-foreground">
-                  1234 Street Name, City, United States
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Phone size={22} className="text-primary shrink-0 mt-1" />
-                <span className="text-base text-muted-foreground font-medium">
-                  {contactNumber || '+01 23456789'}
-                </span>
-              </div>
+          <div className="flex flex-col items-start max-w-75">
+            <div className="mb-6 scale-90 origin-left lg:scale-100">
+              <Logo />
             </div>
+            <p className="text-[#6E6E70] leading-[1.6] text-sm font-normal">
+              {displayBrandDescription}
+            </p>
           </div>
 
-          {/* Link Columns */}
+          {/* Dynamic Link Columns from Payload */}
           {sections &&
             sections.map((section, i: number) => (
               <div key={i}>
-                <h4 className="text-base font-bold mb-3 uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
+                <h4 className="text-[13px] font-bold text-[#1A1A1C] mb-6 uppercase tracking-[1px]">
                   {section.title}
                 </h4>
-                <ul className="space-y-2">
+                <ul className="space-y-6">
                   {section.navItems?.map((item, j: number) => (
                     <li key={j}>
                       <CMSLink
                         {...item.link}
-                        className="text-muted-foreground hover:text-primary transition-colors text-base"
+                        className="text-[#6E6E70] hover:text-[#1A1A1C] transition-colors text-sm font-normal"
                       />
                     </li>
                   ))}
@@ -74,84 +55,68 @@ export async function Footer() {
 
           {/* Opening Hours */}
           <div>
-            <h4 className="text-base font-bold mb-3 uppercase tracking-widest relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-primary">
+            <h4 className="text-[13px] font-bold text-[#1A1A1C] mb-6 uppercase tracking-[1px]">
               Opening Hours
             </h4>
-            <ul className="space-y-0">
+            <ul className="space-y-6">
               {openingHours && openingHours.length > 0 ? (
                 openingHours.map((item, i: number) => (
-                  <li
-                    key={i}
-                    className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base"
-                  >
-                    <span className="text-muted-foreground">{item.day}</span>
-                    <span className="font-bold text-foreground">{item.hours}</span>
+                  <li key={i} className="flex justify-between items-center text-sm">
+                    <span className="text-[#6E6E70]">{item.day}</span>
+                    <span className="text-[#6E6E70]">{item.hours}</span>
                   </li>
                 ))
               ) : (
                 <>
-                  <li className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base">
-                    <span className="text-muted-foreground">Mon - Fri:</span>
-                    <span className="font-bold text-foreground">9:00 AM - 6:00 PM</span>
+                  <li className="flex justify-between items-center text-sm">
+                    <span className="text-[#6E6E70]">Mon - Fri:</span>
+                    <span className="text-[#6E6E70]">9:00 - 20:00</span>
                   </li>
-                  <li className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base">
-                    <span className="text-muted-foreground">Saturday:</span>
-                    <span className="font-bold text-foreground">10:00 AM - 5:00 PM</span>
+                  <li className="flex justify-between items-center text-sm">
+                    <span className="text-[#6E6E70]">Sat:</span>
+                    <span className="text-[#6E6E70]">10:00 - 18:00</span>
                   </li>
-                  <li className="flex justify-between border-b border-border/40 pb-1.5 pt-1 text-base">
-                    <span className="text-muted-foreground">Sunday:</span>
-                    <span className="font-bold text-foreground">Closed</span>
+                  <li className="flex justify-between items-center text-sm">
+                    <span className="text-[#6E6E70]">Sun:</span>
+                    <span className="text-[#6E6E70]">Closed</span>
                   </li>
                 </>
               )}
             </ul>
           </div>
         </div>
-      </div>
 
-      {/* Copyright Bar */}
-      <div className="bg-neutral-50 border-t items-center py-3 md:py-4">
-        <div className="container debug-container flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
-          <p className="text-muted-foreground text-base">
-            &copy; {currentYear}{' '}
-            {copyrightText ? (
-              copyrightText
-            ) : (
-              <>
-                <strong>LUKANI</strong>. Made with ❤️ for plants.
-              </>
-            )}
+        {/* Bottom Bar */}
+        <div className="mt-10 md:mt-12 lg:mt-16 pt-6 border-t border-[#F0F0F2] flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-[#6E6E70] text-[13px] font-normal">
+            &copy; {currentYear} {displayCopyrightText}
           </p>
-          <div className="flex flex-col sm:flex-row items-center gap-3 md:gap-4">
-            <div className="flex gap-4">
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Facebook size={20} />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Twitter size={20} />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Instagram size={20} />
-              </Link>
-              <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Youtube size={20} />
-              </Link>
-            </div>
-            {/* Payment Icons Placeholder */}
-            <div className="flex gap-3 opacity-60">
-              <div className="w-12 h-8 bg-card border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
-                VISA
-              </div>
-              <div className="w-12 h-8 bg-card border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
-                PAYPAL
-              </div>
-              <div className="w-12 h-8 bg-card border border-border shadow-sm flex items-center justify-center font-bold text-[8px]">
-                MC
-              </div>
-            </div>
+          <div className="flex items-center gap-5">
+            <Link
+              href="#"
+              className="text-[#1A1A1C] hover:text-[#6E6E70] transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram size={18} />
+            </Link>
+            <Link
+              href="#"
+              className="text-[#1A1A1C] hover:text-[#6E6E70] transition-colors"
+              aria-label="Facebook"
+            >
+              <Facebook size={18} />
+            </Link>
+            <Link
+              href="#"
+              className="text-[#1A1A1C] hover:text-[#6E6E70] transition-colors"
+              aria-label="Twitter"
+            >
+              <Twitter size={18} />
+            </Link>
           </div>
         </div>
       </div>
     </footer>
   )
 }
+

@@ -1,34 +1,20 @@
 'use client'
 
-import { AddressItem } from '@/components/addresses/AddressItem'
 import { CreateAddressModal } from '@/components/addresses/CreateAddressModal'
-import { Button } from '@/components/ui/button'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog'
 import { Address } from '@/payload-types'
+import { useAuth } from '@/providers/Auth'
+import { cn } from '@/utilities/cn'
 import { useAddresses } from '@payloadcms/plugin-ecommerce/client/react'
-import React, { useState } from 'react'
+import { Check, Plus } from 'lucide-react'
+import Link from 'next/link'
+import React from 'react'
 
 type Props = {
   selectedAddress?: Address
-  setAddress: React.Dispatch<React.SetStateAction<Partial<Address> | undefined>>
-  heading?: string
-  description?: string
-  setSubmit?: React.Dispatch<React.SetStateAction<() => void | Promise<void>>>
+  setAddressAction: (address: Partial<Address> | undefined) => void
 }
 
-import { useAuth } from '@/providers/Auth'
-
-export const CheckoutAddresses: React.FC<Props> = ({
-  setAddress,
-  heading = 'Addresses',
-  description = 'Please select or add your shipping and billing addresses.',
-}) => {
+export const CheckoutAddresses: React.FC<Props> = ({ selectedAddress, setAddressAction }) => {
   const { user } = useAuth()
   const { addresses: rawAddresses } = useAddresses()
 
@@ -41,87 +27,79 @@ export const CheckoutAddresses: React.FC<Props> = ({
     })
   }, [rawAddresses, user])
 
-  if (!addresses || addresses.length === 0) {
+  if (!user) {
     return (
-      <div>
-        <p>No addresses found. Please add an address.</p>
-
-        <CreateAddressModal />
+      <div className="p-8 border border-dashed border-border text-center space-y-4">
+        <p className="text-sm text-muted-foreground">Please log in to use your saved addresses.</p>
+        <Link
+          href="/login"
+          className="inline-block px-6 py-2 border border-foreground text-sm font-medium hover:bg-foreground hover:text-white transition-colors"
+        >
+          Log in
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h3 className="text-xl font-medium mb-2">{heading}</h3>
-        <p className="text-muted-foreground">{description}</p>
+    <div className="space-y-4">
+      {/* Address Cards */}
+      <div className="space-y-3">
+        {addresses.map((address) => {
+          const isSelected = selectedAddress?.id === address.id
+
+          return (
+            <div
+              key={address.id}
+              onClick={() => setAddressAction(address)}
+              className={cn(
+                'flex items-start gap-5 p-5 border cursor-pointer transition-all',
+                isSelected
+                  ? 'border-primary bg-white'
+                  : 'border-border bg-white hover:border-primary/50',
+              )}
+            >
+              {/* Selection Indicator */}
+              <div
+                className={cn(
+                  'w-5 h-5 shrink-0 flex items-center justify-center mt-0.5',
+                  isSelected
+                    ? 'bg-primary'
+                    : 'border border-border',
+                )}
+              >
+                {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
+              </div>
+
+              {/* Address Info */}
+              <div className="flex-1 space-y-1">
+                <p className="text-[15px] font-bold text-foreground">{address.name || 'Home'}</p>
+                <p className="text-[13px] text-muted-foreground">{address.phone}</p>
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  {address.street}, {address.city}
+                  {address.state && `, ${address.state}`}
+                  {address.country && `, ${address.country}`}
+                </p>
+              </div>
+            </div>
+          )
+        })}
       </div>
-      <AddressesModal setAddress={setAddress} />
+
+      {/* Add New Address Button */}
+      <CreateAddressModal
+        callback={(address) => {
+          setAddressAction(address)
+        }}
+        buttonText="Add New Address"
+        modalTitle="Add New Address"
+        trigger={
+          <button className="w-full flex items-center justify-center gap-3 p-4 border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+            <Plus size={18} />
+            <span className="text-sm font-semibold">Add New Address</span>
+          </button>
+        }
+      />
     </div>
-  )
-}
-
-const AddressesModal: React.FC<Props> = ({ setAddress }) => {
-  const [open, setOpen] = useState(false)
-  const handleOpenChange = (state: boolean) => {
-    setOpen(state)
-  }
-
-  const closeModal = () => {
-    setOpen(false)
-  }
-  const { user } = useAuth()
-  const { addresses: rawAddresses } = useAddresses()
-
-  const addresses = React.useMemo(() => {
-    if (!rawAddresses || !user) return []
-    return rawAddresses.filter((address) => {
-      const customerId =
-        typeof address.customer === 'object' ? address.customer?.id : address.customer
-      return customerId === user.id
-    })
-  }, [rawAddresses, user])
-
-  if (!addresses || addresses.length === 0) {
-    return <p>No addresses found. Please add an address.</p>
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant={'outline'}>{'Select an address'}</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{'Select an address'}</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-12">
-          <ul className="flex flex-col gap-8">
-            {addresses.map((address) => (
-              <li key={address.id} className="border-b pb-8 last:border-none">
-                <AddressItem
-                  address={address}
-                  beforeActions={
-                    <Button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setAddress(address)
-                        closeModal()
-                      }}
-                    >
-                      Select
-                    </Button>
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-
-          <CreateAddressModal />
-        </div>
-      </DialogContent>
-    </Dialog>
   )
 }

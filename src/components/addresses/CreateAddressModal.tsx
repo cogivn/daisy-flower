@@ -21,6 +21,7 @@ type Props = {
   callback?: (address: Partial<Address>) => void
   skipSubmission?: boolean
   disabled?: boolean
+  trigger?: React.ReactNode
 }
 
 export const CreateAddressModal: React.FC<Props> = ({
@@ -31,6 +32,7 @@ export const CreateAddressModal: React.FC<Props> = ({
   callback,
   skipSubmission,
   disabled,
+  trigger,
 }) => {
   const [open, setOpen] = useState(false)
   const handleOpenChange = (state: boolean) => {
@@ -52,7 +54,7 @@ export const CreateAddressModal: React.FC<Props> = ({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild disabled={disabled}>
-        <Button variant={'outline'}>{buttonText}</Button>
+        {trigger || <Button variant={'outline'}>{buttonText}</Button>}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

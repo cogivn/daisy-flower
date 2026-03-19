@@ -4,11 +4,11 @@ import { Cart } from '@/components/Cart'
 import { OpenCartButton } from '@/components/Cart/OpenCart'
 import { CMSLink } from '@/components/Link'
 import { Price } from '@/components/Price'
+import { Logo } from '@/components/Logo'
 import Link from 'next/link'
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Category, Header } from '@/payload-types'
-import { useTheme } from '@/providers/Theme'
 import { cn } from '@/utilities/cn'
 import { ChevronDown, Heart, Menu as MenuIcon, Phone, User } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -30,19 +30,14 @@ export function HeaderClient({ header, categories }: Props) {
 
   const [isSticky, setIsSticky] = useState(false)
   const [showCategories, setShowCategories] = useState(false)
-  const { theme = 'light' } = useTheme()
   const { wishlistIds } = useWishlist()
+  const categoriesRef = useRef<HTMLDivElement>(null)
 
   const selectedCategoryTitle = useMemo(() => {
     if (!currentCategoryId) return 'Categories'
     const found = categories?.find((cat) => String(cat.id) === currentCategoryId)
     return found ? found.title : 'Categories'
   }, [currentCategoryId, categories])
-
-  const themeLabel = useMemo(() => {
-    // Theme is currently locked to light; this label remains for future extensibility.
-    return 'Light'
-  }, [])
 
   const formattedContactNumber = useMemo(() => {
     const raw = (contactNumber || '+0123456789').trim()
@@ -63,7 +58,7 @@ export function HeaderClient({ header, categories }: Props) {
       const rest = digits.slice(2)
       const restFormatted = rest.replace(/(\d{3})(?=\d)/g, '$1 ').trim()
 
-      return `(+84)${restFormatted}`
+      return `(+84) ${restFormatted}`
     }
 
     // Generic international: +CC XXXX XXXX...
@@ -78,8 +73,20 @@ export function HeaderClient({ header, categories }: Props) {
     const handleScroll = () => {
       setIsSticky(window.scrollY > 150)
     }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoriesRef.current && !categoriesRef.current.contains(event.target as Node)) {
+        setShowCategories(false)
+      }
+    }
+
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    document.addEventListener('mousedown', handleClickOutside)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
   }, [])
 
   return (
@@ -118,9 +125,7 @@ export function HeaderClient({ header, categories }: Props) {
             href="/"
             className="shrink-0 flex-1 md:flex-none flex justify-center md:justify-start"
           >
-            <h1 className="text-4xl font-bold tracking-tighter text-foreground">
-              LUKANI<span className="text-primary">.</span>
-            </h1>
+            <Logo />
           </Link>
 
           {/* Search Bar - Hidden on Mobile */}
@@ -146,8 +151,7 @@ export function HeaderClient({ header, categories }: Props) {
                 renderTrigger={({ quantity, subtotal }) => (
                   <button type="button" className="flex items-center gap-3 cursor-pointer">
                     <OpenCartButton quantity={quantity} />
-                    <div className="hidden xl:flex flex-col text-[11px] font-bold leading-tight text-left">
-                      <span className="text-muted-foreground uppercase">My Cart</span>
+                    <div className="hidden xl:flex flex-col text-[13px] font-bold leading-tight text-left">
                       <Price
                         as="span"
                         amount={typeof subtotal === 'number' ? subtotal : 0}
@@ -173,13 +177,12 @@ export function HeaderClient({ header, categories }: Props) {
       >
         <div className="container debug-container flex flex-row items-center justify-between gap-2 md:gap-0">
           {/* Categories Dropdown - full width on mobile, fixed width on desktop */}
-          <div className="relative w-full md:w-64 md:shrink-0">
+          <div className="relative w-full md:w-64 md:shrink-0" ref={categoriesRef}>
             <button
               type="button"
               className="bg-primary text-white w-full py-3 px-3 md:px-4 flex items-center justify-between font-medium text-left touch-manipulation cursor-pointer select-none"
               onClick={(e) => {
                 e.preventDefault()
-                e.stopPropagation()
                 setShowCategories((prev) => !prev)
               }}
               aria-expanded={showCategories}
@@ -274,16 +277,11 @@ export function HeaderClient({ header, categories }: Props) {
 
           {/* Help / Phone - compact padding */}
           <div className="hidden md:flex items-center justify-end">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5">
-              <Phone size={18} strokeWidth={1.8} className="text-primary shrink-0" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Call us 24/7
-                </span>
-                <span className="mt-0.5 text-sm font-bold tracking-[0.03em] text-primary">
-                  {formattedContactNumber}
-                </span>
-              </div>
+            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 transition-colors group cursor-pointer">
+              <Phone size={18} strokeWidth={2} className="text-primary shrink-0" />
+              <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                {formattedContactNumber}
+              </span>
             </div>
           </div>
         </div>
